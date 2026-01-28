@@ -1,0 +1,41 @@
+name: Auto label by scope
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add labels based on scope
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.issue.body;
+
+            const scopeToLabel = {
+              'Frontend': 'frontend',
+              'Backend': 'backend',
+              'AI / Data': 'ai',
+              'Infra / DevOps': 'infra',
+              'Docs': 'docs',
+              'Global': 'global',
+            };
+
+            const labels = [];
+
+            for (const [scope, label] of Object.entries(scopeToLabel)) {
+              if (body.includes(`- [x] ${scope}`)) {
+                labels.push(label);
+              }
+            }
+
+            if (labels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels,
+              });
+            }
