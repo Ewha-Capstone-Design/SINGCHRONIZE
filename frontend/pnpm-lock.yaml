@@ -18,7 +18,7 @@ importers:
         specifier: 5.9.2
         version: 5.9.2
 
-  apps/landing:
+  apps/client:
     dependencies:
       '@singchronize/ui':
         specifier: workspace:*
@@ -36,6 +36,9 @@ importers:
       '@singchronize/eslint-config':
         specifier: workspace:*
         version: link:../../packages/eslint-config
+      '@singchronize/tailwind-config':
+        specifier: workspace:*
+        version: link:../../packages/tailwind-config
       '@singchronize/typescript-config':
         specifier: workspace:*
         version: link:../../packages/typescript-config
@@ -51,11 +54,14 @@ importers:
       eslint:
         specifier: ^9.39.1
         version: 9.39.1
+      tailwindcss:
+        specifier: ^4.1.12
+        version: 4.1.18
       typescript:
         specifier: 5.9.2
         version: 5.9.2
 
-  apps/client:
+  apps/landing:
     dependencies:
       '@singchronize/ui':
         specifier: workspace:*
@@ -127,6 +133,12 @@ importers:
       typescript-eslint:
         specifier: ^8.50.0
         version: 8.50.0(eslint@9.39.1)(typescript@5.9.2)
+
+  packages/tailwind-config:
+    devDependencies:
+      tailwindcss:
+        specifier: ^4.1.12
+        version: 4.1.18
 
   packages/typescript-config: {}
 
@@ -702,6 +714,7 @@ packages:
 
   eslint-config-prettier@10.1.1:
     resolution: {integrity: sha512-4EQQr6wXwS+ZJSzaR5ZCrYgLxqvUjdXctaEtBqHcbkW944B1NQyO4qpdHQbXBONfwxXdkAY81HH4+LUfrg+zPw==}
+    hasBin: true
     peerDependencies:
       eslint: '>=7.0.0'
 
@@ -742,6 +755,7 @@ packages:
   eslint@9.39.1:
     resolution: {integrity: sha512-BhHmn2yNOFA9H9JmmIVKJmd288g9hrVRDkdoIgRCRuSySRUHH7r/DI6aAXW9T1WwUuY3DFgrcaqB+deURBLR5g==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    hasBin: true
     peerDependencies:
       jiti: '*'
     peerDependenciesMeta:
@@ -1087,6 +1101,7 @@ packages:
   next@16.1.0:
     resolution: {integrity: sha512-Y+KbmDbefYtHDDQKLNrmzE/YYzG2msqo2VXhzh5yrJ54tx/6TmGdkR5+kP9ma7i7LwZpZMfoY3m/AoPPPKxtVw==}
     engines: {node: '>=20.9.0'}
+    hasBin: true
     peerDependencies:
       '@opentelemetry/api': ^1.1.0
       '@playwright/test': ^1.51.1
@@ -1347,6 +1362,9 @@ packages:
   supports-preserve-symlinks-flag@1.0.0:
     resolution: {integrity: sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==}
     engines: {node: '>= 0.4'}
+
+  tailwindcss@4.1.18:
+    resolution: {integrity: sha512-4+Z+0yiYyEtUVCScyfHCxOYP06L5Ne+JiHhY2IjR2KWMIWhJOYZKLSGZaP5HkZ8+bY0cxfzwDE5uOmzFXyIwxw==}
 
   tinyglobby@0.2.15:
     resolution: {integrity: sha512-j2Zq4NyQYG5XMST4cbs02Ak8iJUdxRM0XI5QyxXuZOzKOINmWurp3smXu3y5wDcJrptwpSjgXHzIQxR0omXljQ==}
@@ -2845,6 +2863,8 @@ snapshots:
       has-flag: 4.0.0
 
   supports-preserve-symlinks-flag@1.0.0: {}
+
+  tailwindcss@4.1.18: {}
 
   tinyglobby@0.2.15:
     dependencies:
