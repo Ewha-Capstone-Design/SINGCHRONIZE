@@ -2,6 +2,7 @@
   "name": "@singchronize/ui",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "exports": {
     ".": {
       "types": "./src/components/index.ts",
@@ -11,7 +12,8 @@
   "scripts": {
     "lint": "eslint . --max-warnings 0",
     "generate:component": "turbo gen react-component",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "ui:add": "tsx scripts/add-ui.ts"
   },
   "devDependencies": {
     "@singchronize/eslint-config": "workspace:*",
@@ -20,6 +22,8 @@
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
     "eslint": "^9.39.1",
+    "execa": "^9.6.1",
+    "tsx": "^4.21.0",
     "typescript": "5.9.2"
   },
   "dependencies": {
