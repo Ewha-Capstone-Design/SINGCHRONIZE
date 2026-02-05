@@ -14,6 +14,20 @@
     line-height: var(--line-height-head);
   }
 
+  .text-28b {
+    font-family: var(--font-family-base);
+    font-size: var(--text-head-28);
+    font-weight: 700;
+    line-height: var(--line-height-head);
+  }
+
+  .text-24b {
+    font-family: var(--font-family-base);
+    font-size: var(--text-head-24);
+    font-weight: 700;
+    line-height: var(--line-height-head);
+  }
+
   /* Body */
   .text-20sb {
     font-family: var(--font-family-base);
@@ -43,14 +57,43 @@
     line-height: var(--line-height-body);
   }
 
+  /* Small */
+  .text-14r {
+    font-family: var(--font-family-base);
+    font-size: var(--text-small-14);
+    font-weight: 400;
+    line-height: var(--line-height-small);
+  }
+
+  .text-12r {
+    font-family: var(--font-family-base);
+    font-size: var(--text-small-12);
+    font-weight: 400;
+    line-height: var(--line-height-small);
+  }
+
   /* Colors */
-  .bg-brand { background-color: var(--color-brand-primary); }
-  .text-brand { color: var(--color-brand-primary); }
-  .bg-base { background-color: var(--color-bg); }
-  .bg-dim { background-color: var(--color-dim); }
-  .text-accent { color: var(--accent-500); }
+  .bg-brand {
+    background-color: var(--color-brand-primary);
+  }
+  .text-brand {
+    color: var(--color-brand-primary);
+  }
+  .bg-base {
+    background-color: var(--color-bg);
+  }
+  .bg-dim {
+    background-color: var(--color-dim);
+  }
+  .text-accent {
+    color: var(--accent-500);
+  }
 
   /* Radius */
-  .rounded-10 { border-radius: var(--radius-10); }
-  .rounded-20 { border-radius: var(--radius-20); }
+  .rounded-10 {
+    border-radius: var(--radius-10);
+  }
+  .rounded-20 {
+    border-radius: var(--radius-20);
+  }
 }
