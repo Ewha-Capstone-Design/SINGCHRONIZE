@@ -20,11 +20,12 @@
     "@singchronize/eslint-config": "workspace:*",
     "@singchronize/tailwind-config": "workspace:*",
     "@singchronize/typescript-config": "workspace:*",
+    "@tailwindcss/postcss": "^4.1.18",
     "@types/node": "^22.15.3",
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
     "eslint": "^9.39.1",
-    "tailwindcss": "^4.1.12",
+    "tailwindcss": "^4.1.18",
     "typescript": "5.9.2"
   }
 }

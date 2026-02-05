@@ -1,0 +1,10 @@
+@layer base {
+  :root {
+    --color-brand-primary: var(--yellow-500);
+    --color-bg: var(--gray-900);
+    --color-dim: var(--black-88);
+
+    --radius-20: 20px;
+    --radius-10: 10px;
+  }
+}

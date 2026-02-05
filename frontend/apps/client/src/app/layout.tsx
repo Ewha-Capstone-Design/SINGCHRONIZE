@@ -1,5 +1,4 @@
 import '@singchronize/tailwind-config';
-import './globals.css';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
