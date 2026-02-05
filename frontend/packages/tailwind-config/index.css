@@ -1,7 +1,16 @@
 @import 'tailwindcss';
 
-@layer utilities {
-  .bg-brand {
-    background: blue;
-  }
-}
+/* base */
+@import './styles/base.css';
+
+/* primitives */
+@import './styles/primitives.css';
+
+/* semantics */
+@import './styles/semantics.css';
+
+/* typography */
+@import './styles/typography.css';
+
+/* utilities */
+@import './styles/utilities.css';

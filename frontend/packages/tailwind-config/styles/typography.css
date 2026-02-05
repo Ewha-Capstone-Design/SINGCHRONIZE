@@ -1,0 +1,15 @@
+@layer base {
+  :root {
+    --font-family-base: 'Pretendard', system-ui, -apple-system, sans-serif;
+
+    --text-head-38: 38px;
+    --text-head-32: 32px;
+
+    --text-body-20: 20px;
+    --text-body-18: 18px;
+    --text-body-16: 16px;
+
+    --line-height-head: 1.45;
+    --line-height-body: 1.5;
+  }
+}
