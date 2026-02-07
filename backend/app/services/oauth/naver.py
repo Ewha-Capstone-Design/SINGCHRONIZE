@@ -19,7 +19,6 @@ class NaverOAuthError(Exception):
 class NaverOAuthProvider(OAuthProvider):
     """
     네이버 OAuth 2.0 구현
-
     참고: https://developers.naver.com/docs/login/api/
     """
 
