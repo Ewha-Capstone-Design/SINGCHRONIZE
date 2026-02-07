@@ -1,16 +1,19 @@
+@source "../../apps/client/src/**/*.{ts,tsx}";
+@source "../../apps/landing/src/**/*.{ts,tsx}";
+@source "../ui/src/**/*.{ts,tsx}";
+
 @import 'tailwindcss';
 
 /* base */
 @import './styles/base.css';
 
-/* primitives */
+/* tokens */
 @import './styles/primitives.css';
-
-/* semantics */
 @import './styles/semantics.css';
 
-/* typography */
-@import './styles/typography.css';
+/* tailwind bridge */
+@import './styles/theme.css';
 
-/* utilities */
+/* rest */
+@import './styles/typography.css';
 @import './styles/utilities.css';

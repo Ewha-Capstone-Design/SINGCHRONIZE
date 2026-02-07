@@ -1,4 +1,4 @@
-import '@singchronize/tailwind-config';
+import './global.css';
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (

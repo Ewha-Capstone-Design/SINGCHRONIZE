@@ -1,0 +1,47 @@
+@theme {
+  /* Yellow */
+  --color-yellow-900: var(--yellow-900);
+  --color-yellow-800: var(--yellow-800);
+  --color-yellow-700: var(--yellow-700);
+  --color-yellow-600: var(--yellow-600);
+  --color-yellow-500: var(--yellow-500);
+  --color-yellow-500-30: var(--yellow-500-30);
+  --color-yellow-400: var(--yellow-400);
+  --color-yellow-300: var(--yellow-300);
+  --color-yellow-200: var(--yellow-200);
+  --color-yellow-100: var(--yellow-100);
+  --color-yellow-50: var(--yellow-50);
+
+  /* Grayscale */
+  --color-black: var(--black);
+  --color-black-88: var(--black-88);
+
+  --color-gray-900: var(--gray-900);
+  --color-gray-800: var(--gray-800);
+  --color-gray-700: var(--gray-700);
+  --color-gray-600: var(--gray-600);
+  --color-gray-500: var(--gray-500);
+  --color-gray-400: var(--gray-400);
+  --color-gray-300: var(--gray-300);
+  --color-gray-200: var(--gray-200);
+  --color-gray-100: var(--gray-100);
+
+  --color-white: var(--white);
+  --color-white-20: var(--white-20);
+  --color-white-10: var(--white-10);
+
+  /* Accent */
+  --color-accent-500: var(--accent-500);
+  --color-accent-600: var(--accent-600);
+  --color-accent-900: var(--accent-900);
+}
+
+@theme {
+  /* Semantic */
+  --color-brand-primary: var(--semantic-brand-primary);
+  --color-bg: var(--semantic-bg);
+  --color-dim: var(--semantic-dim);
+
+  --radius-lg: var(--radius-20);
+  --radius-md: var(--radius-10);
+}
