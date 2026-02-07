@@ -29,29 +29,13 @@ class KakaoOAuthProvider(OAuthProvider):
         authorization_code: str,
         redirect_uri: str
     ) -> str:
-        """
-        카카오 인가 코드로 액세스 토큰 획득
-
-        POST https://kauth.kakao.com/oauth/token
-        Content-Type: application/x-www-form-urlencoded;charset=utf-8
-
-        Args:
-            authorization_code: 카카오 인가 코드
-            redirect_uri: 리다이렉트 URI (프론트엔드에서 전달받은 값)
-
-        Returns:
-            카카오 액세스 토큰
-
-        Raises:
-            KakaoOAuthError: 토큰 발급 실패
-        """
+        """카카오 인가 코드로 액세스 토큰 획득"""
         if not settings.KAKAO_REST_API_KEY:
             raise KakaoOAuthError(
                 "카카오 REST API 키가 설정되지 않았습니다.",
                 {"hint": "환경변수 KAKAO_REST_API_KEY를 설정해주세요."}
             )
 
-        # 요청 데이터 구성
         data = {
             "grant_type": "authorization_code",
             "client_id": settings.KAKAO_REST_API_KEY,
@@ -59,7 +43,6 @@ class KakaoOAuthProvider(OAuthProvider):
             "code": authorization_code,
         }
 
-        # Client Secret이 있으면 추가 (보안 강화 옵션)
         if settings.KAKAO_CLIENT_SECRET:
             data["client_secret"] = settings.KAKAO_CLIENT_SECRET
 
@@ -73,7 +56,6 @@ class KakaoOAuthProvider(OAuthProvider):
                     }
                 )
 
-                # 카카오 API 에러 처리
                 if response.status_code != 200:
                     error_data = response.json() if response.text else {}
                     logger.error(f"카카오 토큰 발급 실패: {response.status_code} - {error_data}")
@@ -112,21 +94,7 @@ class KakaoOAuthProvider(OAuthProvider):
             )
 
     async def get_user_info(self, access_token: str) -> OAuthUserInfo:
-        """
-        카카오 액세스 토큰으로 사용자 정보 조회
-
-        GET/POST https://kapi.kakao.com/v2/user/me
-        Authorization: Bearer {access_token}
-
-        Args:
-            access_token: 카카오 액세스 토큰
-
-        Returns:
-            OAuthUserInfo: 표준화된 사용자 정보
-
-        Raises:
-            KakaoOAuthError: 사용자 정보 조회 실패
-        """
+        """카카오 액세스 토큰으로 사용자 정보 조회"""
         try:
             async with httpx.AsyncClient(timeout=settings.OAUTH_API_TIMEOUT) as client:
                 response = await client.get(
@@ -137,7 +105,6 @@ class KakaoOAuthProvider(OAuthProvider):
                     }
                 )
 
-                # 카카오 API 에러 처리
                 if response.status_code != 200:
                     error_data = response.json() if response.text else {}
                     logger.error(f"카카오 사용자 정보 조회 실패: {response.status_code} - {error_data}")
@@ -152,7 +119,6 @@ class KakaoOAuthProvider(OAuthProvider):
 
                 user_data = response.json()
 
-                # 필수 필드 추출
                 kakao_user_id = user_data.get("id")
                 if not kakao_user_id:
                     raise KakaoOAuthError(
@@ -160,7 +126,6 @@ class KakaoOAuthProvider(OAuthProvider):
                         {"response": user_data}
                     )
 
-                # 선택 필드 추출 (동의 항목에 따라 없을 수 있음)
                 kakao_account = user_data.get("kakao_account", {})
                 profile = kakao_account.get("profile", {})
 
