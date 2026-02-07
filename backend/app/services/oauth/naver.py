@@ -8,7 +8,6 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-
 class NaverOAuthError(Exception):
     """네이버 OAuth 관련 에러"""
     def __init__(self, message: str, details: Dict[str, Any] | None = None):

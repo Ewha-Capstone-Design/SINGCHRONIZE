@@ -4,7 +4,6 @@ from typing import Optional, Dict, Any
 from datetime import datetime
 from uuid import UUID
 
-
 class UserResponse(BaseModel):
     """GET /users/me 응답 - 보컬 캐시 포함"""
     id: UUID
