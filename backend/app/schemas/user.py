@@ -4,10 +4,7 @@ from typing import Optional, Dict, Any
 from datetime import datetime
 from uuid import UUID
 
-<<<<<<< HEAD
 
-=======
->>>>>>> 37619415d32128e6eb47e75d2ff2f2a1d689c018
 class UserResponse(BaseModel):
     """GET /users/me 응답 - 보컬 캐시 포함"""
     id: UUID
