@@ -20,6 +20,10 @@ class User(Base):
     provider_id = Column(String, nullable=False)
 
     # JSON - 보컬 분석 캐시 (마이페이지 성능)
+<<<<<<< HEAD
+=======
+    # PostgreSQL에서는 JSONB 인덱싱 활용 가능, SQLite에서는 TEXT 저장
+>>>>>>> 37619415d32128e6eb47e75d2ff2f2a1d689c018
     vocal_summary_cache = Column(JSON, nullable=True)
 
     # JSON - 설정 통합
