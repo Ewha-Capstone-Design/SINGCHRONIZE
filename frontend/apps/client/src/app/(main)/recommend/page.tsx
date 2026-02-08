@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { StepAnalyzing, StepResult, FlowHeader } from './_components';
+import { FlowHeader } from './_components';
 import { StepRecord } from '@/features/record';
+import { StepRanking } from '@/features/ranking';
 import { RecommendStep, RECOMMEND_STEPS } from '@/shared/types/recommend';
 
 const RecommendPage = () => {
@@ -37,9 +38,8 @@ const RecommendPage = () => {
     >
       <FlowHeader step={step} onBack={handleBack} />
 
-      {step === 'record' && <StepRecord onNext={() => setStep('analyzing')} />}
-      {step === 'analyzing' && <StepAnalyzing onDone={() => setStep('result')} />}
-      {step === 'result' && <StepResult onRestart={() => setStep('record')} />}
+      {step === 'record' && <StepRecord onNext={() => setStep('ranking')} />}
+      {step === 'ranking' && <StepRanking onNext={() => setStep('keyword')} />}
     </div>
   );
 };
