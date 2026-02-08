@@ -29,7 +29,8 @@ const RecommendPage = () => {
   return (
     <div
       className='
-      min-h-screen w-full text-white overflow-hidden
+      w-full h-screen text-white overflow-hidden
+      flex flex-col
       bg-bg
       bg-[radial-gradient(50%_50%_at_50%_50%,rgba(200,255,0,0.20)_0%,rgba(22,22,22,0.20)_100%)]
       bg-no-repeat
@@ -37,9 +38,10 @@ const RecommendPage = () => {
       bg-position-[50%_-70%]'
     >
       <FlowHeader step={step} onBack={handleBack} />
-
-      {step === 'record' && <StepRecord onNext={() => setStep('ranking')} />}
-      {step === 'ranking' && <StepRanking onNext={() => setStep('keyword')} />}
+      <div className='flex-1 flex flex-col items-center'>
+        {step === 'record' && <StepRecord onNext={() => setStep('ranking')} />}
+        {step === 'ranking' && <StepRanking onNext={() => setStep('keyword')} />}
+      </div>
     </div>
   );
 };

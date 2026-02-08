@@ -12,11 +12,15 @@ const StepRecord = ({ onNext }: { onNext: () => void }) => {
   }
 
   return (
-    <div className='mt-[8vh] flex flex-col items-center justify-center'>
+    <div className='pt-[4vh] pb-[8vh] flex flex-col gap-4 items-center justify-around max-w-xl h-full'>
       {/* 상태 문구 */}
-      <p className='text-32b text-center whitespace-pre-line'>{TITLE_BY_PHASE[phase]}</p>
+      <div className='flex items-center h-[92]'>
+        <p className='text-32b text-center whitespace-pre-line'>
+          {TITLE_BY_PHASE[phase]}
+        </p>
+      </div>
 
-      <div className='mt-[14vh] mb-[12vh] flex flex-col gap-[10] items-center w-full max-w-xl'>
+      <div className='flex flex-col gap-[10] items-center w-full'>
         {/* 실시간 파형 */}
         <WaveformRecorder phase={phase} onRecorded={handleRecorded} />
 
