@@ -14,7 +14,7 @@ const StepRecord = ({ onNext }: { onNext: () => void }) => {
   return (
     <div className='mt-[8vh] flex flex-col items-center justify-center'>
       {/* 상태 문구 */}
-      <p className='text-32b'>{TITLE_BY_PHASE[phase]}</p>
+      <p className='text-32b text-center whitespace-pre-line'>{TITLE_BY_PHASE[phase]}</p>
 
       <div className='mt-[14vh] mb-[12vh] flex flex-col gap-[10] items-center w-full max-w-xl'>
         {/* 실시간 파형 */}
