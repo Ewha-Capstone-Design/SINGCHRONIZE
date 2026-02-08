@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { StepRecord, StepAnalyzing, StepResult, FlowHeader } from './_components';
+import { StepAnalyzing, StepResult, FlowHeader } from './_components';
+import { StepRecord } from '@/features/record';
 import { RecommendStep, RECOMMEND_STEPS } from '@/shared/types/recommend';
 
 const RecommendPage = () => {
