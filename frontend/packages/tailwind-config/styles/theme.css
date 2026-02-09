@@ -38,7 +38,7 @@
 
 @theme {
   /* Semantic */
-  --color-brand-primary: var(--semantic-brand-primary);
+  --color-brand: var(--semantic-brand-primary);
   --color-bg: var(--semantic-bg);
   --color-dim: var(--semantic-dim);
 
