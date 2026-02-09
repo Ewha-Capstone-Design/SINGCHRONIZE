@@ -6,6 +6,7 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
+  DragStartEvent,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -23,11 +24,19 @@ type SortableSongListProps = {
 
 const SortableSongList = ({ initialSongs, onChange }: SortableSongListProps) => {
   const [songs, setSongs] = useState<SongType[]>(initialSongs);
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(useSensor(PointerSensor));
 
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+
+    setActiveId(null);
+
     if (!over || active.id === over.id) return;
 
     setSongs((prev) => {
@@ -43,6 +52,7 @@ const SortableSongList = ({ initialSongs, onChange }: SortableSongListProps) => 
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
       <SortableContext

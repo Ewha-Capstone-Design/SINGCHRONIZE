@@ -2,6 +2,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { SongType } from '@/entities/song/model/types';
 import { SongItem } from '@/shared/components';
+import { cn } from '@/shared/lib/cn';
 
 type SortableSongItemProps = {
   song: SongType;
@@ -9,9 +10,8 @@ type SortableSongItemProps = {
 };
 
 const SortableSongItem = ({ song, index }: SortableSongItemProps) => {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
-    id: song.id,
-  });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: song.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -32,7 +32,7 @@ const SortableSongItem = ({ song, index }: SortableSongItemProps) => {
           ...attributes,
           ...listeners,
         }}
-        className='touch-none'
+        className={cn('touch-none', isDragging && 'border border-brand rounded-[10px]')}
       />
     </div>
   );
