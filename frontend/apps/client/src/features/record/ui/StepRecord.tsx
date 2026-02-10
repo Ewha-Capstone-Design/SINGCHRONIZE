@@ -15,7 +15,7 @@ const StepRecord = ({ onNext }: { onNext: () => void }) => {
     <div className='pt-[4vh] pb-[8vh] flex flex-col gap-4 items-center justify-around max-w-xl h-full'>
       {/* 상태 문구 */}
       <div className='flex items-center h-[92]'>
-        <p className='text-32b text-center whitespace-pre-line'>
+        <p className='typo-32b text-center whitespace-pre-line'>
           {TITLE_BY_PHASE[phase]}
         </p>
       </div>
@@ -26,7 +26,7 @@ const StepRecord = ({ onNext }: { onNext: () => void }) => {
 
         {/* 타이머 */}
         <p
-          className={`text-38b tabular-nums ${phase === 'enough' ? 'text-accent-500' : 'text-white'}`}
+          className={`typo-38b tabular-nums ${phase === 'enough' ? 'text-accent-500' : 'text-white'}`}
         >
           {mm}:{ss}
         </p>

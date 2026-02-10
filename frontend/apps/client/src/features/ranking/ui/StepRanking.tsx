@@ -13,7 +13,7 @@ const StepRanking = ({ onNext }: { onNext: () => void }) => {
   return (
     <div className='pt-[4vh] pb-[8vh] flex flex-col gap-[6vh] items-center justify-around w-[500] h-full'>
       <div className='flex items-center h-[92]'>
-        <p className='text-32b text-center whitespace-pre-line'>
+        <p className='typo-32b text-center whitespace-pre-line'>
           {'더 정확한 추천을 위해\n취향에 맞게 노래를 정렬해 주세요!'}
         </p>
       </div>
