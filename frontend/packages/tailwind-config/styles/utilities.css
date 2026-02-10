@@ -74,16 +74,16 @@
 
   /* Colors */
   .bg-brand {
-    background-color: var(--color-brand-primary);
+    background-color: var(--semantic-brand-primary);
   }
   .text-brand {
-    color: var(--color-brand-primary);
+    color: var(--semantic-brand-primary);
   }
   .bg-base {
-    background-color: var(--color-bg);
+    background-color: var(--semantic-bg);
   }
   .bg-dim {
-    background-color: var(--color-dim);
+    background-color: var(--semantic-dim);
   }
   .text-accent {
     color: var(--accent-500);
