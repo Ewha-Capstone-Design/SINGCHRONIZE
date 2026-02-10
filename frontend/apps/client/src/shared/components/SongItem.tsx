@@ -32,8 +32,8 @@ const SongItem = ({ song, onPlay, dragHandleProps, className }: SongItemProps) =
       <div className='flex flex-1 items-center px-[25] py-[18] gap-4 overflow-hidden'>
         {/* 텍스트 영역 */}
         <div className='flex flex-1 flex-col overflow-hidden'>
-          <p className='text-16b text-white truncate'>{song.title}</p>
-          <p className='text-14r text-gray-300 truncate'>{song.artist}</p>
+          <p className='typo-16b text-white truncate'>{song.title}</p>
+          <p className='typo-14r text-gray-300 truncate'>{song.artist}</p>
         </div>
 
         {/* 버튼 */}

@@ -21,7 +21,7 @@ const SortableSongItem = ({ song, index }: SortableSongItemProps) => {
   return (
     <div ref={setNodeRef} style={style} className='flex justify-between items-center'>
       {/* 순위 */}
-      <div className='text-32b'>{index + 1}</div>
+      <div className='typo-32b'>{index + 1}</div>
 
       <SongItem
         song={song}
