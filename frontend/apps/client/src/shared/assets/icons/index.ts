@@ -1,0 +1,10 @@
+export { default as IcBack } from './ic_back.svg';
+export { default as IcClose } from './ic_close.svg';
+export { default as IcDrag } from './ic_drag.svg';
+export { default as IcPause } from './ic_pause.svg';
+export { default as IcPlay } from './ic_play.svg';
+export { default as IcRecordingDone } from './ic_recording_done.svg';
+export { default as IcRecordingPause } from './ic_recording_pause.svg';
+export { default as IcRecordingStart } from './ic_recording_start.svg';
+export { default as IcVolumeOff } from './ic_volume_off.svg';
+export { default as IcVolumeOn } from './ic_volume_on.svg';

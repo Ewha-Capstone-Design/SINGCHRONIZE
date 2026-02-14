@@ -1,27 +1,27 @@
 @layer utilities {
   /* Head */
-  .text-38b {
+  .typo-38b {
     font-family: var(--font-family-base);
     font-size: var(--text-head-38);
     font-weight: 700;
     line-height: var(--line-height-head);
   }
 
-  .text-32b {
+  .typo-32b {
     font-family: var(--font-family-base);
     font-size: var(--text-head-32);
     font-weight: 700;
     line-height: var(--line-height-head);
   }
 
-  .text-28b {
+  .typo-28b {
     font-family: var(--font-family-base);
     font-size: var(--text-head-28);
     font-weight: 700;
     line-height: var(--line-height-head);
   }
 
-  .text-24b {
+  .typo-24b {
     font-family: var(--font-family-base);
     font-size: var(--text-head-24);
     font-weight: 700;
@@ -29,28 +29,28 @@
   }
 
   /* Body */
-  .text-20sb {
+  .typo-20sb {
     font-family: var(--font-family-base);
     font-size: var(--text-body-20);
     font-weight: 600;
     line-height: var(--line-height-body);
   }
 
-  .text-20r {
+  .typo-20r {
     font-family: var(--font-family-base);
     font-size: var(--text-body-20);
     font-weight: 400;
     line-height: var(--line-height-body);
   }
 
-  .text-18sb {
+  .typo-18sb {
     font-family: var(--font-family-base);
     font-size: var(--text-body-18);
     font-weight: 600;
     line-height: var(--line-height-body);
   }
 
-  .text-16r {
+  .typo-16r {
     font-family: var(--font-family-base);
     font-size: var(--text-body-16);
     font-weight: 400;
@@ -58,14 +58,14 @@
   }
 
   /* Small */
-  .text-14r {
+  .typo-14r {
     font-family: var(--font-family-base);
     font-size: var(--text-small-14);
     font-weight: 400;
     line-height: var(--line-height-small);
   }
 
-  .text-12r {
+  .typo-12r {
     font-family: var(--font-family-base);
     font-size: var(--text-small-12);
     font-weight: 400;
@@ -74,16 +74,16 @@
 
   /* Colors */
   .bg-brand {
-    background-color: var(--color-brand-primary);
+    background-color: var(--semantic-brand-primary);
   }
   .text-brand {
-    color: var(--color-brand-primary);
+    color: var(--semantic-brand-primary);
   }
   .bg-base {
-    background-color: var(--color-bg);
+    background-color: var(--semantic-bg);
   }
   .bg-dim {
-    background-color: var(--color-dim);
+    background-color: var(--semantic-dim);
   }
   .text-accent {
     color: var(--accent-500);
