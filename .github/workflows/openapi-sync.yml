@@ -1,0 +1,66 @@
+name: Sync OpenAPI Types
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - 'backend/**'
+
+jobs:
+  sync-openapi:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          pip install -r backend/requirements.txt
+
+      - name: Export OpenAPI spec
+        run: python scripts/export_openapi.py
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.0.0
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate TypeScript types
+        working-directory: frontend
+        run: pnpm generate:api
+
+      - name: Check for changes
+        id: diff
+        run: |
+          git diff --quiet contracts/ frontend/apps/client/src/shared/api/schema.d.ts 2>/dev/null || echo "changed=true" >> $GITHUB_OUTPUT
+
+      - name: Create PR with updated types
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: chore/sync-openapi-types
+          title: 'chore: sync OpenAPI spec and TypeScript types'
+          body: |
+            백엔드 변경에 따른 API 스펙 및 TypeScript 타입 자동 갱신
+
+            - `contracts/openapi.yaml` 업데이트
+            - `frontend/apps/client/src/shared/api/schema.d.ts` 업데이트
+          commit-message: 'chore: sync openapi spec and generated types'
+          labels: infra
