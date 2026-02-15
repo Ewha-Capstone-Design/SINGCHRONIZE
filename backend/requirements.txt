@@ -16,3 +16,6 @@ httpx==0.27.2
 # Validation & Settings
 pydantic==2.10.4
 pydantic-settings==2.7.0
+
+# OpenAPI export
+pyyaml==6.0.2
