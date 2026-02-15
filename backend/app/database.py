@@ -1,5 +1,5 @@
-"""비동기 데이터베이스 설정 (SQLite / PostgreSQL 자동 감지 + Supabase 최적화)"""
-import ssl as _ssl_module
+"""비동기 데이터베이스 설정 (Supabase/PostgreSQL 최적화)"""
+import ssl
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
 from typing import AsyncGenerator
@@ -8,52 +8,52 @@ from app.config import settings
 
 Base = declarative_base()
 
-# 1. DB URL 가져오기
+# 1. DB URL 가져오기 및 가공
 _db_url = settings.DATABASE_URL
 
-# 2. PostgreSQL인 경우, 비동기 드라이버(asyncpg)가 명시되어야 함
-# .env에 "postgresql://"로 적혀있어도 자동으로 변환해주는 안전장치입니다.
+# postgresql:// -> postgresql+asyncpg:// 변환
 if _db_url and _db_url.startswith("postgresql://"):
     _db_url = _db_url.replace("postgresql://", "postgresql+asyncpg://")
 
-# asyncpg는 sslmode 파라미터를 인식하지 못하므로 URL에서 제거
-if "sslmode=" in _db_url:
-    _db_url = _db_url.split("?sslmode=")[0] if "?sslmode=" in _db_url else _db_url.replace("&sslmode=require", "")
+# URL 뒤에 붙은 잡다한 파라미터제거 (connect_args로 제어하기 위함)
+if "?" in _db_url:
+    _db_url = _db_url.split("?")[0]
 
-_is_sqlite = _db_url.startswith("sqlite")
+print(f"🔥 [DB 연결 설정] URL: {_db_url}")
 
-_engine_kwargs = {
-    "echo": True,  # 개발 중에는 SQL 로그를 보는 게 좋습니다 (배포 시 False)
-}
+# 2. SSL 컨텍스트 생성 (Supabase 필수)
+ssl_context = ssl.create_default_context()
+ssl_context.check_hostname = False
+ssl_context.verify_mode = ssl.CERT_NONE
 
-if _is_sqlite:
-    _engine_kwargs["connect_args"] = {"check_same_thread": False}
-else:
-    # Supabase 등 클라우드 DB 사용 시 필수 설정
-    _engine_kwargs["pool_size"] = 10
-    _engine_kwargs["max_overflow"] = 20
-    _engine_kwargs["pool_pre_ping"] = True  # 연결이 끊겼을 때 자동으로 재연결 (중요!)
-    # asyncpg SSL 설정: Supabase는 SSL 필수
-    _ssl_ctx = _ssl_module.create_default_context()
-    _ssl_ctx.check_hostname = False
-    _ssl_ctx.verify_mode = _ssl_module.CERT_NONE
-    _engine_kwargs["connect_args"] = {
-        "ssl": _ssl_ctx,
+# 3. 엔진 생성 (변수 쓰지 않고 직접 주입)
+# 이렇게 하면 설정이 무시될 수가 없습니다.
+engine = create_async_engine(
+    _db_url,
+    echo=True,           # 쿼리 로그 출력
+    pool_size=10,        # 커넥션 풀 크기
+    max_overflow=20,     # 최대 허용 오버플로우
+    pool_pre_ping=True,  # 연결 끊김 자동 복구
+    connect_args={
+        "ssl": ssl_context,
+        "server_settings": {
+            "jit": "off",  # JIT 컴파일 끄기 (성능 최적화)
+        },
+        # ⭐ 여기가 핵심입니다. 캐시를 0으로 설정해서 에러 원천 차단 ⭐
+        "statement_cache_size": 0,
         "command_timeout": 60,
-        "prepared_statement_cache_size": 0, # 드라이버 직접 설정
     }
-
-# 3. 엔진 생성
-engine = create_async_engine(_db_url, **_engine_kwargs)
+)
 
 # 4. 세션 생성기
 AsyncSessionLocal = async_sessionmaker(
     engine,
     class_=AsyncSession,
     expire_on_commit=False,
+    autoflush=False,
 )
 
-# 5. 의존성 주입용 함수 (FastAPI에서 Depends로 사용)
+# 5. 의존성 주입 (Dependency)
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with AsyncSessionLocal() as session:
         try:
