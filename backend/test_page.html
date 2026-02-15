@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SINGCHRONIZE API 테스트</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0f0f0f; color: #e0e0e0; padding: 20px; }
+  h1 { text-align: center; margin-bottom: 8px; color: #bb86fc; }
+  .subtitle { text-align: center; color: #888; margin-bottom: 24px; font-size: 14px; }
+
+  /* Auth Section */
+  .auth-bar {
+    background: #1e1e1e; border: 1px solid #333; border-radius: 8px;
+    padding: 16px; margin-bottom: 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  }
+  .auth-bar label { font-weight: bold; color: #bb86fc; white-space: nowrap; }
+  .auth-bar input { flex: 1; min-width: 200px; padding: 8px 12px; border-radius: 6px; border: 1px solid #444; background: #2a2a2a; color: #fff; font-size: 13px; }
+  .auth-bar button { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; }
+  .btn-kakao { background: #FEE500; color: #000; }
+  .btn-save { background: #bb86fc; color: #000; }
+  .status { font-size: 12px; color: #4caf50; }
+  .status.fail { color: #f44336; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+  .tab { padding: 10px 20px; border-radius: 8px 8px 0 0; border: 1px solid #333; border-bottom: none;
+    background: #1a1a1a; color: #888; cursor: pointer; font-weight: bold; }
+  .tab.active { background: #1e1e1e; color: #bb86fc; }
+
+  /* Panels */
+  .panel { display: none; background: #1e1e1e; border: 1px solid #333; border-radius: 0 8px 8px 8px; padding: 20px; }
+  .panel.active { display: block; }
+
+  /* API Section */
+  .api-section { margin-bottom: 20px; padding: 16px; background: #252525; border-radius: 8px; }
+  .api-section h3 { color: #03dac6; margin-bottom: 12px; font-size: 15px; }
+  .api-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+  .method { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; min-width: 56px; text-align: center; }
+  .method.get { background: #1b5e20; color: #a5d6a7; }
+  .method.post { background: #e65100; color: #ffcc80; }
+  .method.patch { background: #4a148c; color: #ce93d8; }
+  .method.delete { background: #b71c1c; color: #ef9a9a; }
+  .endpoint { font-family: monospace; font-size: 13px; color: #ccc; }
+
+  input, select, textarea {
+    padding: 8px 10px; border-radius: 6px; border: 1px solid #444;
+    background: #2a2a2a; color: #fff; font-size: 13px;
+  }
+  textarea { width: 100%; min-height: 60px; resize: vertical; font-family: monospace; }
+  button {
+    padding: 8px 16px; border-radius: 6px; border: none;
+    background: #03dac6; color: #000; cursor: pointer; font-weight: bold; font-size: 13px;
+  }
+  button:hover { opacity: 0.85; }
+  button.danger { background: #cf6679; }
+
+  /* Response */
+  .response-box {
+    margin-top: 12px; padding: 12px; background: #111; border: 1px solid #333;
+    border-radius: 6px; font-family: monospace; font-size: 12px;
+    max-height: 300px; overflow-y: auto; white-space: pre-wrap; word-break: break-all;
+  }
+  .response-box.success { border-color: #4caf50; }
+  .response-box.error { border-color: #f44336; }
+</style>
+</head>
+<body>
+
+<h1>SINGCHRONIZE API Tester</h1>
+<p class="subtitle">Library & Archive API 테스트 페이지</p>
+
+<!-- Auth -->
+<div class="auth-bar">
+  <button class="btn-kakao" onclick="loginKakao()" style="font-size:15px;padding:10px 24px;">카카오 로그인</button>
+  <span style="color:#666">|</span>
+  <label>JWT:</label>
+  <input id="jwtToken" placeholder="자동으로 채워집니다" style="flex:1" readonly>
+  <button class="btn-save" onclick="logout()">로그아웃</button>
+  <span id="authStatus" class="status"></span>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('songs')">곡 검색</div>
+  <div class="tab" onclick="switchTab('folders')">폴더</div>
+  <div class="tab" onclick="switchTab('wishlist')">위시리스트</div>
+  <div class="tab" onclick="switchTab('history')">부른 기록</div>
+</div>
+
+<!-- Songs Panel -->
+<div id="panel-songs" class="panel active">
+  <div class="api-section">
+    <h3>곡 검색 (토큰 불필요)</h3>
+    <div class="api-row">
+      <span class="method get">GET</span>
+      <span class="endpoint">/api/v1/songs/search</span>
+    </div>
+    <div class="api-row">
+      <input id="songQuery" placeholder="검색어 (제목/가수)" value="아이유" style="flex:1">
+      <button onclick="searchSongs()">검색</button>
+    </div>
+    <div id="res-songs" class="response-box"></div>
+  </div>
+</div>
+
+<!-- Folders Panel -->
+<div id="panel-folders" class="panel">
+  <div class="api-section">
+    <h3>폴더 목록 조회</h3>
+    <div class="api-row">
+      <span class="method get">GET</span>
+      <span class="endpoint">/api/v1/library/folders</span>
+      <button onclick="getFolders()">조회</button>
+    </div>
+    <div id="res-folders" class="response-box"></div>
+  </div>
+  <div class="api-section">
+    <h3>폴더 생성</h3>
+    <div class="api-row">
+      <span class="method post">POST</span>
+      <span class="endpoint">/api/v1/library/folders</span>
+    </div>
+    <div class="api-row">
+      <input id="folderName" placeholder="폴더 이름" value="내 즐겨찾기" style="flex:1">
+      <button onclick="createFolder()">생성</button>
+    </div>
+    <div id="res-create-folder" class="response-box"></div>
+  </div>
+  <div class="api-section">
+    <h3>폴더 삭제</h3>
+    <div class="api-row">
+      <span class="method delete">DELETE</span>
+      <span class="endpoint">/api/v1/library/folders/{id}</span>
+    </div>
+    <div class="api-row">
+      <input id="deleteFolderId" placeholder="폴더 UUID" style="flex:1">
+      <button class="danger" onclick="deleteFolder()">삭제</button>
+    </div>
+    <div id="res-delete-folder" class="response-box"></div>
+  </div>
+</div>
+
+<!-- Wishlist Panel -->
+<div id="panel-wishlist" class="panel">
+  <div class="api-section">
+    <h3>위시리스트 조회</h3>
+    <div class="api-row">
+      <span class="method get">GET</span>
+      <span class="endpoint">/api/v1/library/wishlist</span>
+    </div>
+    <div class="api-row">
+      <input id="wishlistFolderId" placeholder="folder_id (선택)" style="flex:1">
+      <button onclick="getWishlist()">조회</button>
+    </div>
+    <div id="res-wishlist" class="response-box"></div>
+  </div>
+  <div class="api-section">
+    <h3>위시리스트에 곡 추가</h3>
+    <div class="api-row">
+      <span class="method post">POST</span>
+      <span class="endpoint">/api/v1/library/wishlist</span>
+    </div>
+    <div class="api-row">
+      <input id="wishSongId" placeholder="song_id (UUID)" style="flex:1">
+      <input id="wishFolderId" placeholder="folder_id (선택)" style="flex:1">
+      <button onclick="addWishlist()">추가</button>
+    </div>
+    <div id="res-add-wishlist" class="response-box"></div>
+  </div>
+  <div class="api-section">
+    <h3>위시리스트 아이템 삭제</h3>
+    <div class="api-row">
+      <span class="method delete">DELETE</span>
+      <span class="endpoint">/api/v1/library/wishlist/{id}</span>
+    </div>
+    <div class="api-row">
+      <input id="deleteWishlistId" placeholder="wishlist item UUID" style="flex:1">
+      <button class="danger" onclick="deleteWishlist()">삭제</button>
+    </div>
+    <div id="res-delete-wishlist" class="response-box"></div>
+  </div>
+</div>
+
+<!-- History Panel -->
+<div id="panel-history" class="panel">
+  <div class="api-section">
+    <h3>부른 기록 조회</h3>
+    <div class="api-row">
+      <span class="method get">GET</span>
+      <span class="endpoint">/api/v1/library/history</span>
+    </div>
+    <div class="api-row">
+      <input id="historyTag" placeholder="tag 필터 (선택, 예: AGAIN)" style="flex:1">
+      <button onclick="getHistory()">조회</button>
+    </div>
+    <div id="res-history" class="response-box"></div>
+  </div>
+  <div class="api-section">
+    <h3>부른 기록 저장</h3>
+    <div class="api-row">
+      <span class="method post">POST</span>
+      <span class="endpoint">/api/v1/library/history</span>
+    </div>
+    <div class="api-row">
+      <input id="historySongId" placeholder="song_id (UUID)" style="flex:1">
+    </div>
+    <div class="api-row">
+      <input id="historyTags" placeholder='태그 (콤마 구분, 예: AGAIN,HIGH_PITCH)' style="flex:1">
+      <input id="historyMemo" placeholder="메모 (선택)" style="flex:1">
+      <button onclick="createHistory()">저장</button>
+    </div>
+    <div id="res-create-history" class="response-box"></div>
+  </div>
+  <div class="api-section">
+    <h3>부른 기록 수정</h3>
+    <div class="api-row">
+      <span class="method patch">PATCH</span>
+      <span class="endpoint">/api/v1/library/history/{id}</span>
+    </div>
+    <div class="api-row">
+      <input id="patchHistoryId" placeholder="archive UUID" style="flex:1">
+    </div>
+    <div class="api-row">
+      <input id="patchTags" placeholder='태그 (콤마 구분)' style="flex:1">
+      <input id="patchMemo" placeholder="메모" style="flex:1">
+      <button onclick="updateHistory()">수정</button>
+    </div>
+    <div id="res-patch-history" class="response-box"></div>
+  </div>
+  <div class="api-section">
+    <h3>부른 기록 삭제</h3>
+    <div class="api-row">
+      <span class="method delete">DELETE</span>
+      <span class="endpoint">/api/v1/library/history/{id}</span>
+    </div>
+    <div class="api-row">
+      <input id="deleteHistoryId" placeholder="archive UUID" style="flex:1">
+      <button class="danger" onclick="deleteHistory()">삭제</button>
+    </div>
+    <div id="res-delete-history" class="response-box"></div>
+  </div>
+</div>
+
+<script>
+const BASE = 'http://localhost:8000';
+let jwt = localStorage.getItem('singchronize_jwt') || '';
+
+// ── 페이지 로드 시 토큰 복원 ──
+(function init() {
+  if (jwt) {
+    document.getElementById('jwtToken').value = jwt;
+    const s = document.getElementById('authStatus');
+    s.textContent = '로그인됨';
+    s.className = 'status';
+  }
+})();
+
+// ── 팝업에서 토큰 수신 ──
+window.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'KAKAO_LOGIN') {
+    jwt = e.data.token;
+    localStorage.setItem('singchronize_jwt', jwt);
+    document.getElementById('jwtToken').value = jwt;
+    const s = document.getElementById('authStatus');
+    s.textContent = '로그인 성공!';
+    s.className = 'status';
+  }
+});
+
+// ── Auth ──
+function loginKakao() {
+  // 팝업으로 카카오 로그인 페이지 열기
+  const w = 480, h = 600;
+  const left = (screen.width - w) / 2, top = (screen.height - h) / 2;
+  window.open(
+    `${BASE}/auth/test/kakao/login`,
+    'kakao_login',
+    `width=${w},height=${h},left=${left},top=${top}`
+  );
+}
+
+function logout() {
+  jwt = '';
+  localStorage.removeItem('singchronize_jwt');
+  document.getElementById('jwtToken').value = '';
+  const s = document.getElementById('authStatus');
+  s.textContent = '로그아웃됨';
+  s.className = 'status fail';
+}
+
+function authHeaders() {
+  return jwt ? { 'Authorization': `Bearer ${jwt}`, 'Content-Type': 'application/json' }
+             : { 'Content-Type': 'application/json' };
+}
+
+// ── Tabs ──
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+}
+
+// ── API Helpers ──
+async function api(method, path, body, resBoxId) {
+  const box = document.getElementById(resBoxId);
+  box.textContent = '⏳ 요청 중...';
+  box.className = 'response-box';
+  try {
+    const opts = { method, headers: authHeaders() };
+    if (body) opts.body = JSON.stringify(body);
+    const res = await fetch(BASE + path, opts);
+    const text = await res.text();
+    let display;
+    try { display = JSON.stringify(JSON.parse(text), null, 2); } catch { display = text || `(${res.status} ${res.statusText})`; }
+    box.textContent = `[${res.status}] ${display}`;
+    box.className = res.ok ? 'response-box success' : 'response-box error';
+  } catch (e) {
+    box.textContent = '❌ ' + e.message;
+    box.className = 'response-box error';
+  }
+}
+
+// ── Songs ──
+function searchSongs() {
+  const q = document.getElementById('songQuery').value.trim();
+  api('GET', `/api/v1/songs/search?q=${encodeURIComponent(q)}`, null, 'res-songs');
+}
+
+// ── Folders ──
+function getFolders() { api('GET', '/api/v1/library/folders', null, 'res-folders'); }
+function createFolder() {
+  const name = document.getElementById('folderName').value.trim();
+  api('POST', '/api/v1/library/folders', { name }, 'res-create-folder');
+}
+function deleteFolder() {
+  const id = document.getElementById('deleteFolderId').value.trim();
+  api('DELETE', `/api/v1/library/folders/${id}`, null, 'res-delete-folder');
+}
+
+// ── Wishlist ──
+function getWishlist() {
+  const fid = document.getElementById('wishlistFolderId').value.trim();
+  const q = fid ? `?folder_id=${fid}` : '';
+  api('GET', `/api/v1/library/wishlist${q}`, null, 'res-wishlist');
+}
+function addWishlist() {
+  const song_id = document.getElementById('wishSongId').value.trim();
+  const folder_id = document.getElementById('wishFolderId').value.trim() || null;
+  api('POST', '/api/v1/library/wishlist', { song_id, folder_id }, 'res-add-wishlist');
+}
+function deleteWishlist() {
+  const id = document.getElementById('deleteWishlistId').value.trim();
+  api('DELETE', `/api/v1/library/wishlist/${id}`, null, 'res-delete-wishlist');
+}
+
+// ── History ──
+function getHistory() {
+  const tag = document.getElementById('historyTag').value.trim();
+  const q = tag ? `?tag=${encodeURIComponent(tag)}` : '';
+  api('GET', `/api/v1/library/history${q}`, null, 'res-history');
+}
+function createHistory() {
+  const song_id = document.getElementById('historySongId').value.trim();
+  const rawTags = document.getElementById('historyTags').value.trim();
+  const tags = rawTags ? rawTags.split(',').map(t => t.trim()) : [];
+  const memo = document.getElementById('historyMemo').value.trim() || null;
+  api('POST', '/api/v1/library/history', { song_id, tags, memo }, 'res-create-history');
+}
+function updateHistory() {
+  const id = document.getElementById('patchHistoryId').value.trim();
+  const rawTags = document.getElementById('patchTags').value.trim();
+  const memo = document.getElementById('patchMemo').value.trim();
+  const body = {};
+  if (rawTags) body.tags = rawTags.split(',').map(t => t.trim());
+  if (memo) body.memo = memo;
+  api('PATCH', `/api/v1/library/history/${id}`, body, 'res-patch-history');
+}
+function deleteHistory() {
+  const id = document.getElementById('deleteHistoryId').value.trim();
+  api('DELETE', `/api/v1/library/history/${id}`, null, 'res-delete-history');
+}
+</script>
+</body>
+</html>
