@@ -7,13 +7,22 @@ import { RecordingPhase } from '@/shared/types/recommend';
 
 type WaveformRecorderProps = {
   phase: RecordingPhase;
+  mode?: 'test' | 'record';
+  gain?: number;
   onRecorded?: (blob: Blob) => void;
 };
 
-const WaveformRecorder = ({ phase, onRecorded }: WaveformRecorderProps) => {
+const WaveformRecorder = ({
+  phase,
+  onRecorded,
+  mode = 'record',
+  gain = 1,
+}: WaveformRecorderProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const wsRef = useRef<WaveSurfer | null>(null);
   const recordRef = useRef<any>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -40,10 +49,19 @@ const WaveformRecorder = ({ phase, onRecorded }: WaveformRecorderProps) => {
     wsRef.current = ws;
 
     const handleEnd = (blob: Blob) => {
-      onRecorded?.(blob);
+      if (mode === 'record') {
+        onRecorded?.(blob);
+      }
     };
 
     record.on('record-end', handleEnd);
+
+    // AudioContext + GainNode 준비 (앱 내부 레벨 조절용)
+    const ctx = new AudioContext();
+    audioCtxRef.current = ctx;
+    const gainNode = ctx.createGain();
+    gainNode.gain.value = gain;
+    gainNodeRef.current = gainNode;
 
     return () => {
       record.un('record-end', handleEnd);
@@ -52,19 +70,35 @@ const WaveformRecorder = ({ phase, onRecorded }: WaveformRecorderProps) => {
       } catch {}
       ws.destroy();
       wsRef.current = null;
+      ctx.close();
     };
-  }, [onRecorded]);
+  }, [onRecorded, mode]);
 
+  // phase 제어
   useEffect(() => {
     const record = recordRef.current;
     if (!record) return;
 
     if (phase === 'recording') {
-      record.startRecording();
+      // 이미 한 번 녹음했다가 멈춘 상태면 resume, 아니면 start
+      if (record.isPaused && record.isPaused()) {
+        record.resumeRecording();
+      } else if (!record.isRecording || !record.isRecording()) {
+        record.startRecording();
+      }
     } else if (phase === 'paused') {
-      record.pauseRecording();
+      if (record.isRecording && record.isRecording()) {
+        record.pauseRecording();
+      }
     }
   }, [phase]);
+
+  // gain 반영
+  useEffect(() => {
+    if (gainNodeRef.current) {
+      gainNodeRef.current.gain.value = gain;
+    }
+  }, [gain]);
 
   return (
     <div className='relative w-full h-[150] flex items-center'>

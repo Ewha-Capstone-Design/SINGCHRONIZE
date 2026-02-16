@@ -1,1 +1,58 @@
 @import '@singchronize/tailwind-config';
+
+/* 슬라이더 */
+.mic-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: var(--color-gray-700);
+  border-radius: 9999px;
+  outline: none;
+}
+
+/* Chrome / Safari */
+.mic-slider::-webkit-slider-runnable-track {
+  height: 6px;
+  background: linear-gradient(
+    to right,
+    var(--color-white) 0%,
+    var(--color-white) var(--percent, 50%),
+    var(--color-gray-700) var(--percent, 50%),
+    var(--color-gray-700) 100%
+  );
+  border-radius: 9999px;
+}
+
+.mic-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: var(--color-white);
+  border-radius: 50%;
+  cursor: pointer;
+  margin-top: -6px; /* 트랙 중앙 정렬 */
+}
+
+/* Firefox */
+.mic-slider::-moz-range-track {
+  height: 6px;
+  background: var(--color-gray-700);
+  border-radius: 9999px;
+}
+
+.mic-slider::-moz-range-progress {
+  height: 6px;
+  background: var(--color-white);
+  border-radius: 9999px;
+}
+
+.mic-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: var(--color-white);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
