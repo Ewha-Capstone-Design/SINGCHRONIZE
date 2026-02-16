@@ -108,7 +108,7 @@ const MicTestModal = ({ gain, onChangeGain, onClose }: MicTestModalProps) => {
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center bg-dim'>
       <div
-        className='relative w-[904] rounded-20 px-16 py-20 flex flex-col items-center gap-10
+        className='relative w-full max-w-226 rounded-20 px-16 py-20 flex flex-col items-center gap-10
         bg-bg bg-[radial-gradient(50%_50%_at_50%_50%,rgba(200,255,0,0.17)_0%,rgba(22,22,22,0.17)_100%)] bg-size-[150%_170%] bg-position-[50%_-30%]'
       >
         <div className='text-center'>
