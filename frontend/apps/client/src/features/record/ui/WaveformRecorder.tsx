@@ -79,17 +79,19 @@ const WaveformRecorder = ({
     const record = recordRef.current;
     if (!record) return;
 
-    if (mode === 'test') {
-      record.startRecording();
-      return;
-    }
-
     if (phase === 'recording') {
-      record.startRecording();
+      // 이미 한 번 녹음했다가 멈춘 상태면 resume, 아니면 start
+      if (record.isPaused && record.isPaused()) {
+        record.resumeRecording();
+      } else if (!record.isRecording || !record.isRecording()) {
+        record.startRecording();
+      }
     } else if (phase === 'paused') {
-      record.pauseRecording();
+      if (record.isRecording && record.isRecording()) {
+        record.pauseRecording();
+      }
     }
-  }, [phase, mode]);
+  }, [phase]);
 
   // gain 반영
   useEffect(() => {

@@ -117,7 +117,7 @@ const MicTestModal = ({ gain, onChangeGain, onClose }: MicTestModalProps) => {
         </div>
 
         {/* 테스트 파형 */}
-        <WaveformRecorder phase='recording' mode='test' gain={gain} />
+        <WaveformRecorder phase={stream ? 'recording' : 'idle'} mode='test' gain={gain} />
 
         {/* 음량 조절 슬라이더 */}
         <div className='w-[372] flex items-center gap-3'>
