@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { FlowHeader } from './_components';
+import { FlowHeader, StepAnalyze } from './_components';
 import { StepRecord } from '@/features/record';
 import { StepRanking } from '@/features/ranking';
 import { RecommendStep, RECOMMEND_STEPS } from '@/shared/types/recommend';
@@ -34,16 +34,14 @@ const RecommendPage = () => {
   return (
     <div
       className={`
-      w-full h-screen text-white overflow-hidden
-      flex flex-col
-      bg-bg
-      bg-no-repeat 
-      transition-[background-position] duration-700 ease-out
+      flex flex-col w-full h-screen text-white overflow-hidden
+      bg-bg bg-no-repeat transition-[background-position] duration-700 ease-out
       ${bgClass}`}
     >
       <FlowHeader step={step} onBack={handleBack} />
       <div className='flex-1 flex flex-col items-center'>
-        {step === 'record' && <StepRecord onNext={() => setStep('ranking')} />}
+        {step === 'record' && <StepRecord onNext={() => setStep('analyze')} />}
+        {step === 'analyze' && <StepAnalyze onNext={() => setStep('ranking')} />}
         {step === 'ranking' && <StepRanking onNext={() => setStep('keyword')} />}
       </div>
     </div>

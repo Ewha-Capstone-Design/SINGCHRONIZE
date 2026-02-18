@@ -13,8 +13,8 @@ export const useRecorder = () => {
     setPhase('paused');
   }, []);
 
-  const enough = useCallback(() => {
-    setPhase('enough');
+  const finish = useCallback(() => {
+    setPhase('finish');
   }, []);
 
   const handleRecorded = useCallback((blob: Blob) => {
@@ -26,7 +26,7 @@ export const useRecorder = () => {
     setPhase,
     start,
     pause,
-    enough,
+    finish,
     handleRecorded,
     lastBlob,
   };

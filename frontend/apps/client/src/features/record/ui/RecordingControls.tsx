@@ -7,6 +7,7 @@ type RecordingControlsProps = {
   onPause: () => void;
   onResume: () => void;
   onDone: () => void;
+  canDone: boolean;
 };
 
 const RecordingControls = ({
@@ -15,6 +16,7 @@ const RecordingControls = ({
   onPause,
   onResume,
   onDone,
+  canDone,
 }: RecordingControlsProps) => {
   if (phase === 'idle') {
     return (
@@ -28,7 +30,7 @@ const RecordingControls = ({
     return (
       <div className='flex items-center justify-center gap-4'>
         <RecordingButton variant='pause' onClick={onPause} />
-        <RecordingButton variant='done' onClick={onDone} />
+        <RecordingButton variant='done' onClick={onDone} disabled={!canDone} />
       </div>
     );
   }
@@ -37,7 +39,7 @@ const RecordingControls = ({
   return (
     <div className='flex items-center justify-center gap-4'>
       <RecordingButton variant='start' onClick={onResume} />
-      <RecordingButton variant='done' onClick={onDone} />
+      <RecordingButton variant='done' onClick={onDone} disabled={!canDone} />
     </div>
   );
 };
