@@ -26,6 +26,7 @@ jobs:
           pip install -r backend/requirements.txt
 
       - name: Export OpenAPI spec
+        working-directory: backend
         run: python scripts/export_openapi.py
 
       - name: Set up Node.js
@@ -49,18 +50,20 @@ jobs:
       - name: Check for changes
         id: diff
         run: |
-          git diff --quiet contracts/ frontend/apps/client/src/shared/api/schema.d.ts 2>/dev/null || echo "changed=true" >> $GITHUB_OUTPUT
+          git diff --quiet contracts/ frontend/packages/api/src/schema.d.ts 2>/dev/null || echo "changed=true" >> $GITHUB_OUTPUT
 
       - name: Create PR with updated types
         if: steps.diff.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
-          branch: chore/sync-openapi-types
-          title: 'chore: sync OpenAPI spec and TypeScript types'
+          branch: ci/sync-openapi-types
+          title: 'CI/CD(infra): OpenAPI 스펙 및 타입 자동 동기화'
           body: |
+            ## 📤 Tasks
             백엔드 변경에 따른 API 스펙 및 TypeScript 타입 자동 갱신
 
             - `contracts/openapi.yaml` 업데이트
-            - `frontend/apps/client/src/shared/api/schema.d.ts` 업데이트
+            - `frontend/packages/api/src/schema.d.ts` 업데이트
           commit-message: 'chore: sync openapi spec and generated types'
           labels: infra
+          reviewers: youtheyeon
