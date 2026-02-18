@@ -1,5 +1,9 @@
+import type { Metadata } from 'next';
+import { metadataConfig } from './metadata';
 import './global.css';
 import { TooltipProvider } from '@singchronize/ui';
+
+export const metadata: Metadata = metadataConfig;
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (
