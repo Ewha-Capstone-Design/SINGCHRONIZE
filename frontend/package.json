@@ -7,9 +7,11 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
-    "generate:api": "openapi-ts ../contracts/openapi.yaml -o apps/client/src/shared/api/schema.d.ts"
+    "generate:api": "pnpm exec openapi-typescript ../contracts/openapi.yaml -o packages/api/src/schema.d.ts"
   },
   "devDependencies": {
+    "@types/node": "^22.15.3",
+    "openapi-typescript": "^7.13.0",
     "prettier": "^3.7.4",
     "turbo": "^2.8.0",
     "typescript": "5.9.2"
