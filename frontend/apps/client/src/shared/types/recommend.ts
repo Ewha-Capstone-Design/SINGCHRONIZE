@@ -1,6 +1,6 @@
 export type RecordingVariant = 'start' | 'pause' | 'done';
 
-export type RecordingPhase = 'idle' | 'recording' | 'paused' | 'enough';
+export type RecordingPhase = 'idle' | 'recording' | 'paused' | 'finish';
 
 export type RecommendStep = 'record' | 'ranking' | 'keyword' | 'result';
 

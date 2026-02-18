@@ -79,18 +79,35 @@ const WaveformRecorder = ({
     const record = recordRef.current;
     if (!record) return;
 
-    if (phase === 'recording') {
-      // 이미 한 번 녹음했다가 멈춘 상태면 resume, 아니면 start
-      if (record.isPaused && record.isPaused()) {
-        record.resumeRecording();
-      } else if (!record.isRecording || !record.isRecording()) {
-        record.startRecording();
-      }
-    } else if (phase === 'paused') {
+    if (phase === 'finish') {
       if (record.isRecording && record.isRecording()) {
-        record.pauseRecording();
+        record.stopRecording();
       }
+      return;
     }
+
+    const commands: Record<RecordingPhase, () => void> = {
+      idle: () => {
+        // 아무 것도 하지 않음
+      },
+      recording: () => {
+        if (record.isPaused && record.isPaused()) {
+          record.resumeRecording();
+        } else if (!record.isRecording || !record.isRecording()) {
+          record.startRecording();
+        }
+      },
+      paused: () => {
+        if (record.isRecording && record.isRecording()) {
+          record.pauseRecording();
+        }
+      },
+      finish: () => {
+        // 위에서 이미 처리
+      },
+    };
+
+    commands[phase]?.();
   }, [phase]);
 
   // gain 반영
