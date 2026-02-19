@@ -1,0 +1,47 @@
+# ========================================
+# SINGCHRONIZE 유저 보컬 전처리 파이프라인
+# ========================================
+
+# 오디오 처리 기본
+librosa==0.10.1
+soundfile==0.12.1
+scipy>=1.13.0  # 최신 버전 사용 (미리 빌드된 바이너리)
+numpy>=1.26.0
+
+# 보컬 분리 (Demucs)
+demucs==4.0.1
+
+# Pitch 추출
+# crepe==0.0.15  # 빌드 문제로 주석 처리, librosa.pyin 사용
+pyworld>=0.3.4  # 대안 F0 추출
+
+# ECAPA-TDNN 임베딩 (화자 인식 모델)
+speechbrain==0.5.16  # 최신 버전과 호환 문제로 고정
+huggingface-hub<0.20.0  # speechbrain 0.5.16과 호환
+torch>=2.1.0
+torchaudio>=2.1.0
+
+# 음성 품질 분석
+praat-parselmouth==0.4.3  # HNR, Jitter, Shimmer 등
+
+# 데이터 처리
+pandas>=2.1.0
+
+# 시각화 (리포트 생성용)
+matplotlib>=3.8.0
+seaborn>=0.13.0
+
+# 유틸리티
+pydub==0.25.1
+tqdm==4.66.1
+
+# 환경 변수
+python-dotenv==1.0.0
+
+# DB 연결 (기존)
+supabase==2.3.0
+requests==2.31.0
+
+boto3
+yt-dlp
+google-api-python-client
