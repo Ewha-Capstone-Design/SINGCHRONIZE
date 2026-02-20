@@ -14,8 +14,8 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 # 프로젝트 루트 / 백엔드 경로 설정
-ROOT_DIR = Path(__file__).resolve().parent.parent
-BACKEND_DIR = ROOT_DIR / "backend"
+BACKEND_DIR = Path(__file__).resolve().parent.parent
+ROOT_DIR = BACKEND_DIR.parent
 OUT_PATH = ROOT_DIR / "contracts" / "openapi.yaml"
 
 # Settings()가 import 시점에 DATABASE_URL을 요구하므로 더미 값 설정

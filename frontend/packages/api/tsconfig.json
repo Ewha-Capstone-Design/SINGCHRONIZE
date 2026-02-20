@@ -1,0 +1,7 @@
+{
+  "extends": "@singchronize/typescript-config/base.json",
+  "compilerOptions": {
+    "baseUrl": "."
+  },
+  "include": ["src"]
+}

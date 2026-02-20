@@ -758,7 +758,7 @@ paths:
       tags:
       - OAuth Test
       summary: Kakao Callback
-      description: 카카오 콜백 → 인가코드로 토큰 교환 → JWT 발급
+      description: 카카오 콜백 → 인가코드로 토큰 교환 → JWT 발급 → 테스트 페이지로 리다이렉트
       operationId: kakao_callback_auth_test_kakao_callback_get
       parameters:
       - name: code
@@ -767,61 +767,6 @@ paths:
         schema:
           type: string
           title: Code
-      - name: args
-        in: query
-        required: true
-        schema:
-          title: Args
-      - name: kwargs
-        in: query
-        required: true
-        schema:
-          title: Kwargs
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema: {}
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-  /auth/test/naver/login:
-    get:
-      tags:
-      - OAuth Test
-      summary: Naver Login
-      description: 네이버 로그인 페이지로 리다이렉트
-      operationId: naver_login_auth_test_naver_login_get
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema: {}
-  /auth/test/naver/callback:
-    get:
-      tags:
-      - OAuth Test
-      summary: Naver Callback
-      description: 네이버 콜백 → 인가코드로 토큰 교환 → JWT 발급
-      operationId: naver_callback_auth_test_naver_callback_get
-      parameters:
-      - name: code
-        in: query
-        required: true
-        schema:
-          type: string
-          title: Code
-      - name: state
-        in: query
-        required: true
-        schema:
-          type: string
-          title: State
       - name: args
         in: query
         required: true
