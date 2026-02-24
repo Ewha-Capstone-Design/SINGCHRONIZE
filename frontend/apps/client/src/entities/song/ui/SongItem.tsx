@@ -1,6 +1,6 @@
 import { SongType } from '@/entities/song/model/types';
+import { IcDrag, IcPlay } from '@/shared/assets/icons';
 import { cn } from '@/shared/lib/cn';
-import { IcDrag, IcPlay } from '../assets/icons';
 
 type SongItemProps = {
   song: SongType;
