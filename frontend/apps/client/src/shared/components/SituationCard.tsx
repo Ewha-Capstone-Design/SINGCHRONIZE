@@ -7,11 +7,15 @@ import type { SituationKey } from '../types/song';
 
 type SituationCardProps = {
   situationKey: SituationKey;
-  isSelected: boolean;
-  onClick: () => void;
+  isSelected?: boolean;
+  onClick?: () => void;
 };
 
-const SituationCard = ({ situationKey, isSelected, onClick }: SituationCardProps) => {
+const SituationCard = ({
+  situationKey,
+  isSelected = false,
+  onClick = () => {},
+}: SituationCardProps) => {
   const { label, imageUrl } = SITUATION_ITEMS[situationKey];
 
   return (
@@ -19,7 +23,7 @@ const SituationCard = ({ situationKey, isSelected, onClick }: SituationCardProps
       type='button'
       onClick={onClick}
       aria-pressed={isSelected}
-      className='relative flex flex-col items-start justify-end w-45 h-45 overflow-hidden rounded-10 aspect-square cursor-pointer transition-transform duration-200 hover:-translate-y-0.5'
+      className='relative flex flex-col items-start justify-end w-45 h-45 overflow-hidden rounded-10 aspect-square cursor-pointer'
     >
       <Image src={imageUrl} alt={situationKey} fill sizes='180px' loading='eager' />
 
