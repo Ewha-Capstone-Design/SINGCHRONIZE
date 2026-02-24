@@ -1,7 +1,7 @@
 'use client';
 
+import Image from 'next/image';
 import { cn } from '@/shared/lib/cn';
-
 import { GENRE_ITEMS } from '../constants/genre';
 import type { GenreKey } from '../types/song';
 
@@ -24,10 +24,7 @@ const GenreCard = ({ genreKey, isSelected, onClick }: GenreCardProps) => {
         isSelected ? 'ring-2 ring-brand' : ''
       )}
     >
-      <div
-        className='absolute inset-0'
-        style={{ background: `url(${imageUrl}) 100% / cover no-repeat` }}
-      />
+      <Image src={imageUrl} alt={genreKey} fill sizes='180px' loading='eager' />
 
       <div className='relative z-10 px-3.5 py-1.5'>
         <p className='whitespace-pre-line typo-28b text-left text-white'>{label}</p>

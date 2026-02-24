@@ -1,7 +1,7 @@
 'use client';
 
+import Image from 'next/image';
 import { cn } from '@/shared/lib/cn';
-
 import { SITUATION_ITEMS } from '../constants/keyword';
 import type { SituationKey } from '../types/song';
 
@@ -21,10 +21,7 @@ const SituationCard = ({ situationKey, isSelected, onClick }: SituationCardProps
       aria-pressed={isSelected}
       className='relative flex flex-col items-start justify-end w-45 h-45 overflow-hidden rounded-10 aspect-square cursor-pointer transition-transform duration-200 hover:-translate-y-0.5'
     >
-      <div
-        className='absolute inset-0'
-        style={{ background: `lightgray url(${imageUrl}) 50% / cover no-repeat` }}
-      />
+      <Image src={imageUrl} alt={situationKey} fill sizes='180px' loading='eager' />
 
       <div
         className={cn(
