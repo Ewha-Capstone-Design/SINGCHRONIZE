@@ -30,9 +30,7 @@ const RecordingControls = ({
     return (
       <div className='flex items-center justify-center gap-4'>
         <RecordingButton variant='pause' onClick={onPause} />
-        {/* TODO: 개발 편의를 위해 disabled 임시 해제 */}
-        {/* <RecordingButton variant='done' onClick={onDone} disabled={!canDone} /> */}
-        <RecordingButton variant='done' onClick={onDone} />
+        <RecordingButton variant='done' onClick={onDone} disabled={!canDone} />
       </div>
     );
   }
