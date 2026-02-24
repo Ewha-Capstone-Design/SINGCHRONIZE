@@ -2,7 +2,7 @@ import { IcHeartOff, IcHeartOn } from '@/shared/assets/icons';
 
 type LikeIconButtonProps = {
   isLiked: boolean;
-  onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  onClick?: () => void;
 };
 
 const LikeIconButton = ({ isLiked, onClick }: LikeIconButtonProps) => {
