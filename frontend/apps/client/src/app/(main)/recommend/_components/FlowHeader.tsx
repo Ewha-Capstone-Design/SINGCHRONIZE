@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import SegmentedProgress from './SegmentedProgress';
 import { IcBack } from '@/shared/assets/icons';
-import { RecommendStep, FILLED_COUNT_BY_STEP } from '@/shared/types/recommend';
+import { InternalRecommendStep, FILLED_COUNT_BY_STEP } from '@/shared/types/recommend';
 
 type FlowHeaderProps = {
-  step: RecommendStep;
+  step: InternalRecommendStep;
   onBack: () => void;
 };
 

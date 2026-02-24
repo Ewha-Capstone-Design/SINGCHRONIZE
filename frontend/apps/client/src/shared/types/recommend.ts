@@ -2,20 +2,22 @@ export type RecordingVariant = 'start' | 'pause' | 'done';
 
 export type RecordingPhase = 'idle' | 'recording' | 'paused' | 'finish';
 
-export type RecommendStep = 'record' | 'analyze' | 'ranking' | 'keyword' | 'result';
-
-export type ProgressStep = Exclude<RecommendStep, 'analyze'>;
-
-export const RECOMMEND_STEPS: RecommendStep[] = [
+export const RECOMMEND_STEPS = [
   'record',
   'ranking',
   'keyword',
+  'genre',
   'result',
-];
+] as const;
 
-export const FILLED_COUNT_BY_STEP: Record<ProgressStep, number> = {
+export type RecommendStep = (typeof RECOMMEND_STEPS)[number];
+
+export type InternalRecommendStep = RecommendStep | 'analyze';
+
+export const FILLED_COUNT_BY_STEP: Record<RecommendStep, number> = {
   record: 1,
   ranking: 2,
   keyword: 3,
+  genre: 3,
   result: 4,
 };
