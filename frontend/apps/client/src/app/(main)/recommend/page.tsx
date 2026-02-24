@@ -11,7 +11,7 @@ import { InternalRecommendStep, RECOMMEND_STEPS } from '@/shared/types/recommend
 const RecommendPage = () => {
   const router = useRouter();
 
-  const [step, setStep] = useState<InternalRecommendStep>('genre');
+  const [step, setStep] = useState<InternalRecommendStep>('record');
 
   const handleBack = () => {
     if (step === 'analyze') {
