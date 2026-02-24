@@ -19,15 +19,11 @@ const SituationCard = ({ situationKey, isSelected, onClick }: SituationCardProps
       type='button'
       onClick={onClick}
       aria-pressed={isSelected}
-      className={cn(
-        'relative flex w-45 h-45 cursor-pointer flex-col items-start justify-end overflow-hidden rounded-10 aspect-square transition-transform duration-200 hover:-translate-y-0.5'
-      )}
+      className='relative flex flex-col items-start justify-end w-45 h-45 overflow-hidden rounded-10 aspect-square cursor-pointer transition-transform duration-200 hover:-translate-y-0.5'
     >
       <div
-        className='absolute inset-0 grayscale'
-        style={{
-          background: `lightgray url(${imageUrl}) 50% / cover no-repeat`,
-        }}
+        className='absolute inset-0'
+        style={{ background: `lightgray url(${imageUrl}) 50% / cover no-repeat` }}
       />
 
       <div
@@ -37,7 +33,7 @@ const SituationCard = ({ situationKey, isSelected, onClick }: SituationCardProps
         )}
       />
 
-      <div className='relative z-10 flex w-full flex-col items-start justify-end px-4.25 py-3.5'>
+      <div className='relative z-10 px-4.25 py-3.5'>
         <p className='whitespace-pre-line typo-28b text-left text-white'>{label}</p>
       </div>
     </button>

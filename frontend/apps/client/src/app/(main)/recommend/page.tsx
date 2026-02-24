@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { FlowHeader, StepAnalyze, StepKeyword } from './_components';
+import { FlowHeader, StepAnalyze, StepGenre, StepKeyword } from './_components';
 import { StepRecord } from '@/features/record';
 import { StepRanking } from '@/features/ranking';
 import { InternalRecommendStep, RECOMMEND_STEPS } from '@/shared/types/recommend';
@@ -11,7 +11,7 @@ import { InternalRecommendStep, RECOMMEND_STEPS } from '@/shared/types/recommend
 const RecommendPage = () => {
   const router = useRouter();
 
-  const [step, setStep] = useState<InternalRecommendStep>('record');
+  const [step, setStep] = useState<InternalRecommendStep>('genre');
 
   const handleBack = () => {
     if (step === 'analyze') {
@@ -48,7 +48,8 @@ const RecommendPage = () => {
         {step === 'record' && <StepRecord onNext={() => setStep('analyze')} />}
         {step === 'analyze' && <StepAnalyze onNext={() => setStep('ranking')} />}
         {step === 'ranking' && <StepRanking onNext={() => setStep('keyword')} />}
-        {step === 'keyword' && <StepKeyword onNext={() => setStep('keyword')} />}
+        {step === 'keyword' && <StepKeyword onNext={() => setStep('genre')} />}
+        {step === 'genre' && <StepGenre onNext={() => setStep('genre')} />}
       </div>
     </div>
   );

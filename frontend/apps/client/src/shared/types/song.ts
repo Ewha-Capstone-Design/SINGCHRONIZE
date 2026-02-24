@@ -14,3 +14,8 @@ export type SituationItemType = {
 };
 
 export type GenreKey = 'pop' | 'rock' | 'rnb' | 'trot' | 'ballad' | 'dance';
+
+export type GenreItemType = {
+  label: string;
+  imageUrl: string;
+};
