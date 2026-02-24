@@ -1,7 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { SongType } from '@/entities/song/model/types';
-import { SongItem } from '@/shared/components';
+import { SongItem } from '@/entities/song/ui';
 import { cn } from '@/shared/lib/cn';
 
 type SortableSongItemProps = {
