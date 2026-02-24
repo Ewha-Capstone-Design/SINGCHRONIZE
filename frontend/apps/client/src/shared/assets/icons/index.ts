@@ -5,6 +5,7 @@ export { default as IcDrag } from './ic_drag.svg';
 export { default as IcHome } from './ic_home.svg';
 export { default as IcLibrary } from './ic_library.svg';
 export { default as IcLive } from './ic_live.svg';
+export { default as IcLogo } from './ic_logo.svg';
 export { default as IcMy } from './ic_my.svg';
 export { default as IcPause } from './ic_pause.svg';
 export { default as IcPlay } from './ic_play.svg';
