@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     NAVER_TOKEN_URL: str = "https://nid.naver.com/oauth2.0/token"
     NAVER_USER_INFO_URL: str = "https://openapi.naver.com/v1/nid/me"
 
+    # Spotify
+    SPOTIFY_CLIENT_ID: str = ""
+    SPOTIFY_CLIENT_SECRET: str = ""
+    
     # 추가 설정 (필요시)
     SUPABASE_URL: str = "https://dzahkghhyoufwjhmbvkh.supabase.co"
     SUPABASE_SERVICE_ROLE_KEY: str = ""
