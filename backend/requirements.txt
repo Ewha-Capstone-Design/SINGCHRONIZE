@@ -19,3 +19,4 @@ pydantic-settings==2.7.0
 
 # OpenAPI export
 pyyaml==6.0.2
+requests
