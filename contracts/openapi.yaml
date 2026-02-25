@@ -225,39 +225,25 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-  /api/v1/songs/search:
+  /api/v1/music/search:
     get:
       tags:
-      - Songs
-      summary: Search Songs
-      operationId: search_songs_api_v1_songs_search_get
+      - music
+      summary: Search Music
+      operationId: search_music_api_v1_music_search_get
       parameters:
       - name: q
         in: query
         required: true
         schema:
           type: string
-          minLength: 1
-          description: 검색어 (제목 또는 가수)
           title: Q
-        description: 검색어 (제목 또는 가수)
-      - name: args
-        in: query
-        required: true
-        schema:
-          title: Args
-      - name: kwargs
-        in: query
-        required: true
-        schema:
-          title: Kwargs
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/SongResponse'
+              schema: {}
         '422':
           description: Validation Error
           content:
@@ -1054,81 +1040,6 @@ components:
       - access_token
       title: SocialLoginRequest
       description: POST /auth/login/{provider} 요청
-    SongBase:
-      properties:
-        id:
-          type: string
-          format: uuid
-          title: Id
-        title:
-          type: string
-          title: Title
-        artist:
-          type: string
-          title: Artist
-        tags:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Tags
-        features:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Features
-        album_cover:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Album Cover
-        genre:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Genre
-        youtube_url:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Youtube Url
-        raw_s3_key:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Raw S3 Key
-        download_status:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Download Status
-        embedding_status:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Embedding Status
-        created_at:
-          anyOf:
-          - type: string
-            format: date-time
-          - type: 'null'
-          title: Created At
-      type: object
-      required:
-      - id
-      - title
-      - artist
-      title: SongBase
-    SongResponse:
-      properties:
-        songs:
-          items:
-            $ref: '#/components/schemas/SongBase'
-          type: array
-          title: Songs
-      type: object
-      required:
-      - songs
-      title: SongResponse
     TokenResponse:
       properties:
         access_token:
