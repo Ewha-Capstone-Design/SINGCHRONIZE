@@ -105,15 +105,15 @@ export interface paths {
         patch: operations["update_settings_api_v1_users_me_settings_patch"];
         trace?: never;
     };
-    "/api/v1/songs/search": {
+    "/api/v1/music/search": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Search Songs */
-        get: operations["search_songs_api_v1_songs_search_get"];
+        /** Search Music */
+        get: operations["search_music_api_v1_music_search_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -308,49 +308,9 @@ export interface paths {
         };
         /**
          * Kakao Callback
-         * @description 카카오 콜백 → 인가코드로 토큰 교환 → JWT 발급
+         * @description 카카오 콜백 → 인가코드로 토큰 교환 → JWT 발급 → 테스트 페이지로 리다이렉트
          */
         get: operations["kakao_callback_auth_test_kakao_callback_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/test/naver/login": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Naver Login
-         * @description 네이버 로그인 페이지로 리다이렉트
-         */
-        get: operations["naver_login_auth_test_naver_login_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/test/naver/callback": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Naver Callback
-         * @description 네이버 콜백 → 인가코드로 토큰 교환 → JWT 발급
-         */
-        get: operations["naver_callback_auth_test_naver_callback_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -551,41 +511,6 @@ export interface components {
              * @description FCM 디바이스 토큰 (푸시알림)
              */
             fcm_token?: string | null;
-        };
-        /** SongBase */
-        SongBase: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Title */
-            title: string;
-            /** Artist */
-            artist: string;
-            /** Tags */
-            tags?: string | null;
-            /** Features */
-            features?: string | null;
-            /** Album Cover */
-            album_cover?: string | null;
-            /** Genre */
-            genre?: string | null;
-            /** Youtube Url */
-            youtube_url?: string | null;
-            /** Raw S3 Key */
-            raw_s3_key?: string | null;
-            /** Download Status */
-            download_status?: string | null;
-            /** Embedding Status */
-            embedding_status?: string | null;
-            /** Created At */
-            created_at?: string | null;
-        };
-        /** SongResponse */
-        SongResponse: {
-            /** Songs */
-            songs: components["schemas"]["SongBase"][];
         };
         /**
          * TokenResponse
@@ -922,13 +847,10 @@ export interface operations {
             };
         };
     };
-    search_songs_api_v1_songs_search_get: {
+    search_music_api_v1_music_search_get: {
         parameters: {
             query: {
-                /** @description 검색어 (제목 또는 가수) */
                 q: string;
-                args: unknown;
-                kwargs: unknown;
             };
             header?: never;
             path?: never;
@@ -942,7 +864,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SongResponse"];
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -1392,60 +1314,6 @@ export interface operations {
         parameters: {
             query: {
                 code: string;
-                args: unknown;
-                kwargs: unknown;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    naver_login_auth_test_naver_login_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    naver_callback_auth_test_naver_callback_get: {
-        parameters: {
-            query: {
-                code: string;
-                state: string;
                 args: unknown;
                 kwargs: unknown;
             };
