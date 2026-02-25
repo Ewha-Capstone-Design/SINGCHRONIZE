@@ -38,6 +38,14 @@ class Settings(BaseSettings):
     SPOTIFY_CLIENT_ID: str = ""
     SPOTIFY_CLIENT_SECRET: str = ""
     
+    # AWS
+    AWS_ACCESS_KEY_ID: str = ""
+    AWS_SECRET_ACCESS_KEY: str = ""
+    AWS_REGION: str = ""
+    SQS_QUEUE_URL: str = ""
+    S3_BUCKET_NAME: str = ""
+    
+    
     # 추가 설정 (필요시)
     SUPABASE_URL: str = "https://dzahkghhyoufwjhmbvkh.supabase.co"
     SUPABASE_SERVICE_ROLE_KEY: str = ""
