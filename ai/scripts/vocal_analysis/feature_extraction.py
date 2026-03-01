@@ -1,4 +1,5 @@
 """
+유저 보컬 전처리 파이프라인에서 사용되는 특징 추출 모듈
 특징 추출 모듈
 - Pitch (F0) 추출
 - Energy (RMS) 추출
@@ -15,7 +16,10 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # 고급 보컬 분석 모듈
-from advanced_vocal_analysis import AdvancedVocalAnalyzer
+try:
+    from .advanced_vocal_analysis import AdvancedVocalAnalyzer
+except ImportError:
+    from advanced_vocal_analysis import AdvancedVocalAnalyzer
 
 
 class FeatureExtractor:
@@ -702,9 +706,14 @@ class FeatureExtractor:
         
         representative = np.average(segment_embeddings, axis=0, weights=qualities)
         
+        # L2 정규화 (곡 임베딩과 동일한 스케일로 맞추기 위해)
+        representative = representative / (np.linalg.norm(representative) + 1e-8)
+        segment_embeddings = [emb / (np.linalg.norm(emb) + 1e-8) for emb in segment_embeddings]
+        
         print(f"✓ ECAPA 임베딩 추출 완료")
         print(f"  - 임베딩 차원: {representative.shape[0]}")
         print(f"  - 사용된 세그먼트: {len(segment_embeddings)}개")
+        print(f"  - L2 정규화 적용 (곡 임베딩과 스케일 일치)")
         
         return {
             'representative': representative.tolist(),
@@ -764,14 +773,17 @@ class FeatureExtractor:
             if bin_segments:
                 # 품질이 가장 높은 것 선택
                 best = max(bin_segments, key=lambda x: x['quality_score'])
-                selected.append(best)
+                # 중복 체크: start_time으로 비교 (numpy array 비교 문제 방지)
+                if not any(seg['start_time'] == best['start_time'] for seg in selected):
+                    selected.append(best)
             else:
                 # 구간에 세그먼트가 없으면 가장 가까운 것 선택
                 closest = min(
                     top_candidates,
                     key=lambda x: abs(x['mid_time'] - (bin_start + bin_end) / 2)
                 )
-                if closest not in selected:
+                # 중복 체크: start_time으로 비교 (numpy array 비교 문제 방지)
+                if not any(seg['start_time'] == closest['start_time'] for seg in selected):
                     selected.append(closest)
         
         # 중복 제거 및 품질 순 정렬

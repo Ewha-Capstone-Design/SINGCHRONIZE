@@ -22,7 +22,7 @@ torch>=2.1.0
 torchaudio>=2.1.0
 
 # 음성 품질 분석
-praat-parselmouth==0.4.3  # HNR, Jitter, Shimmer 등
+# praat-parselmouth==0.4.3  # HNR, Jitter, Shimmer 등 (빌드 문제로 주석 처리, fallback 사용)
 
 # 데이터 처리
 pandas>=2.1.0
@@ -39,7 +39,8 @@ tqdm==4.66.1
 python-dotenv==1.0.0
 
 # DB 연결 (기존)
-supabase==2.3.0
+supabase>=2.8.0  # Supabase 클라이언트 (httpx/gotrue 호환성 문제 해결)
+psycopg2-binary>=2.9.0  # PostgreSQL 직접 연결 (vector 타입 지원)
 requests==2.31.0
 
 boto3
