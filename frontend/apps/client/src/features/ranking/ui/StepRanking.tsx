@@ -2,7 +2,7 @@ import { Button } from '@singchronize/ui';
 import SortableSongList from './SortableSongList';
 import { SongType } from '@/entities/song/model/types';
 
-// 임시 데이터
+// MOCK: 임시 데이터
 const mockSongs: SongType[] = [
   { id: '1', title: 'Song A', artist: 'Artist A', album_cover: '' },
   { id: '2', title: 'Song B', artist: 'Artist B', album_cover: '' },

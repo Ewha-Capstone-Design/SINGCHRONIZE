@@ -2,8 +2,8 @@
 
 import Image from 'next/image';
 import { cn } from '@/shared/lib/cn';
-import { SITUATION_ITEMS } from '../constants/keyword';
-import type { SituationKey } from '../types/song';
+import { SITUATION_ITEMS } from '../constants/situation';
+import type { SituationKey } from '../types/category';
 
 type SituationCardProps = {
   situationKey: SituationKey;
@@ -23,7 +23,7 @@ const SituationCard = ({
       type='button'
       onClick={onClick}
       aria-pressed={isSelected}
-      className='relative flex flex-col items-start justify-end w-45 h-45 overflow-hidden rounded-10 aspect-square cursor-pointer'
+      className='relative flex flex-col items-start justify-end w-45 h-45 overflow-hidden rounded-10 aspect-square cursor-pointer shrink-0'
     >
       <Image src={imageUrl} alt={situationKey} fill sizes='180px' loading='eager' />
 

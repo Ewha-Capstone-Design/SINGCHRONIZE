@@ -5,7 +5,7 @@ export type RecordingPhase = 'idle' | 'recording' | 'paused' | 'finish';
 export const RECOMMEND_STEPS = [
   'record',
   'ranking',
-  'keyword',
+  'situation',
   'genre',
   'result',
 ] as const;
@@ -17,7 +17,7 @@ export type InternalRecommendStep = RecommendStep | 'analyze';
 export const FILLED_COUNT_BY_STEP: Record<RecommendStep, number> = {
   record: 1,
   ranking: 2,
-  keyword: 3,
+  situation: 3,
   genre: 3,
   result: 4,
 };
