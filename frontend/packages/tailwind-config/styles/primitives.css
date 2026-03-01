@@ -35,5 +35,13 @@
     --accent-500: #ff3b3b;
     --accent-600: #f0303a;
     --accent-900: #c2051f;
+
+    /* Genre */
+    --genre-ballad: #4dabd0;
+    --genre-pop: #0a4bff;
+    --genre-rock: #ff3822;
+    --genre-rnb: #a200ff;
+    --genre-trot: #ff6c1d;
+    --genre-dance: #ff46d7;
   }
 }

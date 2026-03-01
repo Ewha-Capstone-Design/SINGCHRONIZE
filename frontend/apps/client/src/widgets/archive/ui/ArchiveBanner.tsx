@@ -24,12 +24,20 @@ const ArchiveBanner = ({ variant, category }: ArchiveBannerProps) => {
     return category.label;
   };
 
+  const getGradientStyle = (): React.CSSProperties => {
+    if (!isDetail || !category || category.type === 'situation') return {};
+    return {
+      '--tw-gradient-from': `color-mix(in srgb, var(--genre-${category.key}) 50%, transparent)`,
+    } as React.CSSProperties;
+  };
+
   return (
     <section
       className={cn(
         'relative w-full flex flex-col px-8 bg-linear-to-b from-yellow-900/50 to-bg',
         isDetail ? 'py-10 pb-14 gap-7' : 'py-14'
       )}
+      style={getGradientStyle()}
     >
       {isDetail && (
         <button className='w-fit' onClick={handleBack}>
