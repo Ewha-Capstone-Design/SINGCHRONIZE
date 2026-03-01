@@ -13,7 +13,7 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
         <TooltipProvider delayDuration={0}>
           <div className='flex min-h-screen'>
             <Sidebar />
-            <main className='flex-1'>{children}</main>
+            <main className='flex-1 bg-bg'>{children}</main>
           </div>
         </TooltipProvider>
       </body>

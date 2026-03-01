@@ -1,4 +1,4 @@
-import type { GenreItemType, GenreKey } from '../types/song';
+import type { GenreItemType, GenreKey } from '../types/category';
 
 import imgGenre1 from '@/shared/assets/images/genre/img_genre_1.png';
 import imgGenre2 from '@/shared/assets/images/genre/img_genre_2.png';
@@ -15,30 +15,12 @@ export const STEP_GENRE_TEXT = {
 } as const;
 
 export const GENRE_ITEMS: Record<GenreKey, GenreItemType> = {
-  pop: {
-    label: 'POP',
-    imageUrl: imgGenre4.src,
-  },
-  rock: {
-    label: 'ROCK',
-    imageUrl: imgGenre2.src,
-  },
-  rnb: {
-    label: 'R&B',
-    imageUrl: imgGenre3.src,
-  },
-  trot: {
-    label: 'TROT',
-    imageUrl: imgGenre1.src,
-  },
-  ballad: {
-    label: 'BALLAD',
-    imageUrl: imgGenre6.src,
-  },
-  dance: {
-    label: 'DANCE',
-    imageUrl: imgGenre5.src,
-  },
+  ballad: { label: 'BALLAD', tabLabel: '발라드', imageUrl: imgGenre6.src },
+  dance: { label: 'DANCE', tabLabel: '댄스', imageUrl: imgGenre5.src },
+  pop: { label: 'POP', tabLabel: 'POP', imageUrl: imgGenre4.src },
+  trot: { label: 'TROT', tabLabel: '트로트', imageUrl: imgGenre1.src },
+  rock: { label: 'ROCK', tabLabel: '락·메탈', imageUrl: imgGenre2.src },
+  rnb: { label: 'R&B', tabLabel: 'R&B', imageUrl: imgGenre3.src },
 };
 
-export const GENRE_KEYS: GenreKey[] = ['pop', 'rock', 'rnb', 'trot', 'ballad', 'dance'];
+export const GENRE_KEYS: GenreKey[] = ['ballad', 'dance', 'pop', 'trot', 'rock', 'rnb'];

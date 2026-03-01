@@ -48,8 +48,9 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
             }}
             className={cn(
               'w-full border-none bg-transparent outline-none',
-              'typo-20r text-white caret-brand',
+              'typo-20r text-white',
               'placeholder:text-gray-600',
+              isError ? 'caret-accent-500' : 'caret-brand',
               className
             )}
           />

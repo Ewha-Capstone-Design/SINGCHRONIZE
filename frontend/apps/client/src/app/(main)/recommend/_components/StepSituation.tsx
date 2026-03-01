@@ -4,14 +4,14 @@ import { useState } from 'react';
 
 import { Button } from '@singchronize/ui';
 import { SituationCard } from '@/shared/components';
-import { MAX_SITUATION_SELECT, SITUATION_KEYS } from '@/shared/constants/keyword';
-import type { SituationKey } from '@/shared/types/song';
+import { MAX_SITUATION_SELECT, SITUATION_KEYS } from '@/shared/constants/situation';
+import type { SituationKey } from '@/shared/types/category';
 
-type StepKeywordProps = {
+type StepSituationProps = {
   onNext: () => void;
 };
 
-const StepKeyword = ({ onNext }: StepKeywordProps) => {
+const StepSituation = ({ onNext }: StepSituationProps) => {
   const [selectedKeys, setSelectedKeys] = useState<SituationKey[]>([]);
 
   const toggleSelect = (key: SituationKey) => {
@@ -59,4 +59,4 @@ const StepKeyword = ({ onNext }: StepKeywordProps) => {
   );
 };
 
-export default StepKeyword;
+export default StepSituation;

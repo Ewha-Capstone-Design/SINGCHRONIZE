@@ -1,4 +1,4 @@
-import type { SituationKey, SituationItemType } from '../types/song';
+import type { SituationKey, SituationItemType } from '../types/category';
 
 import imgKeyword1 from '@/shared/assets/images/situation/img_keyword_1.png';
 import imgKeyword2 from '@/shared/assets/images/situation/img_keyword_2.png';

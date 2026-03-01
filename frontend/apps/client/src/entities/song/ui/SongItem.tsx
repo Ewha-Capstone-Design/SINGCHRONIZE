@@ -1,9 +1,9 @@
-import { SongType } from '@/entities/song/model/types';
-import { IcDrag, IcPlay } from '@/shared/assets/icons';
 import { cn } from '@/shared/lib/cn';
+import type { SongUiType } from '@/entities/song/model/types';
+import { IcDrag, IcPlay } from '@/shared/assets/icons';
 
 type SongItemProps = {
-  song: SongType;
+  song: SongUiType;
   onPlay?: () => void;
   dragHandleProps?: React.HTMLAttributes<HTMLButtonElement>;
   className?: string;
@@ -19,9 +19,9 @@ const SongItem = ({ song, onPlay, dragHandleProps, className }: SongItemProps) =
     >
       {/* 앨범 이미지 */}
       <div className='h-full aspect-square rounded-l-[10px] overflow-hidden shrink-0'>
-        {song.album_cover ? (
+        {song.thumbnail ? (
           <img
-            src={song.album_cover}
+            src={song.thumbnail}
             alt={song.title}
             className='w-full h-full object-cover'
           />
@@ -37,7 +37,7 @@ const SongItem = ({ song, onPlay, dragHandleProps, className }: SongItemProps) =
         </div>
 
         {/* 버튼 */}
-        <div className='flex items-center gap-4 shrink-0 '>
+        <div className='flex items-center gap-4 shrink-0'>
           <button
             type='button'
             onClick={onPlay}

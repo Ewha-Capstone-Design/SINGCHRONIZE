@@ -3,15 +3,15 @@
 import Image from 'next/image';
 import { cn } from '@/shared/lib/cn';
 import { GENRE_ITEMS } from '../constants/genre';
-import type { GenreKey } from '../types/song';
+import type { GenreKey } from '../types/category';
 
 type GenreCardProps = {
   genreKey: GenreKey;
-  isSelected: boolean;
-  onClick: () => void;
+  isSelected?: boolean;
+  onClick?: () => void;
 };
 
-const GenreCard = ({ genreKey, isSelected, onClick }: GenreCardProps) => {
+const GenreCard = ({ genreKey, isSelected = false, onClick }: GenreCardProps) => {
   const { label, imageUrl } = GENRE_ITEMS[genreKey];
 
   return (
@@ -20,7 +20,7 @@ const GenreCard = ({ genreKey, isSelected, onClick }: GenreCardProps) => {
       onClick={onClick}
       aria-pressed={isSelected}
       className={cn(
-        'relative flex flex-col w-45 h-45 overflow-hidden rounded-10 aspect-square cursor-pointer transition-transform duration-200 hover:-translate-y-0.5',
+        'relative flex flex-col w-45 h-45 overflow-hidden rounded-10 aspect-square cursor-pointer shrink-0',
         isSelected ? 'ring-2 ring-brand' : ''
       )}
     >
