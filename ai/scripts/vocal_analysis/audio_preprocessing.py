@@ -368,10 +368,18 @@ def remove_mr(audio_path: str, output_dir: str = None) -> str:
         model.to(device)
         print(f"✓ Demucs 모델 로드 완료 (device: {device})")
         
-        # 오디오 로드
-        wav, sr = torchaudio.load(audio_path)
-        wav = wav.to(device)
-        print(f"✓ 오디오 로드: {audio_path}")
+        # 오디오 로드 (librosa 사용 - mp4 등 다양한 포맷 지원)
+        # torchaudio는 mp4를 직접 읽지 못할 수 있음
+        import librosa
+        audio_np, sr = librosa.load(audio_path, sr=None, mono=False)
+        
+        # librosa는 mono일 때 1D array, stereo일 때 2D array 반환
+        if audio_np.ndim == 1:
+            audio_np = audio_np[np.newaxis, :]  # (1, samples)로 변환
+        
+        # numpy array를 torch tensor로 변환
+        wav = torch.from_numpy(audio_np).float().to(device)
+        print(f"✓ 오디오 로드: {audio_path} ({sr}Hz, {wav.shape[0]} channels)")
         
         # 보컬 분리
         print("⏳ 보컬 분리 중... (수 분 소요)")
@@ -388,19 +396,34 @@ def remove_mr(audio_path: str, output_dir: str = None) -> str:
         output_path.mkdir(parents=True, exist_ok=True)
         
         vocals_file = output_path / f"{Path(audio_path).stem}_vocals.wav"
-        torchaudio.save(vocals_file, vocals.cpu(), sr)
+        
+        # torch tensor를 numpy array로 변환 후 soundfile로 저장
+        # vocals shape: (channels, samples) 또는 (samples,)
+        vocals_np = vocals.cpu().numpy()
+        if vocals_np.ndim == 1:
+            # mono인 경우 그대로 저장
+            sf.write(str(vocals_file), vocals_np, sr)
+        else:
+            # stereo인 경우 transpose (soundfile은 (samples, channels) 형식)
+            vocals_np = vocals_np.T
+            sf.write(str(vocals_file), vocals_np, sr)
         
         print(f"✓ 보컬 저장: {vocals_file}")
         print("="*60 + "\n")
         
         return str(vocals_file)
     
-    except ImportError:
-        print("⚠️  Demucs가 설치되지 않았습니다.")
-        print("   pip install demucs 로 설치해주세요.")
+    except ImportError as e:
+        print(f"⚠️  Demucs 관련 모듈을 import할 수 없습니다: {e}")
+        print("   pip install demucs torch torchaudio 로 설치해주세요.")
+        import traceback
+        traceback.print_exc()
         return audio_path
     except Exception as e:
         print(f"❌ MR 제거 실패: {e}")
+        print(f"   오류 타입: {type(e).__name__}")
+        import traceback
+        traceback.print_exc()
         return audio_path
 
 

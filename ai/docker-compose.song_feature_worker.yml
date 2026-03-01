@@ -1,0 +1,32 @@
+# Song Feature Worker Docker Compose
+# 500곡 배치 처리를 위한 설정
+
+version: '3.8'
+
+services:
+  song-feature-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.song_feature_worker
+    container_name: song-feature-worker
+    env_file:
+      - .env  # 환경 변수 파일 (S3, DB 연결 정보 등)
+    volumes:
+      # 로컬 .env 파일 마운트 (선택적)
+      - ./.env:/app/.env:ro
+      # 결과 저장 디렉토리 (선택적)
+      - ./artifacts:/app/scripts/artifacts
+    # 리소스 제한 (필요시 조정)
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+        reservations:
+          cpus: '2'
+          memory: 4G
+    # 재시작 정책 (실패 시 재시작하지 않음 - 수동으로 재시작)
+    restart: "no"
+    # 명령어 오버라이드 (500개 노래 처리 + 특징 JSON S3 업로드)
+    command: ["python", "song_feature_worker.py", "--mode", "s3", "--unprocessed", "--limit", "500", "--upload-features-s3"]
+

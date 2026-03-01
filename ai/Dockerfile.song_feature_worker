@@ -1,0 +1,38 @@
+# Song Feature Worker Dockerfile
+# 500곡 배치 처리를 위한 도커 이미지
+
+FROM python:3.11-slim
+
+# 시스템 패키지 설치 (오디오 처리 라이브러리 등)
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    libsndfile1 \
+    git \
+    build-essential \
+    cmake \
+    ninja-build \
+    && rm -rf /var/lib/apt/lists/*
+
+# 작업 디렉토리 설정
+WORKDIR /app
+
+# requirements.txt 복사 및 패키지 설치
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# pretrained 모델 디렉토리 복사 (ECAPA 모델 등)
+COPY pretrained_models/ ./pretrained_models/
+
+# 스크립트 복사
+COPY scripts/ ./scripts/
+
+# 작업 디렉토리를 scripts로 변경
+WORKDIR /app/scripts
+
+# 환경 변수 설정 (런타임에 .env 파일로 오버라이드 가능)
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app/scripts
+
+# 기본 실행 명령 (환경 변수는 docker run 시 전달)
+CMD ["python", "song_feature_worker.py", "--unprocessed"]
+
