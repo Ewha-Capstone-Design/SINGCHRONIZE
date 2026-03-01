@@ -22,14 +22,14 @@ const ArchiveNavigator = ({ tab, tabs, onChangeTab }: ArchiveNavigatorProps) => 
   };
 
   return (
-    <section className='px-8 flex flex-col gap-4 w-full max-w-full overflow-hidden'>
+    <section className='pl-8 flex flex-col gap-4 w-full max-w-full overflow-hidden'>
       <SectionTab
         items={tabs}
         value={tab}
         onChange={(value) => onChangeTab(value as ArchiveTab)}
       />
 
-      <div className='flex gap-5 w-0 min-w-full overflow-x-auto scrollbar-hide'>
+      <div className='pr-8 flex gap-5 w-0 min-w-full overflow-x-auto scrollbar-hide'>
         {tab === 'genre'
           ? GENRE_KEYS.map((genreKey) => (
               <GenreCard
