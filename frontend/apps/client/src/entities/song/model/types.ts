@@ -1,9 +1,17 @@
-export type SongType = {
-  id: string; // uuid
-  title: string; // NN
-  artist: string; // NN
+export type SongApiType = {
+  id: string;
+  title: string;
+  artist: string;
   album_cover?: string | null;
-  tags?: unknown; // jsonb
-  features?: unknown; // jsonb
-  created_at?: string; // timestamptz
+  tags?: unknown;
+  features?: unknown;
+  created_at?: string;
+};
+
+export type SongUiType = {
+  id: string;
+  title: string;
+  artist: string;
+  thumbnail?: string;
+  isLiked?: boolean;
 };

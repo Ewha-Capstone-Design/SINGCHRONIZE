@@ -15,15 +15,15 @@ import {
 } from '@dnd-kit/sortable';
 
 import SortableSongItem from './SortableSongItem';
-import { SongType } from '@/entities/song/model/types';
+import { SongUiType } from '@/entities/song/model/types';
 
 type SortableSongListProps = {
-  initialSongs: SongType[];
-  onChange?: (songs: SongType[]) => void;
+  initialSongs: SongUiType[];
+  onChange?: (songs: SongUiType[]) => void;
 };
 
 const SortableSongList = ({ initialSongs, onChange }: SortableSongListProps) => {
-  const [songs, setSongs] = useState<SongType[]>(initialSongs);
+  const [songs, setSongs] = useState<SongUiType[]>(initialSongs);
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(useSensor(PointerSensor));

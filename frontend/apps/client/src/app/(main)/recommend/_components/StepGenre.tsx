@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Button } from '@singchronize/ui';
 import { GenreCard } from '@/shared/components';
 import { GENRE_KEYS, MAX_GENRE_SELECT } from '@/shared/constants/genre';
-import type { GenreKey } from '@/shared/types/song';
+import type { GenreKey } from '@/shared/types/category';
 
 type StepGenreProps = {
   onNext: () => void;

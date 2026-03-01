@@ -20,3 +20,9 @@ export type GenreItemType = {
   tabLabel: string; // 한글
   imageUrl: string;
 };
+
+export type CategoryKey = GenreKey | SituationKey;
+
+export type CategoryMetaType =
+  | { type: 'genre'; key: GenreKey; label: string; imageUrl: string }
+  | { type: 'situation'; key: SituationKey; label: string; imageUrl: string };

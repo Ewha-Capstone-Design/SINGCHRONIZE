@@ -1,15 +1,13 @@
 import { Button } from '@singchronize/ui';
 import SortableSongList from './SortableSongList';
-import { SongType } from '@/entities/song/model/types';
+import { toSongUi } from '@/entities/song/model/mapper';
 
-// MOCK: 임시 데이터
-const mockSongs: SongType[] = [
-  { id: '1', title: 'Song A', artist: 'Artist A', album_cover: '' },
-  { id: '2', title: 'Song B', artist: 'Artist B', album_cover: '' },
-  { id: '3', title: 'Song C', artist: 'Artist C', album_cover: '' },
-];
+import { MOCK_SONGS } from '@/entities/song/model/mock';
 
 const StepRanking = ({ onNext }: { onNext: () => void }) => {
+  // TODO: 쿼리 훅으로 교체
+  const songs = MOCK_SONGS.map(toSongUi);
+
   return (
     <div className='mt-[4vh] mb-[8vh] flex flex-col justify-center h-full'>
       <div className='flex flex-col gap-[6vh] justify-between items-center w-[500] max-h-171.5 h-full'>
@@ -19,7 +17,7 @@ const StepRanking = ({ onNext }: { onNext: () => void }) => {
           </p>
         </div>
 
-        <SortableSongList initialSongs={mockSongs} />
+        <SortableSongList initialSongs={songs} />
 
         <Button variant='normal' onClick={onNext}>
           정렬 완료하기
