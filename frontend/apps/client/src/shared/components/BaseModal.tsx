@@ -31,7 +31,10 @@ const BaseModal = ({
       >
         {children}
 
-        <button className='absolute bottom-[-64] w-8 h-8' onClick={onClose}>
+        <button
+          className='absolute -bottom-16 left-1/2 -translate-x-1/2 w-8 h-8 shrink-0 text-gray-300'
+          onClick={onClose}
+        >
           <IcClose />
         </button>
       </div>

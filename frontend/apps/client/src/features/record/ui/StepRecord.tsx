@@ -9,7 +9,7 @@ import { useRecorder, useTimer } from '../model';
 import { GUIDE_TEXT_BY_LEVEL } from '../model/constants';
 
 const StepRecord = ({ onNext }: { onNext: () => void }) => {
-  const { open: isMicTestOpen, setOpen: setIsMicTestOpen, closeModal } = useModal(true);
+  const { open: isMicTestOpen, closeModal } = useModal(true);
   const [micGain, setMicGain] = useState(1);
 
   const { phase, start, pause, finish, handleRecorded } = useRecorder();

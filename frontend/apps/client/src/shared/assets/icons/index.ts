@@ -15,6 +15,7 @@ export { default as IcMore } from './ic_more.svg';
 export { default as IcMy } from './ic_my.svg';
 export { default as IcPause } from './ic_pause.svg';
 export { default as IcPlay } from './ic_play.svg';
+export { default as IcPlus } from './ic_plus.svg';
 export { default as IcRecordingDone } from './ic_recording_done.svg';
 export { default as IcRecordingPause } from './ic_recording_pause.svg';
 export { default as IcRecordingStart } from './ic_recording_start.svg';
