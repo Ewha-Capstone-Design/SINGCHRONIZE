@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useModal } from '@/shared/hooks';
 import RecordingControls from './RecordingControls';
 import WaveformRecorder from './WaveformRecorder';
 import MicTestModal from './MicTestModal';
@@ -8,7 +9,7 @@ import { useRecorder, useTimer } from '../model';
 import { GUIDE_TEXT_BY_LEVEL } from '../model/constants';
 
 const StepRecord = ({ onNext }: { onNext: () => void }) => {
-  const [isMicTestOpen, setIsMicTestOpen] = useState(true);
+  const { open: isMicTestOpen, closeModal } = useModal(true);
   const [micGain, setMicGain] = useState(1);
 
   const { phase, start, pause, finish, handleRecorded } = useRecorder();
@@ -28,16 +29,12 @@ const StepRecord = ({ onNext }: { onNext: () => void }) => {
     <>
       {/* 마이크 테스트 모달 */}
       {isMicTestOpen && (
-        <MicTestModal
-          gain={micGain}
-          onChangeGain={setMicGain}
-          onClose={() => setIsMicTestOpen(false)}
-        />
+        <MicTestModal gain={micGain} onChangeGain={setMicGain} onClose={closeModal} />
       )}
 
       <div className='pt-[4vh] pb-[8vh] flex flex-col gap-4 items-center justify-around max-w-xl h-full'>
         {/* 상태 문구 */}
-        <div className='flex items-center h-[92]'>
+        <div className='flex items-center h-23'>
           <p className='typo-32b text-center whitespace-pre-line'>{guideText}</p>
         </div>
 

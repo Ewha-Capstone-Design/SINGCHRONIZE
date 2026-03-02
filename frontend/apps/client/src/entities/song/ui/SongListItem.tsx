@@ -24,6 +24,9 @@ interface SongListItemProps {
   // list4
   likeCount?: number;
 
+  // list3
+  rightSlot?: React.ReactNode;
+
   // ui state
   isLiked?: boolean;
 
@@ -43,6 +46,7 @@ const SongListItem = ({
   musicKey,
   matchRate,
   likeCount,
+  rightSlot,
   isLiked = false,
   onLikeClick,
   onMoreClick,
@@ -84,7 +88,7 @@ const SongListItem = ({
       </div>
 
       {/* [중앙] 곡 정보 */}
-      <div className='flex min-w-0 flex-1 flex-col gap-0.5'>
+      <div className='flex min-w-0 flex-1 flex-col gap-0.5 text-left'>
         <h4 className='truncate typo-18sb text-white'>{title}</h4>
         <p className='truncate typo-14r text-gray-200'>{artist}</p>
       </div>
@@ -131,12 +135,16 @@ const SongListItem = ({
       {/* [오른쪽] 액션 영역 */}
       <div className='flex items-center'>
         {/* list3: 하트 + 더보기 */}
-        {variant === 'list3' && (
-          <div className='flex items-center gap-1.25'>
-            <LikeIconButton isLiked={isLiked} onClick={handleLikeClick} />
-            <MoreActionButton onClick={handleMoreClick} />
-          </div>
-        )}
+        {variant === 'list3' ? (
+          rightSlot ? (
+            <div className='flex items-center'>{rightSlot}</div>
+          ) : (
+            <div className='flex items-center gap-1.25'>
+              <LikeIconButton isLiked={isLiked} onClick={handleLikeClick} />
+              <MoreActionButton onClick={handleMoreClick} />
+            </div>
+          )
+        ) : null}
 
         {/* list2, list5: 하트 */}
         {(variant === 'list2' || variant === 'list5') && (
