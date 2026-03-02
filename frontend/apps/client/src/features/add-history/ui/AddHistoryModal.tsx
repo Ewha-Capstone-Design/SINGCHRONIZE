@@ -6,6 +6,9 @@ import { InputField, Button, TextAreaField } from '@singchronize/ui';
 import { SongListItem } from '@/entities/song/ui';
 import { IcBack, IcPlus } from '@/shared/assets/icons';
 import { HISTORY_TAG_OPTIONS, HistoryTagKeyType } from '@/entities/library/model/tags';
+import type { SongUiType } from '@/entities/song/model/types';
+
+import { MOCK_SONG_LIST } from '@/entities/song/model/mock';
 
 type AddHistoryModalProps = {
   onClose: () => void;
@@ -13,17 +16,10 @@ type AddHistoryModalProps = {
 
 type Step = 'search' | 'form';
 
-type SelectedSong = {
-  id: string | number;
-  title: string;
-  artist: string;
-  thumbnail?: string;
-};
-
 const AddHistoryModal = ({ onClose }: AddHistoryModalProps) => {
   const [step, setStep] = useState<Step>('search');
   const [query, setQuery] = useState('');
-  const [selectedSong, setSelectedSong] = useState<SelectedSong | null>(null);
+  const [selectedSong, setSelectedSong] = useState<SongUiType | null>(null);
 
   const [memo, setMemo] = useState('');
   const [selectedTags, setSelectedTags] = useState<Set<HistoryTagKeyType>>(
@@ -39,16 +35,18 @@ const AddHistoryModal = ({ onClose }: AddHistoryModalProps) => {
     });
   };
 
-  // TODO: 검색 결과/아카이브를 API로 교체
-  const archiveItems = useMemo<SelectedSong[]>(
-    () => [
-      { id: 1, title: '밤편지', artist: '아이유', thumbnail: '' },
-      { id: 2, title: 'The Action', artist: 'BOYNEXTDOOR', thumbnail: '' },
-    ],
-    []
-  );
+  // TODO: 검색 결과를 API로 교체
+  const searchedItems = useMemo(() => {
+    const q = query.trim();
+    if (!q) return [];
 
-  const handleSelectSong = (song: SelectedSong) => {
+    return MOCK_SONG_LIST.filter((song) => {
+      const hay = `${song.title} ${song.artist}`;
+      return hay.includes(q);
+    });
+  }, [query]);
+
+  const handleSelectSong = (song: SongUiType) => {
     setSelectedSong(song);
     setStep('form');
   };
@@ -75,31 +73,22 @@ const AddHistoryModal = ({ onClose }: AddHistoryModalProps) => {
             />
           </div>
 
-          <div className='flex flex-col gap-3 min-h-0'>
-            <p className='typo-20b text-white'>아카이브</p>
-
-            <div className='flex flex-col gap-4 overflow-y-auto min-h-0'>
-              {archiveItems.map((song) => (
-                <button
-                  key={song.id}
-                  type='button'
-                  className='text-left'
-                  onClick={() => handleSelectSong(song)}
-                >
-                  <SongListItem
-                    variant='list3'
-                    title={song.title}
-                    artist={song.artist}
-                    thumbnail={song.thumbnail ?? ''}
-                    rightSlot={
-                      <span className='inline-flex items-center justify-center'>
-                        <IcPlus />
-                      </span>
-                    }
-                  />
-                </button>
-              ))}
-            </div>
+          <div className='flex flex-col gap-4 overflow-y-auto min-h-0'>
+            {searchedItems.map((song) => (
+              <button key={song.id} type='button' onClick={() => handleSelectSong(song)}>
+                <SongListItem
+                  variant='list3'
+                  title={song.title}
+                  artist={song.artist}
+                  thumbnail={song.thumbnail ?? ''}
+                  rightSlot={
+                    <span className='inline-flex items-center justify-center'>
+                      <IcPlus />
+                    </span>
+                  }
+                />
+              </button>
+            ))}
           </div>
         </div>
       ) : (

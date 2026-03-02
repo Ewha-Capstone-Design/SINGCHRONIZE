@@ -88,7 +88,7 @@ const SongListItem = ({
       </div>
 
       {/* [중앙] 곡 정보 */}
-      <div className='flex min-w-0 flex-1 flex-col gap-0.5'>
+      <div className='flex min-w-0 flex-1 flex-col gap-0.5 text-left'>
         <h4 className='truncate typo-18sb text-white'>{title}</h4>
         <p className='truncate typo-14r text-gray-200'>{artist}</p>
       </div>
