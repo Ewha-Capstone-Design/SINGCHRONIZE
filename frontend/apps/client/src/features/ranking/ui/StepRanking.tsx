@@ -1,12 +1,11 @@
 import { Button } from '@singchronize/ui';
 import SortableSongList from './SortableSongList';
-import { toSongUi } from '@/entities/song/model/mapper';
 
-import { MOCK_SONGS } from '@/entities/song/model/mock';
+import { MOCK_SONG_LIST } from '@/entities/song/model/mock';
 
 const StepRanking = ({ onNext }: { onNext: () => void }) => {
   // TODO: 쿼리 훅으로 교체
-  const songs = MOCK_SONGS.map(toSongUi);
+  const songs = MOCK_SONG_LIST;
 
   return (
     <div className='mt-[4vh] mb-[8vh] flex flex-col justify-center h-full'>
