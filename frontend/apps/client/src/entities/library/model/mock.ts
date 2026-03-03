@@ -6,8 +6,7 @@ const MOCK_HISTORY_ITEMS_API: HistoryItemApiType[] = [
     history_id: 'h1',
     song: {
       id: 's1',
-      title:
-        '전체적으로 리듬은 잘 맞았고 초반 흐름도 안정적이었음. 다만 후반부로 갈수록 호흡이 부족해지면서 음정',
+      title: '야생화',
       artist: '박효신',
       album_cover: '',
     },

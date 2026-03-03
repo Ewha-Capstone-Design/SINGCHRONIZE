@@ -8,7 +8,7 @@ export const metadata: Metadata = metadataConfig;
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <html lang='ko'>
-      <body className='h-screen overflow-hidden bg-bg'>
+      <body className='h-screen bg-bg scrollbar-hide'>
         <TooltipProvider delayDuration={0}>{children}</TooltipProvider>
       </body>
     </html>

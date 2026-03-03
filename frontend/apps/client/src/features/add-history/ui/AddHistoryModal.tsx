@@ -75,19 +75,22 @@ const AddHistoryModal = ({ onClose }: AddHistoryModalProps) => {
 
           <div className='flex flex-col gap-4 overflow-y-auto min-h-0'>
             {searchedItems.map((song) => (
-              <button key={song.id} type='button' onClick={() => handleSelectSong(song)}>
+              <div key={song.id}>
                 <SongListItem
                   variant='list3'
                   title={song.title}
                   artist={song.artist}
                   thumbnail={song.thumbnail ?? ''}
                   rightSlot={
-                    <span className='inline-flex items-center justify-center'>
+                    <button
+                      className='inline-flex items-center justify-center text-gray-300'
+                      onClick={() => handleSelectSong(song)}
+                    >
                       <IcPlus />
-                    </span>
+                    </button>
                   }
                 />
-              </button>
+              </div>
             ))}
           </div>
         </div>
