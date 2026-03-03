@@ -1,8 +1,89 @@
+'use client';
+
+import { useRef, useState } from 'react';
+import { cn } from '@/shared/lib/cn';
+import { InputField, Button } from '@singchronize/ui';
+import { IcLogo, IcPlus, IcProfile } from '@/shared/assets/icons';
+
 const ProfilePage = () => {
+  const fileRef = useRef<HTMLInputElement | null>(null);
+
+  const [nickname, setNickname] = useState('');
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const openPicker = () => {
+    fileRef.current?.click();
+  };
+
+  const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+  };
+
+  const isValid = nickname.trim().length >= 2 && nickname.trim().length <= 10;
+
   return (
-    <div>
-      <h1>Profile Setup</h1>
-    </div>
+    <main className='flex flex-col items-center'>
+      <div className='flex flex-col items-center gap-8'>
+        <IcLogo />
+        <h1 className='typo-38b text-center text-white'>프로필을 설정해주세요</h1>
+      </div>
+
+      <section className='mt-[8vh] flex flex-col items-center gap-12 w-full'>
+        <div className='relative'>
+          <div className={cn('w-44 h-44 overflow-hidden rounded-full', 'bg-gray-800')}>
+            {previewUrl ? (
+              <img src={previewUrl} alt='' className='h-full w-full object-cover' />
+            ) : (
+              <IcProfile />
+            )}
+          </div>
+
+          <button
+            type='button'
+            onClick={openPicker}
+            className={cn(
+              'absolute -bottom-1 -right-1',
+              'flex h-10 w-10 items-center justify-center rounded-full',
+              'bg-white text-black'
+            )}
+          >
+            <IcPlus />
+          </button>
+
+          <input
+            ref={fileRef}
+            type='file'
+            accept='image/*'
+            className='hidden'
+            onChange={onPickFile}
+          />
+        </div>
+
+        <InputField
+          value={nickname}
+          onChange={(e) => setNickname(e.target.value)}
+          placeholder='어떻게 불러드리면 좋을까요?'
+          maxLength={10}
+          message='2자 이상 10자 이하로 입력해주세요'
+        />
+
+        <div className='flex justify-center w-full'>
+          <Button
+            variant={'primary'}
+            disabled={!isValid}
+            onClick={() => {
+              // TODO: 다음 단계로 이동
+            }}
+          >
+            다음으로 넘어가기
+          </Button>
+        </div>
+      </section>
+    </main>
   );
 };
 

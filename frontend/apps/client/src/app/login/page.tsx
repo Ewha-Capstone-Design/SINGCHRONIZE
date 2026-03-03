@@ -5,7 +5,7 @@ import { SocialLoginButton } from './_components';
 
 const LoginPage = () => {
   return (
-    <main className='mt-35 flex flex-col items-center justify-between w-105 h-124.25'>
+    <main className='flex flex-col items-center gap-34'>
       <div className='flex flex-col items-center gap-8'>
         <IcLogo />
         <h1 className='typo-38b text-center text-white'>
