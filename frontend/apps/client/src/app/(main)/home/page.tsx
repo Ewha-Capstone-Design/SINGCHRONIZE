@@ -1,8 +1,10 @@
+import { cn } from '@/shared/lib/cn';
 import {
   ArchivePreview,
   HomeHeader,
   VocalAnalysisBanner,
   WeeklyChart,
+  SimilarVocalSection,
 } from '@/widgets/home/ui';
 
 const HomePage = () => {
@@ -10,9 +12,17 @@ const HomePage = () => {
     <main>
       <HomeHeader />
 
-      <div className='px-9 pb-9 grid grid-cols-[1fr_400px] gap-9'>
-        <div className='flex flex-col gap-8'>
+      <div
+        className={cn(
+          'px-9 pb-9 grid gap-9',
+          'grid-cols-1',
+          'lg:grid-cols-[minmax(0,1fr)_340px]',
+          'xl:grid-cols-[minmax(0,1fr)_400px]'
+        )}
+      >
+        <div className='flex flex-col gap-8 min-w-0'>
           <VocalAnalysisBanner />
+          <SimilarVocalSection />
           {/* 라이브 기능 디자인 위치 */}
         </div>
 
