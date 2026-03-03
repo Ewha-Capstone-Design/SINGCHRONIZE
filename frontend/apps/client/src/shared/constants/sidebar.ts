@@ -8,7 +8,7 @@ import {
 } from '@/shared/assets/icons';
 
 export const SIDEBAR_ITEMS = [
-  { id: 'home', label: '홈', Icon: IcHome, href: '/' },
+  { id: 'home', label: '홈', Icon: IcHome, href: '/home' },
   { id: 'recommend', label: '보컬 분석', Icon: IcAnalyze, href: '/recommend' },
   { id: 'live', label: '온라인 버스킹', Icon: IcLive, href: '/live' },
   { id: 'library', label: '노래방 키트', Icon: IcSing, href: '/library' },

@@ -1,15 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-
+import { useNavigate } from '@/shared/lib/navigation';
 import { FlowHeader, StepAnalyze, StepGenre, StepSituation } from './_components';
 import { StepRecord } from '@/features/record';
 import { StepRanking } from '@/features/ranking';
 import { InternalRecommendStep, RECOMMEND_STEPS } from '@/shared/types/recommend';
 
 const RecommendPage = () => {
-  const router = useRouter();
+  const { back } = useNavigate();
 
   const [step, setStep] = useState<InternalRecommendStep>('record');
 
@@ -22,7 +21,7 @@ const RecommendPage = () => {
     const currentIndex = RECOMMEND_STEPS.indexOf(step);
 
     if (currentIndex <= 0) {
-      router.back();
+      back();
       return;
     }
 
