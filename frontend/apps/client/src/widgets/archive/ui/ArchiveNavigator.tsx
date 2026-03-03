@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useNavigate } from '@/shared/lib/navigation';
 import { SituationCard, GenreCard, SectionTab } from '@/shared/components';
 import type { SectionTabItem } from '@/shared/components/SectionTab';
 import type { SituationKey, GenreKey } from '@/shared/types/category';
@@ -15,10 +15,10 @@ type ArchiveNavigatorProps = {
 };
 
 const ArchiveNavigator = ({ tab, tabs, onChangeTab }: ArchiveNavigatorProps) => {
-  const router = useRouter();
+  const { go, dynamic } = useNavigate();
 
   const handleClickCategory = (key: GenreKey | SituationKey) => {
-    router.push(`/archive/${key}`);
+    go(dynamic.archiveCategory(key));
   };
 
   return (

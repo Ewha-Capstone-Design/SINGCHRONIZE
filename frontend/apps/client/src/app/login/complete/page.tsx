@@ -1,7 +1,12 @@
+'use client';
+
+import { useNavigate } from '@/shared/lib/navigation';
 import { IcLogo } from '@/shared/assets/icons';
 import { Button } from '@singchronize/ui';
 
 const CompletePage = () => {
+  const { go, ROUTES } = useNavigate();
+
   return (
     <div className='flex justify-center items-center'>
       <main className='flex flex-col items-center justify-between gap-18'>
@@ -16,7 +21,7 @@ const CompletePage = () => {
 
         <div className='flex gap-3'>
           <Button variant={'outline'}>나중에 이용하기</Button>
-          <Button>로그인 하러가기</Button>
+          <Button onClick={() => go(ROUTES.home)}>로그인 하러가기</Button>
         </div>
       </main>
     </div>

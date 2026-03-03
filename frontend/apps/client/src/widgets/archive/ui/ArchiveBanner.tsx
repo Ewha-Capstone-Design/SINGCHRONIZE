@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useNavigate } from '@/shared/lib/navigation';
 import { cn } from '@/shared/lib/cn';
 import { SituationCard, GenreCard } from '@/shared/components';
 import { IcBack } from '@/shared/assets/icons';
@@ -12,11 +12,11 @@ type ArchiveBannerProps = {
 };
 
 const ArchiveBanner = ({ variant, category }: ArchiveBannerProps) => {
-  const router = useRouter();
+  const { back } = useNavigate();
   const isDetail = variant === 'detail';
 
   const handleBack = () => {
-    router.back();
+    back();
   };
 
   const getTitle = () => {

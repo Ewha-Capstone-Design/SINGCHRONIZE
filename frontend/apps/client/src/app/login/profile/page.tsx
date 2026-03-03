@@ -1,11 +1,14 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { useNavigate } from '@/shared/lib/navigation';
 import { cn } from '@/shared/lib/cn';
 import { InputField, Button } from '@singchronize/ui';
 import { IcLogo, IcPlus, IcProfile } from '@/shared/assets/icons';
 
 const ProfilePage = () => {
+  const { go, ROUTES } = useNavigate();
+
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const [nickname, setNickname] = useState('');
@@ -76,7 +79,8 @@ const ProfilePage = () => {
             variant={'primary'}
             disabled={!isValid}
             onClick={() => {
-              // TODO: 다음 단계로 이동
+              // TODO: 프로필 저장 API 호출
+              go(ROUTES.login.taste);
             }}
           >
             다음으로 넘어가기
