@@ -30,8 +30,13 @@ const SimilarVocalSection = () => {
   return (
     <section className={cn('w-full')}>
       <div className='flex flex-col gap-3'>
-        <SectionHeader title='나랑 닮은 목소리의 pick!' />
-        <SectionTab items={tabs} value={tab} onChange={changeTab} />
+        <SectionHeader title='나랑 닮은 목소리의 pick!' textClassName='typo-28b' />
+        <SectionTab
+          items={tabs}
+          value={tab}
+          onChange={changeTab}
+          textClassName='typo-20sb'
+        />
       </div>
 
       <div className='mt-6 w-full overflow-x-auto scrollbar-hide'>

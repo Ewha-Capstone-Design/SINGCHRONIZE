@@ -23,7 +23,7 @@ const HomePage = () => {
         <div className='flex flex-col gap-8 min-w-0'>
           <VocalAnalysisBanner />
           <SimilarVocalSection />
-          {/* 라이브 기능 디자인 위치 */}
+          {/* TODO: 라이브 기능 디자인 위치 */}
         </div>
 
         <div className='flex flex-col gap-12'>

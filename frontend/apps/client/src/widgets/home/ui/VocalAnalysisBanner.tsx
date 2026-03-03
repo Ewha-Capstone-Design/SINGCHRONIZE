@@ -22,7 +22,7 @@ const VocalAnalysisBanner = () => {
       />
       <div className='absolute inset-0 bg-black/60' />
 
-      <div className='relative z-10 px-24 flex flex-col items-center justify-center gap-7 w-full h-76'>
+      <div className='relative z-10 flex flex-col items-center justify-center gap-7 w-full h-76'>
         <ImgMainTitle />
         <Button variant={'primary'} onClick={() => go(ROUTES.recommend)}>
           보컬 분석 받아보기

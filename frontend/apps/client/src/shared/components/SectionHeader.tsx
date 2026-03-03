@@ -9,6 +9,7 @@ type SectionHeaderProps = {
   right?: ReactNode;
   onMoreClick?: () => void;
   className?: string;
+  textClassName?: string;
 };
 
 const SectionHeader = ({
@@ -17,11 +18,14 @@ const SectionHeader = ({
   right,
   onMoreClick,
   className,
+  textClassName,
 }: SectionHeaderProps) => {
+  const titleClassName = textClassName ?? 'typo-24b';
+
   return (
     <div className={cn('flex items-end justify-between gap-4', className)}>
       <div className='flex flex-col'>
-        <h2 className='typo-24b text-white'>{title}</h2>
+        <h2 className={cn(titleClassName, 'text-white')}>{title}</h2>
         {description ? <p className='typo-16r text-gray-400'>{description}</p> : null}
       </div>
 
