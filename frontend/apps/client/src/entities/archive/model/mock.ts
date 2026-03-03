@@ -1,4 +1,6 @@
 import type { ArchiveSectionAPiType } from '../model/types';
+import { toArchiveUi } from './mapper';
+import type { ArchiveApiType, ArchiveUiType } from './types';
 
 export const MOCK_ARCHIVE_HISTORY: ArchiveSectionAPiType = {
   rec_id: 'rec-20260110',
@@ -19,3 +21,36 @@ export const MOCK_ARCHIVE_HISTORY: ArchiveSectionAPiType = {
     },
   ],
 };
+
+export const MOCK_ARCHIVE: ArchiveApiType = {
+  genres: ['rnb', 'pop', 'ballad', 'dance'],
+  situations: ['mood', 'friend', 'party', 'ending'],
+  items: [
+    {
+      id: 'a1',
+      title: 'NOT CUTE ANYMORE',
+      artist: '가수',
+      album_cover: null,
+      match_rate: 100,
+      is_liked: true,
+    },
+    {
+      id: 'a2',
+      title: '항해',
+      artist: 'AKMU (악뮤)',
+      album_cover: null,
+      match_rate: 97,
+      is_liked: false,
+    },
+    {
+      id: 'a3',
+      title: 'Good Goodbye',
+      artist: '화사 (HWASA)',
+      album_cover: null,
+      match_rate: 94,
+      is_liked: false,
+    },
+  ],
+};
+
+export const MOCK_ARCHIVE_UI: ArchiveUiType = toArchiveUi(MOCK_ARCHIVE);

@@ -28,7 +28,7 @@ const ArtistCard = ({ artist, isSelected, onToggle }: ArtistCardProps) => {
             className='w-full h-full object-cover'
           />
         ) : (
-          <div className='w-full h-full bg-white/10' />
+          <div className='w-full h-full bg-white-10' />
         )}
 
         <div className='absolute inset-0 bg-black/60' />

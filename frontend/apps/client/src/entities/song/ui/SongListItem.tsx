@@ -133,24 +133,26 @@ const SongListItem = ({
       </div>
 
       {/* [오른쪽] 액션 영역 */}
-      <div className='flex items-center'>
-        {/* list3: 하트 + 더보기 */}
-        {variant === 'list3' ? (
-          rightSlot ? (
-            <div className='flex items-center'>{rightSlot}</div>
-          ) : (
-            <div className='flex items-center gap-1.25'>
-              <LikeIconButton isLiked={isLiked} onClick={handleLikeClick} />
-              <MoreActionButton onClick={handleMoreClick} />
-            </div>
-          )
-        ) : null}
+      {variant !== 'list4' && (
+        <div className='flex items-center'>
+          {/* list3: 하트 + 더보기 */}
+          {variant === 'list3' ? (
+            rightSlot ? (
+              <div className='flex items-center'>{rightSlot}</div>
+            ) : (
+              <div className='flex items-center gap-1.25'>
+                <LikeIconButton isLiked={isLiked} onClick={handleLikeClick} />
+                <MoreActionButton onClick={handleMoreClick} />
+              </div>
+            )
+          ) : null}
 
-        {/* list2, list5: 하트 */}
-        {(variant === 'list2' || variant === 'list5') && (
-          <LikeIconButton isLiked={isLiked} onClick={handleLikeClick} />
-        )}
-      </div>
+          {/* list2, list5: 하트 */}
+          {variant === 'list2' || variant === 'list5' ? (
+            <LikeIconButton isLiked={isLiked} onClick={handleLikeClick} />
+          ) : null}
+        </div>
+      )}
     </div>
   );
 };
