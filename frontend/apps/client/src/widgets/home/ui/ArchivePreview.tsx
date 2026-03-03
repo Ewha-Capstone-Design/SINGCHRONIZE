@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-
+import { useNavigate } from '@/shared/lib/navigation';
 import { SectionHeader, SelectChip } from '@/shared/components';
 import { GenreKey } from '@/shared/types/category';
 import { GENRE_ITEMS } from '@/shared/constants/genre';
@@ -16,6 +16,8 @@ type ArchivePreviewProps = {
 };
 
 export const ArchivePreview = ({ className }: ArchivePreviewProps) => {
+  const { go, ROUTES } = useNavigate();
+
   const [filter, setFilter] = useState<ArchiveFilter>('all');
 
   // TODO: 추후 API로 필터링
@@ -37,7 +39,7 @@ export const ArchivePreview = ({ className }: ArchivePreviewProps) => {
 
   return (
     <section className={className}>
-      <SectionHeader title='나의 아카이브' onMoreClick={() => {}} />
+      <SectionHeader title='나의 아카이브' onMoreClick={() => go(ROUTES.archive)} />
 
       <div className='mt-4 flex flex-wrap items-center gap-2'>
         {filterChips.map((chip) => (
