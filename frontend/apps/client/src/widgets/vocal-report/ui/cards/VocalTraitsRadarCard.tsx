@@ -37,8 +37,8 @@ const RadarAngleTick = ({ x, y, payload }: TickProps) => {
 const VocalTraitsRadarCard = ({ data }: { data: RadarDatum[] }) => {
   return (
     <InsightCard title='보컬 특성' description='5가지 기준으로 한눈에 살펴봐요!'>
-      <div className='h-60 md:h-full'>
-        <ResponsiveContainer width='100%' height='120%'>
+      <div className='mt-2 h-60 md:h-full'>
+        <ResponsiveContainer width='100%' height='110%'>
           <RadarChart data={data} outerRadius='70%'>
             <defs>
               <linearGradient id='vocalRadarFill' x1='0' y1='0' x2='0' y2='1'>
