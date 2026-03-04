@@ -7,7 +7,11 @@ export const ROUTES = {
     taste: '/login/taste',
   },
   home: '/home',
-  recommend: '/recommend',
+  recommend: {
+    root: '/recommend',
+    analyze: '/recommend/analyze',
+    result: '/recommend/result',
+  },
   live: {
     root: '/live',
     room: '/live/room',

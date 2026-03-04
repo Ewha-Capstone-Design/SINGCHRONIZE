@@ -1,1 +1,1 @@
-export { default as ImgMainTitle } from './img_main_title.svg';
+export { default as ImgMainTitle } from './ImgMainTitle';
