@@ -6,7 +6,7 @@ import { cn } from '../lib/cn';
 import { SIDEBAR_ITEMS } from '../constants/sidebar';
 import { IcLogo } from '../assets/icons';
 
-const HIDE_SIDEBAR_PATHS = ['/login', '/recommend'];
+const HIDE_SIDEBAR_PATHS = ['/login', '/recommend/analyze', '/recommend/result'];
 
 const Sidebar = () => {
   const pathname = usePathname();
