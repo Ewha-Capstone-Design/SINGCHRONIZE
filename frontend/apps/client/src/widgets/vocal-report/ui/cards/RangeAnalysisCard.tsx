@@ -12,6 +12,7 @@ import {
 import type { RangePoint } from '@/entities/vocal-report';
 import { ReportCard } from '@/shared/components';
 import { cn } from '@/shared/lib/cn';
+import { XAxisTick, YAxisTick } from './AxisTicks';
 
 const StatPill = ({ label, value }: { label: string; value: string }) => {
   return (
@@ -53,8 +54,8 @@ const RangeAnalysisCard = ({
               <AreaChart data={data} margin={{ left: 0, right: 10, top: 10, bottom: 0 }}>
                 <defs>
                   <linearGradient id='vocalRangeFill' x1='0' y1='0' x2='0' y2='1'>
-                    <stop offset='0%' stopColor='var(--semantic-chart-primary-20)' />
-                    <stop offset='100%' stopColor='transparent' />
+                    <stop stopColor='var(--semantic-chart-primary-30)' />
+                    <stop offset='1' stopColor='var(--semantic-chart-primary-end)' />
                   </linearGradient>
                 </defs>
 
@@ -62,14 +63,8 @@ const RangeAnalysisCard = ({
                   strokeDasharray='3 3'
                   stroke='var(--semantic-chart-grid)'
                 />
-                <XAxis
-                  dataKey='note'
-                  tick={{ fill: 'var(--semantic-chart-axis)', fontSize: 12 }}
-                />
-                <YAxis
-                  domain={[0, 100]}
-                  tick={{ fill: 'var(--semantic-chart-axis)', fontSize: 12 }}
-                />
+                <XAxis dataKey='note' tick={<XAxisTick />} />
+                <YAxis domain={[0, 100]} tick={<YAxisTick />} />
 
                 <ReferenceLine
                   x={comfort.from}
@@ -89,7 +84,7 @@ const RangeAnalysisCard = ({
                   dataKey='score'
                   stroke='var(--semantic-chart-primary)'
                   fill='url(#vocalRangeFill)'
-                  strokeWidth={2}
+                  strokeWidth={1}
                   dot={{ r: 3, fill: 'var(--semantic-chart-primary)' }}
                 />
               </AreaChart>

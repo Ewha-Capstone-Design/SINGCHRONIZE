@@ -9,10 +9,11 @@
 
     /* Chart */
     --semantic-chart-primary: var(--semantic-brand-primary);
-    --semantic-chart-primary-20: var(--yellow-500-20);
+    --semantic-chart-primary-30: var(--yellow-500-30);
+    --semantic-chart-primary-end: var(--yellow-900-20);
 
     --semantic-chart-grid: var(--white-10);
-    --semantic-chart-axis: var(--gray-400);
+    --semantic-chart-axis: var(--gray-200);
     --semantic-chart-axis-strong: var(--gray-100);
 
     --semantic-chart-muted-fill: var(--white-10);

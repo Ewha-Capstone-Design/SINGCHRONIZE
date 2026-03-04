@@ -1,6 +1,7 @@
 @layer base {
   :root {
     /* Yellow */
+    --yellow-900-20: rgb(137 147 0 / 0.2);
     --yellow-900: #899300;
     --yellow-800: #a0bc00;
     --yellow-700: #aed400;

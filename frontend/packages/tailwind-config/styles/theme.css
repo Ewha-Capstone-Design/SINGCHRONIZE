@@ -1,5 +1,6 @@
 @theme {
   /* Yellow */
+  --color-yellow-900-20: var(--yellow-900-20);
   --color-yellow-900: var(--yellow-900);
   --color-yellow-800: var(--yellow-800);
   --color-yellow-700: var(--yellow-700);

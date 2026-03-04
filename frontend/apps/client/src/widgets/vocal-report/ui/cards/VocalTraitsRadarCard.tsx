@@ -42,7 +42,8 @@ const VocalTraitsRadarCard = ({ data }: { data: RadarDatum[] }) => {
           <RadarChart data={data} outerRadius='70%'>
             <defs>
               <linearGradient id='vocalRadarFill' x1='0' y1='0' x2='0' y2='1'>
-                <stop stopColor='var(--semantic-chart-primary-20)' />
+                <stop stopColor='var(--semantic-chart-primary-30)' />
+                <stop offset='1' stopColor='var(--semantic-chart-primary-end)' />
               </linearGradient>
             </defs>
 
@@ -58,7 +59,7 @@ const VocalTraitsRadarCard = ({ data }: { data: RadarDatum[] }) => {
               dataKey='value'
               stroke='var(--semantic-chart-primary)'
               fill='url(#vocalRadarFill)'
-              strokeWidth={2}
+              strokeWidth={0.7}
               dot={{ r: 3, fill: 'var(--semantic-chart-primary)' }}
             />
           </RadarChart>

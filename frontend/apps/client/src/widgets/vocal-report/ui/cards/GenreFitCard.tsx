@@ -10,49 +10,7 @@ import {
 } from 'recharts';
 import type { GenreDatum } from '@/entities/vocal-report';
 import { ReportCard } from '@/shared/components';
-
-type AxisTickProps = {
-  x?: number;
-  y?: number;
-  payload?: { value?: string | number };
-};
-
-const XAxisTick = ({ x, y, payload }: AxisTickProps) => {
-  const value = payload?.value ?? '';
-
-  return (
-    <g transform={`translate(${x ?? 0},${y ?? 0})`}>
-      <text
-        x={0}
-        y={0}
-        dy={16}
-        textAnchor='middle'
-        className='typo-14r fill-(--semantic-chart-axis-strong)'
-      >
-        {String(value)}
-      </text>
-    </g>
-  );
-};
-
-const YAxisTick = ({ x, y, payload }: AxisTickProps) => {
-  const value = payload?.value ?? '';
-
-  return (
-    <g transform={`translate(${x ?? 0},${y ?? 0})`}>
-      <text
-        x={0}
-        y={0}
-        dx={-8}
-        dy={4}
-        textAnchor='end'
-        className='typo-12r fill-(--semantic-chart-axis)'
-      >
-        {String(value)}
-      </text>
-    </g>
-  );
-};
+import { XAxisTick, YAxisTick } from './AxisTicks';
 
 type BarShapeProps = {
   x?: number;
@@ -97,7 +55,7 @@ const GenreFitCard = ({ data, bestGenre }: { data: GenreDatum[]; bestGenre: stri
     ...d,
     fill:
       d.genre === bestGenre
-        ? 'var(--semantic-chart-primary-20)'
+        ? 'url(#vocalBestGenreFill)'
         : 'var(--semantic-chart-muted-fill)',
   }));
 
@@ -113,6 +71,13 @@ const GenreFitCard = ({ data, bestGenre }: { data: GenreDatum[]; bestGenre: stri
         <div className='pr-13.5 max-w-137 w-full h-55'>
           <ResponsiveContainer width='100%' height='100%'>
             <BarChart data={chartData} barCategoryGap={0} barGap={0}>
+              <defs>
+                <linearGradient id='vocalBestGenreFill' x1='0' y1='0' x2='0' y2='1'>
+                  <stop stopColor='var(--semantic-chart-primary-30)' />
+                  <stop offset='1' stopColor='var(--semantic-chart-primary-end)' />
+                </linearGradient>
+              </defs>
+
               <CartesianGrid
                 strokeDasharray='3 3'
                 stroke='var(--semantic-chart-grid)'
