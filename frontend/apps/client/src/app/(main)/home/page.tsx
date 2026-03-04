@@ -2,10 +2,10 @@ import { cn } from '@/shared/lib/cn';
 import {
   ArchivePreview,
   HomeHeader,
-  VocalAnalysisBanner,
   WeeklyChart,
   SimilarVocalSection,
 } from '@/widgets/home/ui';
+import { VocalAnalysisBanner } from '@/widgets/vocal-analze/ui';
 
 const HomePage = () => {
   return (
@@ -21,7 +21,7 @@ const HomePage = () => {
         )}
       >
         <div className='flex flex-col gap-8 min-w-0'>
-          <VocalAnalysisBanner />
+          <VocalAnalysisBanner size='compact' />
           <SimilarVocalSection />
           {/* TODO: 라이브 기능 디자인 위치 */}
         </div>
