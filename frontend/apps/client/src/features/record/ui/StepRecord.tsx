@@ -74,7 +74,7 @@ const StepRecord = ({ onNext }: { onNext: () => void }) => {
             finish();
             onNext();
           }}
-          canDone={canDone}
+          canDone={true} // TODO: canDone로 교체
         />
       </div>
     </>
