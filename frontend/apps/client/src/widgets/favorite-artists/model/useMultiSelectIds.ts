@@ -23,9 +23,6 @@ export const useMultiSelectIds = ({ initialSelectedIds, maxSelect }: Params) => 
         const exists = prev.includes(id);
         if (exists) return prev.filter((x) => x !== id);
 
-        // 최대 선택 제한
-        if (maxSelect !== undefined && prev.length >= maxSelect) return prev;
-
         return [...prev, id];
       });
     },
