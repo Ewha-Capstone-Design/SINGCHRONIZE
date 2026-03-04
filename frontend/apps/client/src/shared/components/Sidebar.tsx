@@ -23,9 +23,9 @@ const Sidebar = () => {
 
       <nav className='flex flex-col gap-3'>
         {SIDEBAR_ITEMS.map((item) => {
-          const isRoot = item.href === '/';
+          const isRoot = item.href === '/home';
           const isActive = isRoot
-            ? pathname === '/'
+            ? pathname === '/home'
             : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
           return (
