@@ -2,23 +2,23 @@ import type { ReactNode } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { IcArrowRight } from '../assets/icons';
 
-type InsightCardProps = {
+type ReportCardProps = {
   title: string;
   description?: string;
   onClick?: () => void;
-  right?: ReactNode;
+  hideArrow?: boolean;
   className?: string;
   children: ReactNode;
 };
 
-const InsightCard = ({
+const ReportCard = ({
   title,
   description,
   onClick,
-  right,
+  hideArrow = false,
   className,
   children,
-}: InsightCardProps) => {
+}: ReportCardProps) => {
   return (
     <section
       className={cn(
@@ -32,9 +32,11 @@ const InsightCard = ({
           {description ? <p className='typo-14r text-gray-400'>{description}</p> : null}
         </div>
 
-        <button className='shrink-0' onClick={onClick}>
-          {right ?? <IcArrowRight />}
-        </button>
+        {!hideArrow ? (
+          <button type='button' className='shrink-0' onClick={onClick}>
+            <IcArrowRight />
+          </button>
+        ) : null}
       </header>
 
       <div className='flex-1'>{children}</div>
@@ -42,4 +44,4 @@ const InsightCard = ({
   );
 };
 
-export default InsightCard;
+export default ReportCard;

@@ -9,7 +9,7 @@ import {
   CartesianGrid,
 } from 'recharts';
 import type { GenreDatum } from '@/entities/vocal-report';
-import { InsightCard } from '@/shared/components';
+import { ReportCard } from '@/shared/components';
 
 type AxisTickProps = {
   x?: number;
@@ -102,7 +102,7 @@ const GenreFitCard = ({ data, bestGenre }: { data: GenreDatum[]; bestGenre: stri
   }));
 
   return (
-    <InsightCard title='장르 적합도' description='6가지 장르로 적합도를 비교해봐요!'>
+    <ReportCard title='장르 적합도' description='6가지 장르로 적합도를 비교해봐요!'>
       <div className='pt-4 flex flex-col gap-4 md:flex-row md:justify-between h-full md:items-end'>
         <p className='typo-18sb text-white whitespace-pre-line shrink-0'>
           {`지연님에게 가장 잘 맞는\n장르는 `}
@@ -141,7 +141,7 @@ const GenreFitCard = ({ data, bestGenre }: { data: GenreDatum[]; bestGenre: stri
           </ResponsiveContainer>
         </div>
       </div>
-    </InsightCard>
+    </ReportCard>
   );
 };
 

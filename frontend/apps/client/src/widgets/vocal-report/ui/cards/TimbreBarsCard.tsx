@@ -1,11 +1,11 @@
 import type { TimbreDatum } from '@/entities/vocal-report';
-import { InsightCard } from '@/shared/components';
+import { ReportCard } from '@/shared/components';
 
 const clamp100 = (n: number) => (n < 0 ? 0 : n > 100 ? 100 : n);
 
 const TimbreBarsCard = ({ data }: { data: TimbreDatum[] }) => {
   return (
-    <InsightCard title='음색 분석' description='3가지 포인트로 목소리 성향을 짚어봐요!'>
+    <ReportCard title='음색 분석' description='3가지 포인트로 목소리 성향을 짚어봐요!'>
       <div className='px-8 py-10 flex flex-col gap-3'>
         {data.map((item) => {
           const v = clamp100(item.value);
@@ -24,7 +24,7 @@ const TimbreBarsCard = ({ data }: { data: TimbreDatum[] }) => {
           );
         })}
       </div>
-    </InsightCard>
+    </ReportCard>
   );
 };
 

@@ -10,7 +10,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import type { RangePoint } from '@/entities/vocal-report';
-import { InsightCard } from '@/shared/components';
+import { ReportCard } from '@/shared/components';
 import { cn } from '@/shared/lib/cn';
 
 const StatPill = ({ label, value }: { label: string; value: string }) => {
@@ -37,7 +37,7 @@ const RangeAnalysisCard = ({
   stats: { max: string; avg: string; min: string };
 }) => {
   return (
-    <InsightCard title='음역대 분석' description='가장 편한 음역을 확인해봐요!'>
+    <ReportCard title='음역대 분석' description='가장 편한 음역을 확인해봐요!'>
       <div className='pt-4 flex flex-col gap-4 md:flex-row md:justify-between h-full md:items-end'>
         <p className='typo-18sb text-white whitespace-pre-line shrink-0'>
           {`지연님에게 가장 편안한\n음역대는 `}
@@ -103,7 +103,7 @@ const RangeAnalysisCard = ({
           </div>
         </div>
       </div>
-    </InsightCard>
+    </ReportCard>
   );
 };
 
