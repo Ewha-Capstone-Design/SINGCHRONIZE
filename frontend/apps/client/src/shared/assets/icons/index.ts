@@ -1,6 +1,7 @@
 export { default as IcAlarmOff } from './ic_alarm_off.svg';
 export { default as IcAlarmOn } from './ic_alarm_on.svg';
 export { default as IcAnalyze } from './ic_analyze.svg';
+export { default as IcArrowRight } from './ic_arrow_right.svg';
 export { default as IcBack } from './ic_back.svg';
 export { default as IcClose } from './ic_close.svg';
 export { default as IcDownload } from './ic_download.svg';
