@@ -12,16 +12,42 @@ type AudioPlayerProps = {
 const AudioPlayer = ({ src, className }: AudioPlayerProps) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const barRef = useRef<HTMLDivElement | null>(null);
+  const rafRef = useRef<number | null>(null);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
 
-  const progressPercent = useMemo(() => {
+  const progress = useMemo(() => {
     if (duration <= 0) return 0;
-    const v = (currentTime / duration) * 100;
-    return Math.min(100, Math.max(0, v));
+    const v = currentTime / duration;
+    return Math.min(1, Math.max(0, v));
   }, [currentTime, duration]);
+
+  const stopRaf = () => {
+    if (rafRef.current === null) return;
+    cancelAnimationFrame(rafRef.current);
+    rafRef.current = null;
+  };
+
+  const startRaf = () => {
+    stopRaf();
+
+    const tick = () => {
+      const audio = audioRef.current;
+      if (!audio) return;
+
+      setCurrentTime(audio.currentTime);
+
+      if (!audio.paused && !audio.ended) {
+        rafRef.current = requestAnimationFrame(tick);
+      } else {
+        rafRef.current = null;
+      }
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+  };
 
   const togglePlay = async () => {
     const audio = audioRef.current;
@@ -30,15 +56,16 @@ const AudioPlayer = ({ src, className }: AudioPlayerProps) => {
     if (audio.paused) {
       try {
         await audio.play();
-        setIsPlaying(true);
+        // play 이벤트에서 isPlaying/startRaf 동기화
       } catch {
         setIsPlaying(false);
+        stopRaf();
       }
       return;
     }
 
     audio.pause();
-    setIsPlaying(false);
+    // pause 이벤트에서 isPlaying/stopRaf 동기화
   };
 
   const onLoadedMetadata = () => {
@@ -47,14 +74,14 @@ const AudioPlayer = ({ src, className }: AudioPlayerProps) => {
     setDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
   };
 
-  const onTimeUpdate = () => {
+  const onEnded = () => {
     const audio = audioRef.current;
     if (!audio) return;
-    setCurrentTime(audio.currentTime);
-  };
 
-  const onEnded = () => {
+    stopRaf();
     setIsPlaying(false);
+
+    setCurrentTime(audio.duration || 0);
     setCurrentTime(0);
   };
 
@@ -69,22 +96,52 @@ const AudioPlayer = ({ src, className }: AudioPlayerProps) => {
 
     audio.currentTime = ratio * duration;
     setCurrentTime(audio.currentTime);
+
+    if (!audio.paused) startRaf();
   };
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const syncPlayState = () => setIsPlaying(!audio.paused);
+    const onPlay = () => {
+      setIsPlaying(true);
+      startRaf();
+    };
 
-    audio.addEventListener('play', syncPlayState);
-    audio.addEventListener('pause', syncPlayState);
+    const onPause = () => {
+      setIsPlaying(false);
+      stopRaf();
+      setCurrentTime(audio.currentTime);
+    };
+
+    const onSeeking = () => {
+      setCurrentTime(audio.currentTime);
+    };
+
+    audio.addEventListener('play', onPlay);
+    audio.addEventListener('pause', onPause);
+    audio.addEventListener('seeking', onSeeking);
 
     return () => {
-      audio.removeEventListener('play', syncPlayState);
-      audio.removeEventListener('pause', syncPlayState);
+      audio.removeEventListener('play', onPlay);
+      audio.removeEventListener('pause', onPause);
+      audio.removeEventListener('seeking', onSeeking);
+      stopRaf();
     };
   }, []);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    stopRaf();
+    setIsPlaying(false);
+    setDuration(0);
+    setCurrentTime(0);
+    audio.currentTime = 0;
+    audio.pause();
+  }, [src]);
 
   return (
     <div className={cn('flex items-center gap-2', className)}>
@@ -93,7 +150,6 @@ const AudioPlayer = ({ src, className }: AudioPlayerProps) => {
         src={src}
         preload='metadata'
         onLoadedMetadata={onLoadedMetadata}
-        onTimeUpdate={onTimeUpdate}
         onEnded={onEnded}
       />
 
@@ -115,8 +171,8 @@ const AudioPlayer = ({ src, className }: AudioPlayerProps) => {
         className='w-28 h-1.25 rounded-20 bg-gray-800 overflow-hidden'
       >
         <div
-          className='h-full bg-gray-300 transition-[width] duration-150 ease-linear'
-          style={{ width: `${progressPercent}%` }}
+          className='h-full w-full origin-left bg-gray-300'
+          style={{ transform: `scaleX(${progress})` }}
         />
       </div>
 
