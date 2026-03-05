@@ -1,6 +1,6 @@
 'use client';
 
-import { VocalAnalysisBanner } from '@/widgets/vocal-analze/ui';
+import { VocalAnalysisBanner } from '@/widgets/vocal-analyze/ui';
 import { VocalReportWidget } from '@/widgets/vocal-report/ui';
 
 import { MOCK_VOCAL_REPORT } from '@/entities/vocal-report/model/mock';

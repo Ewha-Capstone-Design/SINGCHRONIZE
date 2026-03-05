@@ -7,7 +7,7 @@ import { StepRecord } from '@/features/record';
 import { StepRanking } from '@/features/ranking';
 import { InternalRecommendStep, RECOMMEND_STEPS } from '@/shared/types/recommend';
 
-const RecommendAnalzePage = () => {
+const RecommendAnalyzePage = () => {
   const { back } = useNavigate();
 
   const [step, setStep] = useState<InternalRecommendStep>('record');
@@ -54,4 +54,4 @@ const RecommendAnalzePage = () => {
   );
 };
 
-export default RecommendAnalzePage;
+export default RecommendAnalyzePage;

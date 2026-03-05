@@ -6,10 +6,10 @@ import { useSectionTab } from '@/shared/hooks';
 import { cn } from '@/shared/lib/cn';
 import { useNavigate } from '@/shared/lib/navigation';
 import { VocalReportWidget } from '@/widgets/vocal-report/ui';
-import { RecommendSongWidget } from '@/widgets/vocal-analze/ui';
+import { RecommendSongWidget } from '@/widgets/vocal-analyze/ui';
 
 import { MOCK_VOCAL_REPORT } from '@/entities/vocal-report/model/mock';
-import { MOCK_GENRE_TABS, MOCK_SITUATION_TABS } from '@/widgets/vocal-analze/model/mock';
+import { MOCK_GENRE_TABS, MOCK_SITUATION_TABS } from '@/widgets/vocal-analyze/model/mock';
 
 const RecommendResultPage = () => {
   const { go, ROUTES } = useNavigate();
