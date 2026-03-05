@@ -1,3 +1,4 @@
+export { default as AudioPlayer } from './AudioPlayer';
 export { default as BaseModal } from './BaseModal';
 export { default as GenreCard } from './GenreCard';
 export { default as ReportCard } from './ReportCard';

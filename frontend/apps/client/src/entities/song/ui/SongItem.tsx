@@ -41,7 +41,7 @@ const SongItem = ({ song, onPlay, dragHandleProps, className }: SongItemProps) =
           <button
             type='button'
             onClick={onPlay}
-            className='cursor-pointer'
+            className='text-white'
             aria-label='미리듣기'
           >
             <IcPlay />

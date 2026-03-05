@@ -5,7 +5,7 @@ import {
   WeeklyChart,
   SimilarVocalSection,
 } from '@/widgets/home/ui';
-import { VocalAnalysisBanner } from '@/widgets/vocal-analze/ui';
+import { VocalAnalysisBanner } from '@/widgets/vocal-analyze/ui';
 
 const HomePage = () => {
   return (
