@@ -6,8 +6,10 @@ import { useSectionTab } from '@/shared/hooks';
 import { cn } from '@/shared/lib/cn';
 import { useNavigate } from '@/shared/lib/navigation';
 import { VocalReportWidget } from '@/widgets/vocal-report/ui';
+import { RecommendSongWidget } from '@/widgets/vocal-analze/ui';
 
 import { MOCK_VOCAL_REPORT } from '@/entities/vocal-report/model/mock';
+import { MOCK_GENRE_TABS, MOCK_SITUATION_TABS } from '@/widgets/vocal-analze/model/mock';
 
 const RecommendResultPage = () => {
   const { go, ROUTES } = useNavigate();
@@ -19,6 +21,8 @@ const RecommendResultPage = () => {
     ] as const,
     initialTab: 'report',
   });
+
+  const isReport = tab == 'report';
 
   // TODO: 임시 닉네임 교체 필요
   const username = '지연';
@@ -37,7 +41,7 @@ const RecommendResultPage = () => {
           : `${username}님께 딱 맞는 곡도 만나보세요!`}
       </h1>
 
-      <div className='mt-2 flex flex-col gap-4'>
+      <div className='mt-2 flex flex-col gap-8'>
         <div className='flex justify-between items-center'>
           <SectionTab
             items={tabs}
@@ -45,12 +49,19 @@ const RecommendResultPage = () => {
             onChange={(nextTab) => changeTab(nextTab)}
             textClassName='typo-24b'
           />
-          <AudioPlayer src='' />
+          {isReport && <AudioPlayer src='' />}
         </div>
-        <VocalReportWidget desktopLayout='grid' report={MOCK_VOCAL_REPORT} />
+        {isReport ? (
+          <VocalReportWidget desktopLayout='grid' report={MOCK_VOCAL_REPORT} />
+        ) : (
+          <RecommendSongWidget
+            situationTabs={MOCK_SITUATION_TABS}
+            genreTabs={MOCK_GENRE_TABS}
+          />
+        )}
       </div>
 
-      <div className='flex flex-1 items-center justify-center min-h-20'>
+      <div className='flex flex-1 items-center justify-center gap-3 min-h-20'>
         <Button variant={'outline'} onClick={() => go(ROUTES.home)}>
           홈으로 돌아가기
         </Button>
