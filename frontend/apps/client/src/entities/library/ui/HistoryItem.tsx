@@ -1,5 +1,12 @@
 'use client';
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@singchronize/ui';
+import { IcMore } from '@/shared/assets/icons';
 import { cn } from '@/shared/lib/cn';
 import type { HistoryItemUiType } from '../model/types';
 import { getHistoryTagLabel } from '../model/tags';
@@ -29,20 +36,29 @@ const HistoryItem = ({ item, onEditClick }: HistoryItemProps) => {
 
       <div className='flex flex-1 flex-col gap-4 min-w-0'>
         {/* 음원 정보 */}
-        <div className='flex items-center justify-between gap-6'>
+        <div className='flex justify-between gap-6'>
           <div className='flex flex-1 flex-col min-w-0'>
             <h3 className='typo-24b text-white truncate'>{item.title}</h3>
             <p className='mt-0.5 typo-16r text-gray-200 truncate'>{item.artist}</p>
             <p className='mt-2 typo-16r text-gray-400'>{item.date}</p>
           </div>
 
-          <button
-            type='button'
-            onClick={() => onEditClick?.(item.historyId)}
-            className={cn('typo-16m text-gray-200 shrink-0')}
-          >
-            수정하기
-          </button>
+          {/* 더보기 드롭다운 */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild onClick={() => onEditClick?.(item.historyId)}>
+              <IcMore className='rotate-90 cursor-pointer' />
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent
+              side='bottom'
+              align='end'
+              sideOffset={12}
+              alignOffset={-28}
+            >
+              <DropdownMenuItem>기록 수정하기</DropdownMenuItem>
+              <DropdownMenuItem>기록 삭제하기</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* 태그 */}
