@@ -3,3 +3,4 @@ export * from './dialog/Dialog';
 export * from './tooltip/Tooltip';
 export { default as InputField } from './inputfield/InputField';
 export { default as TextAreaField } from './textareafield/TextAreaField';
+export * from './dropdown-menu/DropdownMenu';
