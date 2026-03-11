@@ -140,7 +140,7 @@ const SongListItem = ({
             rightSlot ? (
               <div className='flex items-center'>{rightSlot}</div>
             ) : (
-              <div className='flex items-center gap-1.25'>
+              <div className='flex items-center gap-4'>
                 <LikeIconButton isLiked={isLiked} onClick={handleLikeClick} />
                 <MoreActionButton onClick={handleMoreClick} />
               </div>
