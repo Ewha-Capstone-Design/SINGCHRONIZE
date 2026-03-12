@@ -47,7 +47,6 @@ async def create_room(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    print(">>> create_room entered")
     """버스킹 방 생성 (로그인 필수)"""
     logger.info(f"방 생성 요청: user={current_user.id}, title={room_data.title}")
 
