@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head><title>🎤 오디오 테스트</title></head>
+<body>
+    <h1>🎵 오디오 스트리밍 테스트</h1>
+    <input type="text" id="roomId" value="room1">
+    <button onclick="startBusking()">🎤 가수 (마이크 켜기)</button>
+    <button onclick="joinAudience()">👂 관객 (듣기 시작)</button>
+    <div id="status">상태: 대기중</div>
+
+    <script>
+        let ws, mediaRecorder, sourceBuffer, mediaSource, queue = [];
+
+        async function startBusking() {
+            const roomId = document.getElementById("roomId").value;
+            ws = new WebSocket(`ws://localhost:8000/api/v1/busking/ws/audio/${roomId}`);
+            ws.onopen = async () => {
+                document.getElementById("status").innerText = "🎤 가수가 노래 중...";
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+                // 브라우저가 지원하는 코덱 자동 선택
+                const types = ['audio/webm; codecs="opus"', 'audio/webm', 'audio/ogg; codecs="opus"'];
+                let selectedType = types.find(t => MediaRecorder.isTypeSupported(t));
+
+                mediaRecorder = new MediaRecorder(stream, { mimeType: selectedType });
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0 && ws.readyState === 1) ws.send(e.data);
+                };
+                mediaRecorder.start(200);
+            };
+        }
+
+        async function joinAudience() {
+            const roomId = document.getElementById("roomId").value;
+            const audio = new Audio();
+            mediaSource = new MediaSource();
+            audio.src = URL.createObjectURL(mediaSource);
+
+            mediaSource.onsourceopen = () => {
+                // 가수와 동일한 타입으로 설정 (기본값 webm/opus)
+                sourceBuffer = mediaSource.addSourceBuffer('audio/webm; codecs="opus"');
+                sourceBuffer.onupdateend = () => {
+                    if (queue.length > 0 && !sourceBuffer.updating) sourceBuffer.appendBuffer(queue.shift());
+                };
+            };
+
+            ws = new WebSocket(`ws://localhost:8000/api/v1/busking/ws/audio/${roomId}`);
+            ws.binaryType = "arraybuffer";
+            ws.onmessage = (e) => {
+                if (mediaSource.readyState === 'open' && sourceBuffer && !sourceBuffer.updating) {
+                    sourceBuffer.appendBuffer(e.data);
+                } else {
+                    queue.push(e.data);
+                }
+                if (audio.paused) audio.play().catch(() => {});
+            };
+            document.getElementById("status").innerText = "👂 관객 모드 활성화!";
+        }
+    </script>
+</body>
+</html>

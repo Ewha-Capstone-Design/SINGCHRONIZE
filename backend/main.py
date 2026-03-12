@@ -38,12 +38,15 @@ app.include_router(songs.router)
 app.include_router(library.router)
 app.include_router(busking.router)
 app.include_router(oauth_test_router)
-app.mount("/", StaticFiles(directory=".", html=True), name="static")
 
 
 @app.get("/health", status_code=status.HTTP_200_OK)
 async def health_check():
     return {"status": "ok"}
+
+
+# 테스트용 HTML 파일만 서빙 (루트 디렉토리 노출 방지)
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 
 if __name__ == "__main__":
