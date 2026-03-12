@@ -660,6 +660,7 @@ paths:
       tags:
       - Busking
       summary: Create Room
+      description: 버스킹 방 생성 (로그인 필수)
       operationId: create_room_api_v1_busking_rooms_post
       security:
       - HTTPBearer: []

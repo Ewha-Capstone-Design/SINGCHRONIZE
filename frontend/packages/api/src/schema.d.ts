@@ -271,7 +271,10 @@ export interface paths {
          */
         get: operations["get_rooms_api_v1_busking_rooms_get"];
         put?: never;
-        /** Create Room */
+        /**
+         * Create Room
+         * @description 버스킹 방 생성 (로그인 필수)
+         */
         post: operations["create_room_api_v1_busking_rooms_post"];
         delete?: never;
         options?: never;
