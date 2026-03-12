@@ -50,7 +50,7 @@ async def update_profile(
     service = UserService(db)
     updated = await service.update_profile(
         user_id=current_user.id,
-        nickname=body.nickname,
+        nickname=update_data.get("nickname"),
     )
     return UserResponse.model_validate(updated)
 

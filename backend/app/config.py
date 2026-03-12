@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str
 
     # JWT
-    SECRET_KEY: str = "sb_secret_u8SuM16H8Gxi5X9fX7u_Dg_K_Ee1rzi"
+    SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
