@@ -1,10 +1,14 @@
 """비동기 데이터베이스 설정 (Supabase/PostgreSQL 최적화)"""
+import logging
+import os
 import ssl
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
 from typing import AsyncGenerator
 
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 Base = declarative_base()
 
@@ -19,7 +23,7 @@ if _db_url and _db_url.startswith("postgresql://"):
 if "?" in _db_url:
     _db_url = _db_url.split("?")[0]
 
-print(f"🔥 [DB 연결 설정] URL: {_db_url}")
+logger.info("[DB] 엔진 초기화 중 (URL은 보안상 출력 생략)")
 
 # 2. SSL 컨텍스트 생성 (Supabase 필수)
 ssl_context = ssl.create_default_context()
@@ -28,9 +32,10 @@ ssl_context.verify_mode = ssl.CERT_NONE
 
 # 3. 엔진 생성 (변수 쓰지 않고 직접 주입)
 # 이렇게 하면 설정이 무시될 수가 없습니다.
+_debug = os.getenv("DEBUG", "false").lower() == "true"
 engine = create_async_engine(
     _db_url,
-    echo=True,           # 쿼리 로그 출력
+    echo=_debug,         # DEBUG=true 환경에서만 쿼리 로그 출력
     pool_size=10,        # 커넥션 풀 크기
     max_overflow=20,     # 최대 허용 오버플로우
     pool_pre_ping=True,  # 연결 끊김 자동 복구
