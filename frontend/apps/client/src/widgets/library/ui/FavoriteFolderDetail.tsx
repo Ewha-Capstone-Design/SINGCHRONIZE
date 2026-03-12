@@ -1,12 +1,14 @@
 'use client';
 
 import { Button } from '@singchronize/ui';
+import { cn } from '@/shared/lib/cn';
+import { useModal } from '@/shared/hooks';
 import { SongListItem } from '@/entities/song/ui';
 import type {
   FavoriteFolderUiType,
   FavoriteSongUiType,
 } from '@/entities/library/model/types';
-import { cn } from '@/shared/lib/cn';
+import { AddFavoriteModal } from '@/features/add-favorite';
 
 interface FavoriteFolderDetailProps {
   folder: FavoriteFolderUiType;
@@ -14,9 +16,11 @@ interface FavoriteFolderDetailProps {
 }
 
 const FavoriteFolderDetail = ({ folder, songs }: FavoriteFolderDetailProps) => {
+  const { open: isAddModalOpen, openModal, closeModal } = useModal(false);
+
   return (
-    <div className='flex flex-col'>
-      <Button variant='normal' className='my-6 w-fit'>
+    <section className='flex flex-col'>
+      <Button variant='normal' className='my-6 w-fit' onClick={openModal}>
         찜 추가하기
       </Button>
 
@@ -42,7 +46,9 @@ const FavoriteFolderDetail = ({ folder, songs }: FavoriteFolderDetailProps) => {
           </li>
         ))}
       </ul>
-    </div>
+
+      {isAddModalOpen && <AddFavoriteModal onClose={closeModal} />}
+    </section>
   );
 };
 

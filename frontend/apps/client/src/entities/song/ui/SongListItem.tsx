@@ -67,7 +67,7 @@ const SongListItem = ({
   return (
     <div
       className={cn(
-        'flex w-full items-center gap-4 rounded-10 bg-gray-800 px-5',
+        'px-5 flex items-center gap-4 w-full rounded-10 bg-gray-800 shrink-0',
         isTall ? 'h-22.5' : 'h-20'
       )}
     >

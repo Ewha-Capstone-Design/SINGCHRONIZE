@@ -22,7 +22,7 @@ const LibraryFavoriteList = () => {
   }
 
   return (
-    <div className='flex flex-col'>
+    <section className='flex flex-col'>
       <Button variant='normal' className='my-6 w-fit'>
         찜 폴더 추가하기
       </Button>
@@ -41,7 +41,7 @@ const LibraryFavoriteList = () => {
           </li>
         ))}
       </ul>
-    </div>
+    </section>
   );
 };
 

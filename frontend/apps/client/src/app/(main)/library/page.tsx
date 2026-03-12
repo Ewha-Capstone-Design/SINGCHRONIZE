@@ -6,7 +6,7 @@ import {
   LibraryBanner,
   LibraryFavoriteList,
   LibraryHistoryList,
-} from '@/widgets/library/ui';
+} from '@/widgets/library';
 
 const LibraryPage = () => {
   const { tab, tabs, changeTab } = useSectionTab({

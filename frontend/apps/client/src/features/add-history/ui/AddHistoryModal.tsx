@@ -73,7 +73,7 @@ const AddHistoryModal = ({ onClose }: AddHistoryModalProps) => {
             />
           </div>
 
-          <div className='flex flex-col gap-4 overflow-y-auto min-h-0'>
+          <div className='flex flex-col gap-4 overflow-y-auto min-h-0 scrollbar-hide'>
             {searchedItems.map((song) => (
               <div key={song.id}>
                 <SongListItem
