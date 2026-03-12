@@ -5,7 +5,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '../../lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-[10px] px-6 py-[10px] rounded-full typo-18sb text-center shrink-0 transition-colors cursor-pointer disabled:pointer-events-none',
+  'inline-flex items-center justify-center gap-[10px] rounded-full text-center shrink-0 transition-colors cursor-pointer disabled:pointer-events-none',
   {
     variants: {
       variant: {
@@ -13,6 +13,10 @@ const buttonVariants = cva(
         normal: '',
         outline: '',
         accent: '',
+      },
+      size: {
+        large: 'px-6 py-[10px] typo-18sb',
+        medium: 'px-6 py-[10px] typo-16m',
       },
       state: {
         enabled: '',
@@ -50,6 +54,7 @@ const buttonVariants = cva(
     defaultVariants: {
       variant: 'primary',
       state: 'enabled',
+      size: 'large',
     },
   }
 );
@@ -62,7 +67,7 @@ export interface ButtonProps
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, asChild = false, disabled, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, disabled, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button';
 
     return (
@@ -72,6 +77,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         className={cn(
           buttonVariants({
             variant,
+            size,
             state: disabled ? 'disabled' : 'enabled',
             className,
           })
