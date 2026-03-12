@@ -1,4 +1,5 @@
 """OAuth 테스트용 라우터 - 카카오 로그인 리다이렉트 플로우"""
+import json
 import logging
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import RedirectResponse, HTMLResponse
@@ -47,7 +48,8 @@ async def kakao_callback(
 
         logger.info(f"테스트 로그인 성공: user={user.id}, new={is_new}")
 
-        # 3. 토큰을 가지고 테스트 페이지로 돌아가기
+        # 3. 토큰을 JSON으로 직렬화하여 XSS 없이 JS에 전달
+        token_json = json.dumps(access_token)
         return HTMLResponse(f"""
         <!DOCTYPE html>
         <html><head><meta charset="UTF-8"><title>로그인 성공</title></head>
@@ -57,13 +59,12 @@ async def kakao_callback(
             <p>자동으로 테스트 페이지로 이동합니다...</p>
         </div>
         <script>
-            // opener(팝업) 또는 부모 창에 토큰 전달
-            const token = "{access_token}";
+            // json.dumps로 직렬화된 값이라 XSS 안전
+            const token = {token_json};
             if (window.opener) {{
                 window.opener.postMessage({{ type: 'KAKAO_LOGIN', token }}, '*');
                 window.close();
             }} else {{
-                // 직접 리다이렉트된 경우 localStorage에 저장 후 테스트 페이지로
                 localStorage.setItem('singchronize_jwt', token);
                 window.location.href = '/test_page.html';
             }}
