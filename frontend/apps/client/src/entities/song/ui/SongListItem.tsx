@@ -67,7 +67,7 @@ const SongListItem = ({
   return (
     <div
       className={cn(
-        'flex w-full items-center gap-4 rounded-10 bg-gray-800 px-5',
+        'px-5 flex items-center gap-4 w-full rounded-10 bg-gray-800 shrink-0',
         isTall ? 'h-22.5' : 'h-20'
       )}
     >
@@ -140,7 +140,7 @@ const SongListItem = ({
             rightSlot ? (
               <div className='flex items-center'>{rightSlot}</div>
             ) : (
-              <div className='flex items-center gap-1.25'>
+              <div className='flex items-center gap-4'>
                 <LikeIconButton isLiked={isLiked} onClick={handleLikeClick} />
                 <MoreActionButton onClick={handleMoreClick} />
               </div>

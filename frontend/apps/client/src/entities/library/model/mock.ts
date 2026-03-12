@@ -1,5 +1,9 @@
-import type { HistoryItemApiType } from './types';
-import { toHistoryItemUi } from './mapper';
+import type {
+  FavoriteFolderApiType,
+  FavoriteSongUiType,
+  HistoryItemApiType,
+} from './types';
+import { toFavoriteFolderUi, toHistoryItemUi } from './mapper';
 
 const MOCK_HISTORY_ITEMS_API: HistoryItemApiType[] = [
   {
@@ -41,3 +45,33 @@ const MOCK_HISTORY_ITEMS_API: HistoryItemApiType[] = [
 ];
 
 export const MOCK_HISTORY_ITEMS = MOCK_HISTORY_ITEMS_API.map(toHistoryItemUi);
+
+export const MOCK_FAVORITE_FOLDERS_API: FavoriteFolderApiType[] = [
+  {
+    id: 'f1',
+    name: '남자친구랑 데이트',
+    thumbnail: ['', '', '', ''],
+    count: 4,
+    updated_at: '2026-03-10T09:30:00Z',
+  },
+  {
+    id: 'f2',
+    name: '등교할 때',
+    thumbnail: ['', '', '', ''],
+    count: 11,
+    updated_at: '2026-03-01T12:00:00Z',
+  },
+];
+
+export const MOCK_FAVORITE_FOLDERS = MOCK_FAVORITE_FOLDERS_API.map(toFavoriteFolderUi);
+
+export const MOCK_FAVORITE_SONGS: FavoriteSongUiType[] = [
+  { itemId: '1', songId: '1', title: '전설', artist: '잔나비', isLiked: true },
+  {
+    itemId: '2',
+    songId: '2',
+    title: 'NOT CUTE ANYMORE',
+    artist: '아일릿(ILLIT)',
+    isLiked: true,
+  },
+];

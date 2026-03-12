@@ -5,10 +5,10 @@ import { Button } from '@singchronize/ui';
 import { SelectChip } from '@/shared/components';
 import { cn } from '@/shared/lib/cn';
 import { nextSelectedWithAll } from '@/shared/lib/selection';
+import { useModal } from '@/shared/hooks';
 import { HistoryItem } from '@/entities/library/ui';
 import { HISTORY_FILTER_OPTIONS, HistoryTagType } from '@/entities/library/model/tags';
-import { useModal } from '@/shared/hooks';
-import { AddHistoryModal } from '@/features/add-history/ui';
+import { AddHistoryModal } from '@/features/add-history';
 
 import { MOCK_HISTORY_ITEMS } from '@/entities/library/model/mock';
 
@@ -32,10 +32,6 @@ const LibraryHistoryList = () => {
     );
   }, [selected]);
 
-  const handleAddClick = () => {
-    openModal();
-  };
-
   return (
     <>
       <section className='mt-4 mb-6 flex flex-col gap-6'>
@@ -51,7 +47,7 @@ const LibraryHistoryList = () => {
             ))}
           </div>
 
-          <Button variant='normal' onClick={handleAddClick}>
+          <Button variant='normal' onClick={openModal}>
             보컬기록 추가하기
           </Button>
         </div>
