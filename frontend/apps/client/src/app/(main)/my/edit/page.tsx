@@ -1,9 +1,7 @@
+import { ProfileEdit } from '@/widgets/profile/ui';
+
 const ProfileEditPage = () => {
-  return (
-    <div>
-      <h1>Profile Edit</h1>
-    </div>
-  );
+  return <ProfileEdit />;
 };
 
 export default ProfileEditPage;

@@ -1,3 +1,4 @@
+import { Button } from '@singchronize/ui';
 import { IcKakao, IcNaver } from '@/shared/assets/icons';
 import type { SnsAccountUiType } from '@/entities/user/model/types';
 
@@ -9,9 +10,16 @@ const SNS_CONFIG = {
 interface SnsAccountItemProps {
   provider: SnsAccountUiType['provider'];
   email?: string;
+  connected: boolean;
+  onConnect?: () => void;
 }
 
-const SnsAccountItem = ({ provider, email }: SnsAccountItemProps) => {
+const SnsAccountItem = ({
+  provider,
+  email,
+  connected,
+  onConnect,
+}: SnsAccountItemProps) => {
   const { icon, label } = SNS_CONFIG[provider];
 
   return (
@@ -20,10 +28,18 @@ const SnsAccountItem = ({ provider, email }: SnsAccountItemProps) => {
         <div className='shrink-0'>{icon}</div>
         <div className='flex flex-col w-full overflow-hidden'>
           <p className='typo-14r text-gray-300'>{label}</p>
-          <p className='typo-14r text-gray-500 truncate'>{email}</p>
+          <p className='typo-14r text-gray-500 truncate'>
+            {connected ? email : '연동되지 않음'}
+          </p>
         </div>
       </div>
-      <span className='typo-16r text-gray-500 shrink-0'>연동됨</span>
+      {connected ? (
+        <span className='typo-16r text-gray-500 shrink-0'>연동됨</span>
+      ) : (
+        <Button variant='normal' size={'medium'} onClick={onConnect}>
+          연동하기
+        </Button>
+      )}
     </div>
   );
 };

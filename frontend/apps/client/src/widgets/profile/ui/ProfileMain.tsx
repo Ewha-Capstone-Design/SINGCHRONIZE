@@ -33,7 +33,7 @@ const ProfileMain = () => {
   ];
 
   return (
-    <div className='min-h-screen bg-bg text-white'>
+    <div className='min-h-screen text-white'>
       <div className='px-8 flex items-center h-101.5 bg-linear-to-b from-yellow-900/40 to-bg'>
         <ProfileCard profile={profile} />
       </div>
@@ -42,10 +42,18 @@ const ProfileMain = () => {
         {/* SNS 연동 */}
         <div className='flex flex-col gap-3'>
           {kakaoAccount?.connected && (
-            <SnsAccountItem provider='kakao' email={kakaoAccount.email} />
+            <SnsAccountItem
+              provider='kakao'
+              email={kakaoAccount.email}
+              connected={kakaoAccount.connected}
+            />
           )}
           {naverAccount?.connected && (
-            <SnsAccountItem provider='naver' email={naverAccount.email} />
+            <SnsAccountItem
+              provider='naver'
+              email={naverAccount.email}
+              connected={naverAccount.connected}
+            />
           )}
         </div>
 
@@ -58,7 +66,7 @@ const ProfileMain = () => {
                 key={item.label}
                 type='button'
                 onClick={() => go(item.route)}
-                className='px-9 py-2 w-full text-left typo-16m text-gray-200 hover:text-gray-400 transition-colors'
+                className='px-9 py-2 w-full h-16 text-left typo-16m text-gray-200 hover:text-gray-400 transition-colors'
               >
                 {item.label}
               </button>
@@ -75,7 +83,7 @@ const ProfileMain = () => {
                 key={item.label}
                 type='button'
                 onClick={item.action ?? undefined}
-                className='px-9 py-2 w-full text-left typo-16m text-gray-200 hover:text-gray-400 transition-colors'
+                className='px-9 py-2 w-full h-16 text-left typo-16m text-gray-200 hover:text-gray-400 transition-colors'
               >
                 {item.label}
               </button>
