@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import init_db
-from app.routers import auth, user, songs, library, busking
+from app.routers import auth, user, songs, library, busking, recommendations
 from app.routers.oauth_test import router as oauth_test_router
 from fastapi.staticfiles import StaticFiles
 
@@ -37,8 +37,8 @@ app.include_router(user.router)
 app.include_router(songs.router)
 app.include_router(library.router)
 app.include_router(busking.router)
+app.include_router(recommendations.router)
 app.include_router(oauth_test_router)
-
 
 @app.get("/health", status_code=status.HTTP_200_OK)
 async def health_check():
