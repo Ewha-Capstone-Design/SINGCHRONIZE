@@ -56,6 +56,7 @@ const BlockedSongsModal = ({ onClose }: BlockedSongsModalProps) => {
                   rightSlot={
                     <Button
                       variant='normal'
+                      size='medium'
                       onClick={() => {
                         /* TODO: 차단 해제 API */
                       }}
