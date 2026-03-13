@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { InputField, Button } from '@singchronize/ui';
 import { IcBack } from '@/shared/assets/icons';
 import { useNavigate } from '@/shared/lib/navigation';
@@ -19,8 +19,25 @@ const ProfileEdit = () => {
 
   const [nickname, setNickname] = useState(profile.nickname);
   const [bio, setBio] = useState(profile.bio);
+  const [preview, setPreview] = useState<string | null>(profile.profileImage ?? null);
+  const [profileFile, setProfileFile] = useState<File | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isEditArtistsModalOpen, setIsEditArtistsModalOpen] = useState(false);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setProfileFile(file);
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
 
   return (
     <div className='min-h-screen text-white'>
@@ -35,17 +52,27 @@ const ProfileEdit = () => {
         {/* 프로필 이미지 */}
         <div className='flex flex-col items-center shrink-0'>
           <div className='size-38.5 rounded-full overflow-hidden bg-gray-800'>
-            {profile.profileImage ? (
-              <img
-                src={profile.profileImage}
-                alt={profile.nickname}
-                className='size-full object-cover'
-              />
+            {preview ? (
+              <img src={preview} alt={nickname} className='size-full object-cover' />
             ) : (
               <div className='size-full bg-gray-700' />
             )}
           </div>
-          <Button variant='normal' size={'medium'} className='mt-5 mb-2 w-fit'>
+
+          <input
+            ref={fileInputRef}
+            type='file'
+            accept='image/jpeg, image/png'
+            className='hidden'
+            onChange={handleImageChange}
+          />
+
+          <Button
+            variant='normal'
+            size='medium'
+            className='mt-5 mb-2 w-fit'
+            onClick={() => fileInputRef.current?.click()}
+          >
             사진 설정하기
           </Button>
           <p className='typo-16r text-gray-600'>JPG, PNG 파일 (최대 5MB)</p>
@@ -118,7 +145,7 @@ const ProfileEdit = () => {
           <div className='flex justify-center py-4'>
             <Button
               onClick={() => {
-                /* TODO: 저장 API */
+                // TODO: 저장 API
               }}
             >
               저장하기
@@ -132,7 +159,7 @@ const ProfileEdit = () => {
           initialSelectedIds={artists.map((a) => a.id)}
           onClose={() => setIsEditArtistsModalOpen(false)}
           onConfirm={(artists) => {
-            /* TODO: 저장 */
+            // TODO: 저장
           }}
         />
       )}
