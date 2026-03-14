@@ -1,6 +1,6 @@
+import { Button } from '@singchronize/ui';
 import { useNavigate } from '@/shared/lib/navigation';
 import type { ProfileUiType } from '../model/types';
-import { Button } from '@singchronize/ui';
 
 interface ProfileCardProps {
   profile: ProfileUiType;
@@ -8,6 +8,7 @@ interface ProfileCardProps {
 
 const ProfileCard = ({ profile }: ProfileCardProps) => {
   const { go, ROUTES } = useNavigate();
+
   return (
     <div className='flex gap-5 h-37.5'>
       <div className='size-37.5 rounded-full border-2 border-brand overflow-hidden shrink-0 bg-gray-800'>
