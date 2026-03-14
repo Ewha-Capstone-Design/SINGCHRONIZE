@@ -48,7 +48,7 @@ const EditFavoriteArtistsModal = ({
   return (
     <BaseModal
       onClose={onClose}
-      className='relative px-10 flex flex-col w-full max-w-226 max-h-178 h-[70vh] bg-bg rounded-20'
+      className='relative px-25 flex flex-col w-full max-w-226 max-h-178 h-[70vh] bg-bg rounded-20'
     >
       <div className='pt-14.5 flex flex-col gap-9 h-full'>
         <h2 className='typo-28b text-white'>선호하는 가수 수정하기</h2>
