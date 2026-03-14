@@ -1,7 +1,12 @@
 """
 장르별 프로파일 데이터
 - 각 장르의 특징적인 음역대, 음색, 발성 스타일 정의
+- (옵션) DB의 songs / song_features 테이블에서 통계를 내서 동적으로 생성
 """
+from pathlib import Path
+from typing import Dict, List
+import sys
+
 import numpy as np
 
 # 장르별 프로파일
@@ -389,5 +394,212 @@ def calculate_vocal_style_distance(user_radar: dict, genre_style: dict) -> float
     distance = np.mean(distances)
     
     return distance
+
+
+# =========================
+# DB 기반 장르 프로파일 생성
+# =========================
+
+# song_feature_worker 에서 Supabase 클라이언트 재사용
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from song_feature_worker import get_supabase_client  # noqa: E402
+
+
+def _parse_genres(genre_str) -> List[str]:
+    """문자열/리스트 형태의 genre를 ['발라드', '댄스', ...] 로 통일"""
+    if not genre_str:
+        return []
+    if isinstance(genre_str, list):
+        return [g.strip() for g in genre_str if g and g.strip()]
+    if isinstance(genre_str, str):
+        return [g.strip() for g in genre_str.split(",") if g and g.strip()]
+    return []
+
+
+def _load_song_features_with_genre() -> List[Dict]:
+    """
+    song_features + songs.genre 를 합쳐서 가져오기
+    반환 형식: [{song_id, f0_p*, timbre_*, genres: ['발라드', ...]}, ...]
+    """
+    supabase = get_supabase_client()
+
+    # 1) song_features 전체
+    res = supabase.table("song_features").select("*").execute()
+    rows = res.data or []
+    if not rows:
+        raise ValueError("DB에 song_features 데이터가 없습니다.")
+
+    song_ids = [row["song_id"] for row in rows]
+
+    # 2) songs 테이블에서 genre 조회
+    songs_res = (
+        supabase.table("songs")
+        .select("id, genre")
+        .in_("id", song_ids)
+        .execute()
+    )
+    songs_rows = songs_res.data or []
+    song_meta_map: Dict[str, Dict] = {r["id"]: r for r in songs_rows}
+
+    # 3) merge
+    result: List[Dict] = []
+    for row in rows:
+        sid = row["song_id"]
+        meta = song_meta_map.get(sid, {})
+        genres = _parse_genres(meta.get("genre"))
+        if not genres:
+            # 장르가 없는 곡은 장르 프로파일 통계에서 제외
+            continue
+
+        item = {
+            "song_id": sid,
+            "genres": genres,
+            # pitch 관련 (Hz)
+            "f0_p5": float(row.get("f0_p5", 0.0)),
+            "f0_p25": float(row.get("f0_p25", 0.0)),
+            "f0_p75": float(row.get("f0_p75", 0.0)),
+            "f0_p95": float(row.get("f0_p95", 0.0)),
+            # timbre 관련 (0~1 스케일 가정)
+            "timbre_brightness": float(row.get("timbre_brightness", 0.0)),
+            "timbre_roughness": float(row.get("timbre_roughness", 0.0)),
+            "timbre_body": float(row.get("timbre_body", 0.0)),
+            "timbre_clarity": float(row.get("timbre_clarity", 0.0)),
+            "timbre_warmth": float(row.get("timbre_warmth", 0.0)),
+        }
+        result.append(item)
+
+    if not result:
+        raise ValueError("songs.genre 가 설정된 song_features 가 없습니다.")
+
+    return result
+
+
+def build_genre_profiles_from_db() -> Dict[str, Dict]:
+    """
+    DB의 song_features + songs.genre 로부터 장르별 프로파일 생성.
+
+    - pitch:
+        * typical_low  ≈ f0_p25 평균
+        * typical_high ≈ f0_p75 평균
+        * tessitura_center ≈ (f0_p25_avg + f0_p75_avg) / 2
+        * range_semitones ≈ 12 * log2(f0_p95_avg / f0_p5_avg)
+    - timbre: timbre_* 평균
+    - vocal_style / weights:
+        * 기존 GENRE_PROFILES 에 정의되어 있으면 그대로 사용
+        * 없으면 기본값 사용
+    """
+    from collections import defaultdict
+
+    songs = _load_song_features_with_genre()
+
+    # 장르별 누적 통계
+    stats = defaultdict(
+        lambda: {
+            "count": 0,
+            "f0_p5": 0.0,
+            "f0_p25": 0.0,
+            "f0_p75": 0.0,
+            "f0_p95": 0.0,
+            "brightness": 0.0,
+            "roughness": 0.0,
+            "body": 0.0,
+            "clarity": 0.0,
+            "warmth": 0.0,
+        }
+    )
+
+    for s in songs:
+        for g in s["genres"]:
+            st = stats[g]
+            st["count"] += 1
+            st["f0_p5"] += s["f0_p5"]
+            st["f0_p25"] += s["f0_p25"]
+            st["f0_p75"] += s["f0_p75"]
+            st["f0_p95"] += s["f0_p95"]
+            st["brightness"] += s["timbre_brightness"]
+            st["roughness"] += s["timbre_roughness"]
+            st["body"] += s["timbre_body"]
+            st["clarity"] += s["timbre_clarity"]
+            st["warmth"] += s["timbre_warmth"]
+
+    genre_profiles: Dict[str, Dict] = {}
+
+    for genre_name, st in stats.items():
+        c = st["count"]
+        if c == 0:
+            continue
+
+        f0_p5_avg = st["f0_p5"] / c
+        f0_p25_avg = st["f0_p25"] / c
+        f0_p75_avg = st["f0_p75"] / c
+        f0_p95_avg = st["f0_p95"] / c
+
+        # 음역대 추정
+        typical_low = f0_p25_avg
+        typical_high = f0_p75_avg
+        tessitura_center = (
+            (f0_p25_avg + f0_p75_avg) / 2.0 if f0_p25_avg > 0 and f0_p75_avg > 0 else 0.0
+        )
+        if f0_p5_avg > 0 and f0_p95_avg > 0:
+            range_semitones = 12 * np.log2(f0_p95_avg / f0_p5_avg)
+        else:
+            range_semitones = 24.0
+
+        # 음색 평균
+        timbre = {
+            "brightness": st["brightness"] / c,
+            "roughness": st["roughness"] / c,
+            "body": st["body"] / c,
+            "clarity": st["clarity"] / c,
+            "warmth": st["warmth"] / c,
+        }
+
+        # vocal_style과 weights는 기존 하드코딩 값이 있으면 그대로 사용, 없으면 기본값
+        base_profile = GENRE_PROFILES.get(genre_name, {})
+        vocal_style = base_profile.get(
+            "vocal_style",
+            {
+                "pitch_stability": 0.7,
+                "breath_control": 0.7,
+                "dynamic_range": 0.7,
+            },
+        )
+        weights = base_profile.get(
+            "weights",
+            {
+                "pitch": 0.3,
+                "timbre": 0.4,
+                "vocal_style": 0.3,
+            },
+        )
+
+        genre_profiles[genre_name] = {
+            "name": base_profile.get("name", genre_name),
+            "description": base_profile.get("description", f"{genre_name} 장르"),
+            "pitch": {
+                "typical_low": typical_low,
+                "typical_high": typical_high,
+                "tessitura_center": tessitura_center,
+                "range_semitones": range_semitones,
+            },
+            "timbre": timbre,
+            "vocal_style": vocal_style,
+            "weights": weights,
+        }
+
+    return genre_profiles
+
+
+def build_and_override_global_genre_profiles_from_db() -> Dict[str, Dict]:
+    """
+    편의 함수:
+    - DB에서 장르 프로파일을 만든 뒤,
+    - 전역 GENRE_PROFILES 를 DB 값으로 덮어쓰고 반환.
+
+    주의: 프로세스 실행 중에 한 번만 호출해서 캐시처럼 쓰는 용도로 추천.
+    """
+    global GENRE_PROFILES
+    GENRE_PROFILES = build_genre_profiles_from_db()
+    return GENRE_PROFILES
 
 
