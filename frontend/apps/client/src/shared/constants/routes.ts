@@ -20,7 +20,9 @@ export const ROUTES = {
   archive: '/archive',
   my: {
     root: '/my',
+    edit: '/my/edit',
     vocalReport: '/my/vocal-report',
+    busking: '/my/busking',
   },
 } as const;
 

@@ -1,6 +1,7 @@
 import type { VocalReport } from '@/entities/vocal-report';
 
 export const MOCK_VOCAL_REPORT: VocalReport = {
+  updated_at: '2026.02.03',
   traits: [
     { label: '음정 안정성', value: 85 },
     { label: '발성 수준', value: 60 },

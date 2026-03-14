@@ -1,9 +1,7 @@
+import { ProfileMain } from '@/widgets/profile/ui';
+
 const MyPage = () => {
-  return (
-    <div>
-      <h1>My</h1>
-    </div>
-  );
+  return <ProfileMain />;
 };
 
 export default MyPage;

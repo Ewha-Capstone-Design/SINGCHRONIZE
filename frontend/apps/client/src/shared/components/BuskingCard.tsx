@@ -2,17 +2,13 @@
 
 import { cn } from '@/shared/lib/cn';
 import { IcPlay } from '../assets/icons';
+import { BuskingType, BuskingUiType } from '@/entities/busking/model/types';
 
 type BuskingCardVariant = 'sm' | 'md' | 'lg';
-type BuskingCardStatus = 'live' | 'record';
 
 interface BuskingCardProps {
   variant?: BuskingCardVariant;
-  status: BuskingCardStatus;
-  thumbnail?: string;
-  profileImage?: string;
-  nickname: string;
-  listenerCount: number;
+  busking: BuskingUiType;
   onClick?: () => void;
 }
 
@@ -28,12 +24,12 @@ const badgeVariantClassMap: Record<BuskingCardVariant, string> = {
   lg: 'px-[15.5px] py-[5px] rounded-[13px] typo-18sb',
 };
 
-const badgeClassMap: Record<BuskingCardStatus, string> = {
+const badgeClassMap: Record<BuskingType, string> = {
   live: 'bg-accent-600 text-white',
   record: 'bg-brand text-black',
 };
 
-const badgeTextMap: Record<BuskingCardStatus, string> = {
+const badgeTextMap: Record<BuskingType, string> = {
   live: 'Live',
   record: 'Record',
 };
@@ -68,15 +64,9 @@ const bottomAreaClassMap: Record<BuskingCardVariant, string> = {
   lg: 'h-23 px-4.5',
 };
 
-const BuskingCard = ({
-  variant = 'md',
-  status,
-  thumbnail,
-  profileImage,
-  nickname,
-  listenerCount,
-  onClick,
-}: BuskingCardProps) => {
+const BuskingCard = ({ variant = 'md', busking, onClick }: BuskingCardProps) => {
+  const { status, thumbnail, profileImage, nickname, listenerCount } = busking;
+
   return (
     <button
       type='button'
