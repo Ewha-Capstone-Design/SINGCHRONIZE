@@ -37,6 +37,15 @@ class Settings(BaseSettings):
     # Spotify
     SPOTIFY_CLIENT_ID: str = ""
     SPOTIFY_CLIENT_SECRET: str = ""
+
+    # Last.fm
+    LASTFM_API_KEY: str = ""
+
+    # OpenAI
+    OPENAI_API_KEY: str = ""
+
+    # Gemini
+    GEMINI_API_KEY: str = ""
     
     # AWS
     AWS_ACCESS_KEY_ID: str = ""
