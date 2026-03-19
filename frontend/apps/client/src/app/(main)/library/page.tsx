@@ -1,12 +1,8 @@
 'use client';
 
-import { SectionTab } from '@/shared/components';
+import { PageBanner, SectionTab } from '@/shared/components';
 import { useSectionTab } from '@/shared/hooks';
-import {
-  LibraryBanner,
-  LibraryFavoriteList,
-  LibraryHistoryList,
-} from '@/widgets/library';
+import { LibraryFavoriteList, LibraryHistoryList } from '@/widgets/library';
 
 const LibraryPage = () => {
   const { tab, tabs, changeTab } = useSectionTab({
@@ -19,7 +15,10 @@ const LibraryPage = () => {
 
   return (
     <div className='flex-1 min-h-screen'>
-      <LibraryBanner />
+      <PageBanner
+        category='노래방 키트'
+        title='노래방에서 찜한 노래와 보컬 기록을 확인하며 노래해보세요!'
+      />
       <div className='px-8'>
         <SectionTab items={tabs} value={tab} onChange={(nextTab) => changeTab(nextTab)} />
         {tab == 'favorite' ? <LibraryFavoriteList /> : <LibraryHistoryList />}
