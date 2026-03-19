@@ -3,11 +3,11 @@ from uuid import UUID
 from typing import List
 
 from fastapi import HTTPException, status
-from sqlalchemy import select, func, text, or_
+from sqlalchemy import select, func, text, or_, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.singer import Singer, BlockedSinger
+from app.models.singer import Singer, BlockedSinger, FavoriteSinger
 
 
 VALID_GENDERS = {"male", "female"}
@@ -58,6 +58,39 @@ class SingerService:
             .limit(limit)
         )
         result = await self.db.execute(stmt)
+        return result.scalars().all()
+
+    # ─── 즐겨찾는 가수 선택 (온보딩 2단계) ──────────────
+
+    async def select_favorite_singers(
+        self, user_id: UUID, singer_ids: List[int]
+    ) -> List[Singer]:
+        """기존 즐겨찾기를 전부 교체 후 새로 저장 (onboarding step2 / 마이페이지 수정 공용)"""
+        # 요청된 singer_id가 실제로 존재하는지 한 번에 검증
+        exists_result = await self.db.execute(
+            select(Singer.singer_id).where(Singer.singer_id.in_(singer_ids))
+        )
+        found_ids = set(exists_result.scalars().all())
+        missing = set(singer_ids) - found_ids
+        if missing:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"code": "SINGER_NOT_FOUND", "message": f"존재하지 않는 가수 ID: {sorted(missing)}"},
+            )
+
+        # 기존 즐겨찾기 전체 삭제 후 재삽입 (교체 방식)
+        await self.db.execute(
+            delete(FavoriteSinger).where(FavoriteSinger.user_id == user_id)
+        )
+        self.db.add_all([
+            FavoriteSinger(user_id=user_id, singer_id=sid) for sid in singer_ids
+        ])
+        await self.db.flush()
+
+        # 저장된 Singer 정보 반환
+        result = await self.db.execute(
+            select(Singer).where(Singer.singer_id.in_(singer_ids)).order_by(Singer.name)
+        )
         return result.scalars().all()
 
     # ─── 가수 차단 등록 ───────────────────────────────
