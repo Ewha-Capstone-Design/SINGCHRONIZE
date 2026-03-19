@@ -34,6 +34,21 @@ def generate_presigned_url(object_name, expiration=3600):
         return None
     return response
 
+def upload_image_to_s3(file_bytes: bytes, key: str, content_type: str = "image/jpeg") -> str | None:
+    """S3에 이미지를 직접 업로드하고 public URL 반환"""
+    try:
+        s3_client.put_object(
+            Bucket=settings.S3_BUCKET_NAME,
+            Key=key,
+            Body=file_bytes,
+            ContentType=content_type,
+        )
+        return f"https://{settings.S3_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/{key}"
+    except ClientError as e:
+        print(f"❌ S3 이미지 업로드 실패: {e}")
+        return None
+
+
 def send_sqs_message(message_body):
     """SQS 큐에 추천 작업 메시지 전송"""
     try:

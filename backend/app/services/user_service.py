@@ -30,6 +30,23 @@ class UserService:
         await self.db.flush()
         return user
 
+    async def setup_onboarding_step1(
+        self,
+        user_id: uuid.UUID,
+        nickname: str,
+        profile_img_url: str | None = None,
+    ) -> User:
+        """온보딩 1단계: 닉네임 + 프로필 사진 저장 후 완료 상태 반영"""
+        user = await self.get_user(user_id)
+        user.nickname = nickname
+        if profile_img_url is not None:
+            user.profile_img = profile_img_url
+        settings_data = dict(user.settings or {})
+        settings_data["onboarding_step"] = 1
+        user.settings = settings_data
+        await self.db.flush()
+        return user
+
     async def update_settings(
         self,
         user_id: uuid.UUID,
