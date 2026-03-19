@@ -8,7 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.dependencies.auth import get_current_user
 from app.models.user import User
+from app.schemas.singer import FavoriteSingersSelectRequest, FavoriteSingersSelectResponse, SingerInfo
 from app.schemas.user import UserResponse
+from app.services.singer_service import SingerService
 from app.services.user_service import UserService
 from app.utils.aws import upload_image_to_s3
 
@@ -86,3 +88,40 @@ async def onboarding_step1(
     await db.refresh(updated)
 
     return UserResponse.model_validate(updated, from_attributes=True)
+
+
+@router.post(
+    "/step2",
+    response_model=FavoriteSingersSelectResponse,
+    status_code=status.HTTP_200_OK,
+    summary="즐겨부르는 가수 선택 (온보딩 2단계)",
+    description=(
+        "가수 ID 목록을 받아 즐겨부르는 가수로 저장합니다. "
+        "기존 선택을 전부 교체하므로 마이페이지 수정 시에도 동일하게 호출할 수 있습니다. "
+        "가수 목록은 `GET /api/v1/singers/random` API로 조회하세요."
+    ),
+)
+async def onboarding_step2(
+    body: FavoriteSingersSelectRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> FavoriteSingersSelectResponse:
+    service = SingerService(db)
+    singers = await service.select_favorite_singers(
+        user_id=current_user.id,
+        singer_ids=body.singer_ids,
+    )
+
+    # 온보딩 2단계 완료 상태 반영
+    user_service = UserService(db)
+    await user_service.update_settings(
+        user_id=current_user.id,
+        update_data={"onboarding_step": 2},
+    )
+
+    return FavoriteSingersSelectResponse(
+        singers=[
+            SingerInfo(singer_id=s.singer_id, name=s.name, photo_url=s.photo_url)
+            for s in singers
+        ]
+    )

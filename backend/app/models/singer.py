@@ -1,4 +1,4 @@
-"""Singer & BlockedSinger 모델"""
+"""Singer & BlockedSinger & FavoriteSinger 모델"""
 from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Uuid, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
@@ -20,6 +20,7 @@ class Singer(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     blocked_by = relationship("BlockedSinger", back_populates="singer", cascade="all, delete-orphan")
+    favorited_by = relationship("FavoriteSinger", back_populates="singer", cascade="all, delete-orphan")
 
 
 class BlockedSinger(Base):
@@ -34,4 +35,19 @@ class BlockedSinger(Base):
 
     __table_args__ = (
         UniqueConstraint("user_id", "singer_id", name="uq_user_singer_block"),
+    )
+
+
+class FavoriteSinger(Base):
+    __tablename__ = "favorite_singers"
+
+    favorite_id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    singer_id = Column(Integer, ForeignKey("singers.singer_id", ondelete="CASCADE"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    singer = relationship("Singer", back_populates="favorited_by")
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "singer_id", name="uq_user_singer_favorite"),
     )

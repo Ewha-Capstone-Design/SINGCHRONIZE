@@ -1,5 +1,5 @@
 """Singer 스키마"""
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import List, Optional
 from datetime import datetime
 
@@ -19,6 +19,25 @@ class RandomSingersResponse(BaseModel):
 
 
 class SingerSearchResponse(BaseModel):
+    singers: List[SingerInfo]
+
+
+# ── Favorite Singers (온보딩 2단계) ──────────────────
+
+class FavoriteSingersSelectRequest(BaseModel):
+    singer_ids: List[int]
+
+    @field_validator("singer_ids")
+    @classmethod
+    def validate_singer_ids(cls, v: List[int]) -> List[int]:
+        if not v:
+            raise ValueError("가수를 최소 1명 이상 선택해야 합니다.")
+        if len(v) != len(set(v)):
+            raise ValueError("중복된 가수 ID가 포함되어 있습니다.")
+        return v
+
+
+class FavoriteSingersSelectResponse(BaseModel):
     singers: List[SingerInfo]
 
 
