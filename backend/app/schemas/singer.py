@@ -18,6 +18,10 @@ class RandomSingersResponse(BaseModel):
     singers: List[SingerInfo]
 
 
+class SingerSearchResponse(BaseModel):
+    singers: List[SingerInfo]
+
+
 # ── Blocked Singer ───────────────────────────────────
 
 class BlockSingerRequest(BaseModel):

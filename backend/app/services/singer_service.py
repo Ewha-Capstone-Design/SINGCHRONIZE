@@ -3,7 +3,7 @@ from uuid import UUID
 from typing import List
 
 from fastapi import HTTPException, status
-from sqlalchemy import select, func, text
+from sqlalchemy import select, func, text, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -43,6 +43,20 @@ class SingerService:
             .limit(limit)
         )
 
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
+
+    # ─── 가수 검색 ───────────────────────────────────
+
+    async def search_singers(self, query: str, limit: int) -> List[Singer]:
+        """이름 또는 별칭으로 가수 검색 (부분 일치)"""
+        q = f"%{query}%"
+        stmt = (
+            select(Singer)
+            .where(or_(Singer.name.ilike(q), Singer.aliases.ilike(q)))
+            .order_by(Singer.name)
+            .limit(limit)
+        )
         result = await self.db.execute(stmt)
         return result.scalars().all()
 
