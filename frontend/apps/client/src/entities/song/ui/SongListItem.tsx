@@ -54,7 +54,7 @@ const SongListItem = ({
   onMoreClick,
 }: SongListItemProps) => {
   const showRank = variant === 'list2' || variant === 'list4' || variant === 'list5';
-  const isTall = variant === 'list2' || variant === 'list3';
+  const isTall = variant === 'list2' || variant === 'list3'; // 90
   const showMatchRate =
     (variant === 'list2' || variant === 'list5') && matchRate !== undefined;
 
@@ -134,6 +134,7 @@ const SongListItem = ({
       {/* [오른쪽] 액션 영역 */}
       {variant !== 'list4' && (
         <div className='flex items-center' onClick={(e) => e.stopPropagation()}>
+          {/* list3: 하트 + 더보기 */}
           {variant === 'list3' ? (
             rightSlot ? (
               <div className='flex items-center'>{rightSlot}</div>
