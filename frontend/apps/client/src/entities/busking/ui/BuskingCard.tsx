@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/shared/lib/cn';
-import { IcPlay } from '../assets/icons';
+import { IcPlay } from '@/shared/assets/icons';
 import { BuskingType, BuskingUiType } from '@/entities/busking/model/types';
 
 type BuskingCardVariant = 'sm' | 'md' | 'lg';

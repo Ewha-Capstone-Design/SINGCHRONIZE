@@ -1,6 +1,5 @@
 export { default as AudioPlayer } from './AudioPlayer';
 export { default as BaseModal } from './BaseModal';
-export { default as BuskingCard } from './BuskingCard';
 export { default as GenreCard } from './GenreCard';
 export { default as PageHeader } from './PageHeader';
 export { default as ReportCard } from './ReportCard';

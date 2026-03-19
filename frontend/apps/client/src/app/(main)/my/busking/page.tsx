@@ -1,4 +1,5 @@
-import { BuskingCard, PageHeader } from '@/shared/components';
+import { PageHeader } from '@/shared/components';
+import { BuskingCard } from '@/entities/busking/ui';
 
 import { MOCK_BUSKING_LIST } from '@/entities/busking/model/mock';
 
