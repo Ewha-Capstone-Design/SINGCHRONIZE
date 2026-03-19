@@ -7,6 +7,7 @@ from app.config import settings
 from app.database import init_db
 from app.routers import auth, user, songs, library, busking, recommendations, singers
 from app.routers.oauth_test import router as oauth_test_router
+from app.routers.onboarding import router as onboarding_router
 from fastapi.staticfiles import StaticFiles
 
 
@@ -39,6 +40,7 @@ app.include_router(library.router)
 app.include_router(busking.router)
 app.include_router(recommendations.router)
 app.include_router(singers.router)
+app.include_router(onboarding_router)
 app.include_router(oauth_test_router)
 
 @app.get("/health", status_code=status.HTTP_200_OK)
