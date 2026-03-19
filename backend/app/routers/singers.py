@@ -6,9 +6,27 @@ from app.database import get_db
 from app.dependencies.auth import get_current_user
 from app.models.user import User
 from app.services.singer_service import SingerService
-from app.schemas.singer import RandomSingersResponse, SingerInfo
+from app.schemas.singer import RandomSingersResponse, SingerInfo, SingerSearchResponse
 
 router = APIRouter(prefix="/api/v1/singers", tags=["Singers"])
+
+
+@router.get("/search", response_model=SingerSearchResponse)
+async def search_singers(
+    q: str = Query(..., min_length=1, description="검색할 가수 이름"),
+    limit: int = Query(10, ge=1, le=30),
+    _: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """가수 이름 또는 별칭으로 검색 (부분 일치)"""
+    service = SingerService(db)
+    singers = await service.search_singers(query=q, limit=limit)
+    return SingerSearchResponse(
+        singers=[
+            SingerInfo(singer_id=s.singer_id, name=s.name, photo_url=s.photo_url)
+            for s in singers
+        ]
+    )
 
 
 @router.get("/random", response_model=RandomSingersResponse)
