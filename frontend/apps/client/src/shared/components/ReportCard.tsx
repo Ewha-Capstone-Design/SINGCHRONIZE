@@ -25,6 +25,7 @@ const ReportCard = ({
         'p-6 flex flex-col h-full md:h-90 bg-bg border border-gray-600 rounded-20',
         className
       )}
+      onClick={onClick}
     >
       <header className='flex items-start justify-between gap-4'>
         <div className='flex flex-col gap-0.5 min-w-0'>
@@ -33,7 +34,7 @@ const ReportCard = ({
         </div>
 
         {!hideArrow ? (
-          <button type='button' className='shrink-0' onClick={onClick}>
+          <button type='button' className='shrink-0'>
             <IcArrowRight />
           </button>
         ) : null}
