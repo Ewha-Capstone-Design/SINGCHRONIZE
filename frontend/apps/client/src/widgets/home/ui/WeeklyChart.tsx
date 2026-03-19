@@ -3,14 +3,16 @@
 import { cn } from '@/shared/lib/cn';
 import { SectionHeader } from '@/shared/components';
 import { SongListItem } from '@/entities/song/ui';
+import type { SongUiType } from '@/entities/song/model/types';
 
 import { MOCK_WEEKLY_CHART } from '@/entities/song/model/mock';
 
 type WeeklyChartProps = {
+  onSongClick: (song: SongUiType) => void;
   className?: string;
 };
 
-const WeeklyChart = ({ className }: WeeklyChartProps) => {
+const WeeklyChart = ({ onSongClick, className }: WeeklyChartProps) => {
   return (
     <section className={cn('flex flex-col gap-4', className)}>
       <SectionHeader
@@ -29,6 +31,7 @@ const WeeklyChart = ({ className }: WeeklyChartProps) => {
             thumbnail={song.thumbnail}
             likeCount={song.likeCount}
             isLiked={song.isLiked}
+            onClick={() => onSongClick(song)}
           />
         ))}
       </div>

@@ -2,7 +2,12 @@ import type { RankedSongType, SongApiType, SongUiType } from './types';
 import { toSongUi } from './mapper';
 
 export const MOCK_SONGS: SongApiType[] = [
-  { id: '1', title: '밤편지', artist: '아이유', album_cover: null },
+  {
+    id: '1',
+    title: '밤편지',
+    artist: '아이유',
+    album_cover: 'https://image.bugsm.co.kr/album/images/500/200890/20089092.jpg',
+  },
   { id: '2', title: 'The Action', artist: 'BOYNEXTDOOR', album_cover: null },
   { id: '3', title: 'Celebrity', artist: '아이유', album_cover: null },
 ];
