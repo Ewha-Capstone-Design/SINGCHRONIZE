@@ -83,7 +83,7 @@ const ListenSongModal = ({
   return (
     <BaseModal
       onClose={onClose}
-      className='relative flex flex-col justify-center items-center gap-23.5 w-full max-w-199 max-h-159 h-[70vh] bg-bg rounded-20'
+      className='relative flex flex-col justify-center items-center gap-23.5 w-full max-w-198 max-h-159 h-[70vh] bg-bg rounded-20'
     >
       {/* 그라데이션 배경 */}
       <div
