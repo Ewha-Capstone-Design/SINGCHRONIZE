@@ -31,6 +31,7 @@ interface SongListItemProps {
   isLiked?: boolean;
 
   // actions
+  onClick?: () => void;
   onLikeClick?: () => void;
   onMoreClick?: () => void;
 }
@@ -48,6 +49,7 @@ const SongListItem = ({
   likeCount,
   rightSlot,
   isLiked = false,
+  onClick,
   onLikeClick,
   onMoreClick,
 }: SongListItemProps) => {
@@ -56,20 +58,14 @@ const SongListItem = ({
   const showMatchRate =
     (variant === 'list2' || variant === 'list5') && matchRate !== undefined;
 
-  const handleLikeClick = () => {
-    onLikeClick?.();
-  };
-
-  const handleMoreClick = () => {
-    onMoreClick?.();
-  };
-
   return (
     <div
       className={cn(
         'px-5 flex items-center gap-4 w-full rounded-10 bg-gray-800 shrink-0',
-        isTall ? 'h-22.5' : 'h-20'
+        isTall ? 'h-22.5' : 'h-20',
+        onClick && 'cursor-pointer'
       )}
+      onClick={onClick}
     >
       {/* [왼쪽] 순위/번호 - list2,4,5 */}
       {showRank && (
@@ -125,8 +121,11 @@ const SongListItem = ({
 
         {/* list4: 좋아요 수 */}
         {variant === 'list4' && (
-          <div className='flex items-center gap-1.25'>
-            <LikeIconButton isLiked={isLiked} onClick={handleLikeClick} />
+          <div
+            className='flex items-center gap-1.25'
+            onClick={(e) => e.stopPropagation()}
+          >
+            <LikeIconButton isLiked={isLiked} onClick={onLikeClick} />
             <span className='typo-16b text-gray-200'>{likeCount ?? 0}</span>
           </div>
         )}
@@ -134,22 +133,22 @@ const SongListItem = ({
 
       {/* [오른쪽] 액션 영역 */}
       {variant !== 'list4' && (
-        <div className='flex items-center'>
+        <div className='flex items-center' onClick={(e) => e.stopPropagation()}>
           {/* list3: 하트 + 더보기 */}
           {variant === 'list3' ? (
             rightSlot ? (
               <div className='flex items-center'>{rightSlot}</div>
             ) : (
               <div className='flex items-center gap-4'>
-                <LikeIconButton isLiked={isLiked} onClick={handleLikeClick} />
-                <MoreActionButton onClick={handleMoreClick} />
+                <LikeIconButton isLiked={isLiked} onClick={onLikeClick} />
+                <MoreActionButton onClick={onMoreClick} />
               </div>
             )
           ) : null}
 
           {/* list2, list5: 하트 */}
           {variant === 'list2' || variant === 'list5' ? (
-            <LikeIconButton isLiked={isLiked} onClick={handleLikeClick} />
+            <LikeIconButton isLiked={isLiked} onClick={onLikeClick} />
           ) : null}
         </div>
       )}

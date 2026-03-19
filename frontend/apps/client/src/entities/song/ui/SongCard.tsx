@@ -5,12 +5,16 @@ import type { SongUiType } from '@/entities/song/model/types';
 
 type SongCardProps = {
   song: SongUiType;
+  onClick?: (song: SongUiType) => void;
   className?: string;
 };
 
-export const SongCard = ({ song, className }: SongCardProps) => {
+const SongCard = ({ song, onClick, className }: SongCardProps) => {
   return (
-    <div className={cn('w-35 text-left', className)}>
+    <div
+      className={cn('w-35 text-left', onClick && 'cursor-pointer', className)}
+      onClick={() => onClick?.(song)}
+    >
       <div className='relative aspect-square w-full overflow-hidden rounded-10 bg-gray-800'>
         {song.thumbnail ? (
           <img src={song.thumbnail} alt={song.title} className='size-full object-cover' />

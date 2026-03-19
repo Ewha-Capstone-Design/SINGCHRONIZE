@@ -4,12 +4,17 @@ import { cn } from '@/shared/lib/cn';
 import { SectionHeader, SectionTab } from '@/shared/components';
 import { useSectionTab } from '@/shared/hooks';
 import { SongCard } from '@/entities/song/ui';
+import type { SongUiType } from '@/entities/song/model/types';
 
 import { MOCK_SONG_LIST } from '@/entities/song/model/mock';
 
 type RangeKey = 'today' | 'week' | 'month';
 
-const SimilarVocalSection = () => {
+type SimilarVocalSectionProps = {
+  onSongClick: (song: SongUiType) => void;
+};
+
+const SimilarVocalSection = ({ onSongClick }: SimilarVocalSectionProps) => {
   const { tab, tabs, changeTab } = useSectionTab({
     items: [
       { key: 'today', label: '오늘' },
@@ -42,7 +47,7 @@ const SimilarVocalSection = () => {
       <div className='mt-6 w-full overflow-x-auto scrollbar-hide'>
         <div className='flex w-max gap-4'>
           {items.map((song) => (
-            <SongCard key={song.id} song={song} />
+            <SongCard key={song.id} song={song} onClick={onSongClick} />
           ))}
         </div>
       </div>
