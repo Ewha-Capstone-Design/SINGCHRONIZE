@@ -25,5 +25,7 @@ export { default as IcRecordingPause } from './ic_recording_pause.svg';
 export { default as IcRecordingStart } from './ic_recording_start.svg';
 export { default as IcRefresh } from './ic_refresh.svg';
 export { default as IcSing } from './ic_sing.svg';
+export { default as IcThumbsDown } from './ic_thumbs_down.svg';
+export { default as IcThumbsUp } from './ic_thumbs_up.svg';
 export { default as IcVolumeOff } from './ic_volume_off.svg';
 export { default as IcVolumeOn } from './ic_volume_on.svg';

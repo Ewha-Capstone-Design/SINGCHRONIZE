@@ -1,14 +1,14 @@
 'use client';
 
 import { cn } from '@/shared/lib/cn';
-import { IcPlay } from '../assets/icons';
+import { IcPlay } from '@/shared/assets/icons';
 import { BuskingType, BuskingUiType } from '@/entities/busking/model/types';
 
 type BuskingCardVariant = 'sm' | 'md' | 'lg';
 
 interface BuskingCardProps {
   variant?: BuskingCardVariant;
-  busking: BuskingUiType;
+  item: BuskingUiType;
   onClick?: () => void;
 }
 
@@ -64,8 +64,8 @@ const bottomAreaClassMap: Record<BuskingCardVariant, string> = {
   lg: 'h-23 px-4.5',
 };
 
-const BuskingCard = ({ variant = 'md', busking, onClick }: BuskingCardProps) => {
-  const { status, thumbnail, profileImage, nickname, listenerCount } = busking;
+const BuskingCard = ({ variant = 'md', item, onClick }: BuskingCardProps) => {
+  const { status, thumbnail, profileImage, nickname, listenerCount } = item;
 
   return (
     <button
