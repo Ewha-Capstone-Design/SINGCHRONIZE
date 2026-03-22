@@ -1,6 +1,8 @@
 """
 analysis_jobs.result_data 저장용: 파이프라인 report 중 화면에 쓰는 블록만 `result` 키 아래에 담음.
 embedding / metadata / genre_fitness.analysis.details / timbre formants 제외.
+
+job_id, user_id, recording_id, created_at 등은 analysis_jobs 행 컬럼에 두고 result_data에는 넣지 않음.
 """
 from __future__ import annotations
 
@@ -84,3 +86,8 @@ def build_result_data_payload(pipeline_result: Dict[str, Any]) -> Dict[str, Any]
         "version": "v1",
         "result": inner,
     }
+
+
+def build_failure_result_data(error_message: str) -> Dict[str, Any]:
+    """실패 시 result_data — 에러 문구만 (식별·시간은 analysis_jobs 컬럼)."""
+    return {"version": "v1", "error": str(error_message)}

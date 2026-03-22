@@ -2,6 +2,11 @@
 유저 보컬 전처리 메인 파이프라인 (아카펠라 전용)
 - 1번의 전처리로 리포트 + 추천용 데이터 동시 생성
 - 사용자가 아카펠라로만 녹음하므로 MR 제거 불필요
+
+DB 저장은 이 클래스가 하지 않는다. 프로덕션에서는 vocal_analysis_worker 가
+process() 결과로 analysis_jobs(result·scoring_song_aligned)를 쓰고,
+user_vocal_profile_sync 로 user_vocal_profiles(리포트 누적 + 1차 추천 컬럼)를 갱신한다.
+1차 추천 워커는 기본적으로 그 DB 값만 읽는다.
 """
 import json
 from pathlib import Path
@@ -13,6 +18,7 @@ from audio_preprocessing import AudioPreprocessor
 from feature_extraction import FeatureExtractor
 from report_generator_v2 import ReportGeneratorV2
 from radar_chart_descriptions import RADAR_CHART_DESCRIPTIONS, get_score_interpretation
+from genre_profiles import build_and_override_global_genre_profiles_from_db
 
 
 class UserVocalPipeline:
@@ -25,7 +31,7 @@ class UserVocalPipeline:
     1. 오디오 전처리 (표준화 + 세그먼트화)
     2. 특징 추출 (Pitch, Energy, Onset, Timbre, ECAPA)
     3. 보컬 분석 리포트 생성
-    4. 추천용 임베딩 생성
+    4. 추천용 임베딩·음색·F0 등 (DB 저장은 워커가 담당)
     
     사용 예시:
     ```python
@@ -46,7 +52,7 @@ class UserVocalPipeline:
         segment_duration: float = 20.0,
         hop_duration: float = 5.0,
         fast_mode: bool = False
-    ):
+        ):
         """
         Args:
             sr: 샘플레이트 (16kHz 권장)
@@ -55,6 +61,14 @@ class UserVocalPipeline:
             fast_mode: 빠른 모드 (세그먼트 길이 증가, 간격 증가로 세그먼트 개수 감소)
         """
         self.sr = sr
+
+        # 장르 프로파일을 DB 기반으로 초기화
+        print("\n[Init] DB 기반 장르 프로파일 로드 중...")
+        try:
+            build_and_override_global_genre_profiles_from_db()
+            print("✓ DB 기반 장르 프로파일 로드 완료")
+        except Exception as e:
+            print(f"⚠️ DB 기반 장르 프로파일 로드 실패, 기본 하드코딩 프로파일 사용: {e}")
         
         # 빠른 모드: 세그먼트 설정 최적화 (30-40초 녹음에 최적화)
         if fast_mode:

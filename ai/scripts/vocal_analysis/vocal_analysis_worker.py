@@ -4,18 +4,30 @@
 흐름:
 1. 입력: analysis_jobs.id (UUID) + (로컬) audio_path 또는 (AWS) s3_key
 2. AWS: 행 상태 ANALYZING → S3 다운로드 → UserVocalPipeline.process() → DONE + result_data
-3. 결과: 로컬은 output/<uuid>/result.json (전체), AWS는 result_data = { version, result: { report 일부 } }
+   (result_data: 화면용 result + scoring_song_aligned → 이후 sync 로 user_vocal_profiles 에 1차 추천 컬럼 반영)
+3. 결과: 로컬은 output/<uuid>/result.json, AWS는 analysis_jobs DONE 저장 후 user_vocal_profiles UPSERT
 
 Supabase analysis_jobs 스키마 (기본값):
   id, recording_id, user_id, status (vocal_analysis_status), result_data, created_at, updated_at
   status: QUEUED | UPLOADING | ANALYZING | FINDING_SONGS | DONE | FAILED
 
-실행 예:
-  로컬:  python vocal_analysis_worker.py <analysis_jobs.id> -a /path/to.wav
-  AWS:   python vocal_analysis_worker.py <analysis_jobs.id> --aws --s3-key path/in/bucket.m4a
-  SQS:   python vocal_analysis_worker.py --queue   # 메시지에 job_id 또는 id + s3_key
+실행 예 (반드시 이 디렉터리에서 실행 — import 경로):
+  cd ai/scripts/vocal_analysis
 
-.env (다른 테이블/컬럼명일 때만):
+  로컬 파일:  python vocal_analysis_worker.py <job_uuid> -a /path/to.wav
+  S3+DB:      python vocal_analysis_worker.py <job_uuid> --aws --s3-key path/in/bucket.m4a
+  SQS 큐:     python vocal_analysis_worker.py --queue
+
+  (venv는 ai 디렉터리에서 생성 후)
+  cd ../.. && python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
+  cd scripts/vocal_analysis && python vocal_analysis_worker.py --queue
+
+  Docker (ai 루트):
+  docker compose -f docker-compose.vocal_analysis_worker.yml up --build
+
+  SQS 메시지 Body JSON 예: {"job_id":"<uuid>","s3_key":"recordings/xxx.m4a"}
+
+.env (ai/.env, 다른 테이블/컬럼명일 때만 추가):
   ANALYSIS_JOBS_TABLE=analysis_jobs
   ANALYSIS_JOBS_ID_COLUMN=id
   ANALYSIS_JOBS_TIMESTAMP_COLUMN=updated_at
@@ -34,8 +46,10 @@ import boto3
 from botocore.exceptions import ClientError
 from dotenv import load_dotenv
 
+from report_for_db import build_failure_result_data, build_result_data_payload
+from user_song_aligned_features import build_scoring_song_aligned_from_pipeline_result
 from user_vocal_pipeline import UserVocalPipeline
-from report_for_db import build_result_data_payload
+from user_vocal_profile_sync import sync_user_vocal_profile_after_job
 
 
 # ============================================================================
@@ -257,19 +271,44 @@ class VocalAnalysisWorker:
             ANALYSIS_JOBS_ID_COLUMN, row_id
         ).execute()
 
+    def _fetch_job_context(self, job_id: str) -> Dict:
+        """analysis_jobs 한 행에서 user_id 조회 (프로필 UPSERT용). 메타는 result_data에 넣지 않음."""
+        if not self.supabase:
+            return {}
+        try:
+            res = (
+                self.supabase.table(ANALYSIS_JOBS_TABLE)
+                .select("user_id")
+                .eq(ANALYSIS_JOBS_ID_COLUMN, job_id)
+                .limit(1)
+                .execute()
+            )
+            rows = res.data or []
+            return rows[0] if rows else {}
+        except Exception as e:
+            print(f"⚠️  job 컨텍스트 조회 실패: {e}")
+            return {}
+
     def _save_to_db(self, job_id: str, result: Dict):
         """
         분석 결과를 DB(Supabase analysis_jobs)에 저장 — status=DONE, result_data=jsonb
         """
-        print(f"\n[Step 3] DB에 저장 중...")
+        print(f"\n[Step 3] DB에 저장 중 (화면용 result_data, 메타는 행 컬럼만)...")
         print(f"  - {ANALYSIS_JOBS_ID_COLUMN}: {job_id}")
 
-        # result_data: { "version", "result": { radar_chart, vocal_range, genre_fitness, timbre_profile } }
         result_data = build_result_data_payload(result)
+        aligned = build_scoring_song_aligned_from_pipeline_result(result)
+        if aligned:
+            result_data["scoring_song_aligned"] = aligned
 
         self._patch_analysis_job(
             job_id,
             {"status": STATUS_DONE, ANALYSIS_JOBS_RESULT_COLUMN: result_data},
+        )
+
+        ctx = self._fetch_job_context(job_id)
+        sync_user_vocal_profile_after_job(
+            self.supabase, user_id=ctx.get("user_id")
         )
 
     def _mark_job_failed(self, job_id: str, error_message: str):
@@ -280,10 +319,7 @@ class VocalAnalysisWorker:
         print(f"  - {ANALYSIS_JOBS_ID_COLUMN}: {job_id}")
         print(f"  - error: {error_message}")
 
-        fail_data = {
-            "error": error_message,
-            "version": "v1",
-        }
+        fail_data = build_failure_result_data(error_message)
         self._patch_analysis_job(
             job_id,
             {"status": STATUS_FAILED, ANALYSIS_JOBS_RESULT_COLUMN: fail_data},
