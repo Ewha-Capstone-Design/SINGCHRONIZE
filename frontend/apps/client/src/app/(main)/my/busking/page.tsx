@@ -10,7 +10,7 @@ const MyBuskingPage = () => {
       <div className='mx-auto w-fit'>
         <div className='grid grid-cols-4 gap-x-4 gap-y-7'>
           {MOCK_BUSKING_LIST.map((busking) => (
-            <BuskingCard key={busking.id} variant='sm' busking={busking} />
+            <BuskingCard key={busking.id} variant='sm' item={busking} />
           ))}
         </div>
       </div>

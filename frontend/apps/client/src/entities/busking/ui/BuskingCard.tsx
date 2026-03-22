@@ -8,7 +8,7 @@ type BuskingCardVariant = 'sm' | 'md' | 'lg';
 
 interface BuskingCardProps {
   variant?: BuskingCardVariant;
-  busking: BuskingUiType;
+  item: BuskingUiType;
   onClick?: () => void;
 }
 
@@ -64,8 +64,8 @@ const bottomAreaClassMap: Record<BuskingCardVariant, string> = {
   lg: 'h-23 px-4.5',
 };
 
-const BuskingCard = ({ variant = 'md', busking, onClick }: BuskingCardProps) => {
-  const { status, thumbnail, profileImage, nickname, listenerCount } = busking;
+const BuskingCard = ({ variant = 'md', item, onClick }: BuskingCardProps) => {
+  const { status, thumbnail, profileImage, nickname, listenerCount } = item;
 
   return (
     <button

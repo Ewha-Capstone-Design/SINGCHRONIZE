@@ -5,6 +5,21 @@ export type BuskingUiType = {
   status: BuskingType;
   thumbnail: string;
   nickname: string;
-  listenerCount: number;
   profileImage: string;
+  listenerCount: number;
+};
+
+export type SetlistType = {
+  rank: number;
+  title: string;
+  artist: string;
+  thumbnail?: string;
+  isCurrent?: boolean;
+};
+
+export type ChatMessageType = {
+  id: string;
+  username: string;
+  profileImage?: string;
+  message: string;
 };
