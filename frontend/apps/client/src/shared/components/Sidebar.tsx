@@ -5,8 +5,14 @@ import { usePathname } from 'next/navigation';
 import { cn } from '../lib/cn';
 import { SIDEBAR_ITEMS } from '../constants/sidebar';
 import { IcLogo } from '../assets/icons';
+import { ROUTES } from '../constants/routes';
 
-const HIDE_SIDEBAR_PATHS = ['/login', '/recommend/analyze', '/recommend/result'];
+const HIDE_SIDEBAR_PATHS = [
+  ROUTES.login.root,
+  ROUTES.recommend.analyze,
+  ROUTES.recommend.result,
+  ROUTES.live.room,
+];
 
 const Sidebar = () => {
   const pathname = usePathname();
