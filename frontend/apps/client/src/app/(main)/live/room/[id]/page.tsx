@@ -111,7 +111,7 @@ const BuskingViewerPage = () => {
 
         {/* 다른 버스킹 */}
         {isStreamer ? (
-          <div className='h-62'></div>
+          <div className='h-62'></div> // 셋리스트 넘기기 버튼
         ) : (
           <div className='pt-5 pb-7 bg-gray-950'>
             <BuskingSection
