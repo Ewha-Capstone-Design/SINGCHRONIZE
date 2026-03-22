@@ -3,6 +3,8 @@
 이 문서는 **현재 레포의 Python 워커 코드**를 기준으로 (1) **엔드투엔드 흐름**(누가 무엇을 어떤 순서로 하는지)과 (2) **계약**(필드명·상태값·SQS Body·삭제 정책)을 같이 정리한 것이다.  
 구현 세부는 다음 파일이 단일 근거(Single source of truth)다.
 
+**FastAPI `backend/` 팀용 요약(구현 체크리스트·발행 예시)**: [`backend/docs/AI_WORKER_INTEGRATION.md`](../../backend/docs/AI_WORKER_INTEGRATION.md)
+
 | 영역 | 파일 |
 |------|------|
 | 보컬 분석 워커·SQS | `ai/scripts/vocal_analysis/vocal_analysis_worker.py` |
@@ -12,6 +14,47 @@
 | 추천 통합 워커·SQS | `ai/scripts/recommendation/recommendation_worker.py` |
 | 2차 추천 | `ai/scripts/recommendation/second_recommendation_worker.py` |
 | `user_vocal_profiles` 스코어링 컬럼 DDL | `ai/scripts/vocal_analysis/sql/add_user_vocal_profiles_song_aligned_columns.sql` |
+
+---
+
+## 백엔드 → SQS `SendMessage` Body에 넣을 필드 (한눈에)
+
+Body는 **UTF-8 JSON 문자열** 한 덩어리. (SNS 래핑 시 최상위 `Message` 안에 동일 JSON — 각 워커가 파싱.)
+
+### 보컬 분석 큐 — 환경 변수 `VOCAL_ANALYSIS_SQS_QUEUE_URL`
+
+| JSON 키 | 필수 | 설명 |
+|---------|------|------|
+| `job_id` | ✅ | `analysis_jobs.id` 와 동일 UUID (`id` 로내도 됨) |
+| `s3_key` | ✅ | 워커 버킷 `S3_BUCKET_NAME` 기준 오브젝트 키 (`audio_s3_key` 별칭 가능) |
+
+**넣지 않아도 되는 것**: 별도 “보컬 프로필 id” — 없음. 프로필은 완료 후 `user_id` 로 upsert.
+
+**DB 선행 조건**: 해당 `job_id` 행에 `user_id` 가 있어야 완료 시 `user_vocal_profiles` 동기화가 기대대로 동작.
+
+### 추천 큐 — 환경 변수 `SQS_QUEUE_URL`
+
+| JSON 키 | 필수 | 설명 |
+|---------|------|------|
+| `job_id` | ✅ | `recommendation_logs.id` 와 동일 UUID |
+| `user_id` | ✅ | `user_vocal_profiles` 조회 키 (1차 기본 경로) |
+| `s3_key` | ❌ (기본) | **생략 가능**. 1차는 DB 프로필만 사용. 워커에 `FIRST_REC_FORCE_PIPELINE=1` 이고 S3 폴백을 쓸 때만 필요 |
+| `stage` | ❌ | `"stage1"` / `"stage2"`. 없으면 `recommendation_logs.status` 로 자동 분기 |
+
+**넣지 않아도 되는 것**: 보컬 프로필 전용 id — 스키마가 `user_id` 당 1행 upsert 이므로 **불필요**.
+
+**운영 권장**: 1차가 `user_vocal_profiles` 를 읽으므로, **보컬 분석 워커가 해당 유저 프로필을 채운 뒤** 추천 메시지 발행.
+
+---
+
+## 최근 코드 변경 요약 (추천 1차)
+
+- **`ai/scripts/recommendation/recommendation_worker.py` — `process_stage1`**
+  - **기본**: S3 다운로드·파이프라인 제거 → `user_vocal_profiles` 에서 `try_load_user_features_from_vocal_profile(user_id)` 로 유저 특징 로드.
+  - **폴백**: 환경 변수 `FIRST_REC_FORCE_PIPELINE=1` 이고 메시지에 유효한 `s3_key` 가 있을 때만 기존처럼 S3 + `extract_user_features_from_audio`.
+  - `process_recommendation_job` / SQS 수신: `s3_key` 없으면 빈 문자열로 처리.
+- **`first_recommendation_worker`** 와 **기본 경로·폴백 env** 가 맞춰짐.
+- **문서**: 본 MD의 흐름 B·절 3·7·11.4·11.5·11.6 등을 위 동작에 맞게 갱신됨.
 
 ---
 
@@ -25,7 +68,7 @@
 |------|------|---------|
 | 백엔드/API | 서버 | `analysis_jobs` / `recommendation_logs` 행 생성·상태 노출, S3 업로드 URL 또는 업로드 완료 처리, **SQS에 JSON 메시지 발행**, 클라이언트 폴링/Webhook |
 | 보컬 워커 | ECS/Fargate 등 | 보컬 큐 소비 → S3에서 오디오 다운로드 → `analysis_jobs` 갱신 → `user_vocal_profiles` UPSERT |
-| 추천 워커 | 동일 또는 별 태스크 | 추천 큐 소비 → (현재 통합 코드 기준) S3·Mongo·`recommendation_logs` 갱신 |
+| 추천 워커 | 동일 또는 별 태스크 | 추천 큐 소비 → 1차는 `user_vocal_profiles`·`song_features`·Mongo `basescores` → 2차 → `recommendation_logs` 갱신 (S3는 폴백 시만) |
 
 큐가 **두 개**이므로, “한 메시지로 보컬+추천 다 한다”는 흐름은 **이 레포 코드에 없다**. 백엔드가 **두 번** 발행하거나, 한쪽만 쓰는 설계를 택한다.
 
@@ -70,23 +113,22 @@ sequenceDiagram
 
 ### 흐름 B — 추천만 (`recommendation_worker.py` 통합 워커 + 추천 SQS)
 
-현재 통합 워커는 **1차에서 S3 오디오를 다시 받아** 파이프라인으로 유저 특징을 뽑는다 (`process_stage1`). 즉 **보컬 워커와 큐가 다르면, 추천만으로도 동작은 가능**하지만 **같은 파일을 두 번 분석**하게 된다.
+1차(`process_stage1`) **기본**: `user_vocal_profiles` 에서 스코어링 특징 로드 (보컬 분석 워커가 채운 컬럼). **SQS에 `s3_key` 없이** `job_id` + `user_id` 만내도 된다.  
+**폴백**: 워커에 `FIRST_REC_FORCE_PIPELINE=1` 이고 메시지에 `s3_key` 가 있으면 S3 다운로드 + 파이프라인(중복 분석).
 
 ```mermaid
 sequenceDiagram
   participant BE as 백엔드
-  participant S3 as S3
   participant Qr as 추천 SQS
   participant Wr as 추천 워커
   participant SB as Supabase
   participant MG as MongoDB
 
   BE->>SB: recommendation_logs 행 생성 (id=job_id, user_id, status 등)
-  BE->>Qr: SendMessage { job_id, user_id, s3_key, stage? }
+  BE->>Qr: SendMessage { job_id, user_id, s3_key?, stage? }
   Qr->>Wr: 메시지 전달
   Wr->>SB: status=RUNNING_STAGE1 (+ stage1_started_at)
-  Wr->>S3: 유저 녹음 다운로드 (s3_key)
-  Wr->>Wr: extract_user_features_from_audio (파이프라인)
+  Wr->>SB: user_vocal_profiles 로드 (기본)
   Wr->>SB: song_features 전량 조회
   Wr->>Wr: score_song 루프
   Wr->>MG: basescores 상위 200 저장
@@ -101,14 +143,23 @@ sequenceDiagram
 
 - `recommendation_logs.id` 를 메시지의 `job_id` 와 **동일**하게 두는 것이 워커 코드와 맞다 (`.eq("id", job_id)`).  
 - `user_id` 는 **필수** (없으면 메시지 삭제됨).  
+- 1차 기본 경로: 해당 유저 `user_vocal_profiles` 에 스코어링 컬럼이 있어야 함 → **보컬 분석 `DONE` 이후** 추천 큐를 쏘는 것을 권장.  
 - `stage` 를 생략하면 워커가 DB의 `status` 보고 `stage1` / `stage2` 를 고른다 (자동 분기 규칙은 아래 계약 절 참고).  
 - **실패 재시도는 SQS에 맡기지 않는다** (처리 후 메시지 삭제). 재시도·알람은 DB 상태와 백엔드 정책으로 잡는다.
 
 ---
 
-### 흐름 C — “보컬 먼저, 1차 추천은 DB 프로필만” (목표 아키텍처와 코드 정렬)
+### 흐름 C — “보컬 먼저, 1차는 프로필만” 제품 관점
 
-`first_recommendation_worker.process_first_recommendation` 의 **기본 경로**는 `user_vocal_profiles` 에 이미 채워진 스코어링 컬럼을 읽고, **`FIRST_REC_FORCE_PIPELINE=1` 일 때만** S3+파이프라인을 탄다.
+**백엔드가 할 일(대부분의 경우)**  
+추천 작업은 **`recommendation_logs` 행 생성 → 추천 SQS 발행 → `recommendation_logs.status`(및 `first_recommendation` / `recommend_songs` 등) 폴링** 으로 끝난다.  
+워커가 내부에서 `user_vocal_profiles` 만 읽는지, S3에서 다시 파이프라인을 도는지, `FIRST_REC_FORCE_PIPELINE` 을 쓰는지는 **백엔드 API 계약에 넣을 필요 없는 구현 디테일**이다.
+
+**백엔드가 제품/운영과만 맞추면 되는 한 가지**  
+통합 추천 워커 1차 **기본**은 `user_vocal_profiles` 이므로, **보컬 분석 완료(프로필 반영) 후** 추천 큐를 쏘는 것이 안전하다. S3 폴백(`FIRST_REC_FORCE_PIPELINE=1` + `s3_key`)을 켠 배포만 예외적으로 순서가 느슨해질 수 있다.
+
+**AI/인프라**  
+`recommendation_worker.process_stage1` 과 `first_recommendation_worker.process_first_recommendation` 의 **기본 경로가 동일**(DB 프로필)하다. 폴백도 같은 env `FIRST_REC_FORCE_PIPELINE` 을 쓴다.
 
 ```mermaid
 sequenceDiagram
@@ -117,20 +168,16 @@ sequenceDiagram
   participant Wv as 보컬 워커
   participant SB as Supabase
 
-  Note over BE,SB: 1) 흐름 A와 동일하게 보컬 완료까지
+  Note over BE,SB: (선택) 팀 정책: 추천 전에 보컬 완료 필요 시
   BE->>Qv: 보컬 메시지
-  Wv->>SB: DONE + user_vocal_profiles (스코어링 컬럼 포함)
-  BE->>BE: analysis_jobs.status=DONE 확인 후 다음 단계
+  Wv->>SB: DONE, user_vocal_profiles 갱신
+  BE->>SB: 필요 시 analysis_jobs 폴링
 
-  Note over BE,SB: 2) 1차 추천 트리거 (이 레포에서 SQS는 통합 추천 워커만 연결됨)
-  alt 통합 워커만 쓰는 현재 코드
-    BE->>BE: 추천 큐 발행 시에도 S3 파이프라인 1차가 돌아감 (중복 분석)
-  else first_recommendation_worker 로 맞춘 운영
-    BE->>BE: API/잡에서 process_first_recommendation 호출 또는 추천 워커를 DB 프로필 경로로 수정
-  end
+  Note over BE,SB: 추천 — 백엔드는 큐 + recommendation_logs 폴링
+  BE->>SB: recommendation_logs 생성
+  BE->>BE: 추천 SQS 발행
+  BE->>SB: status·결과 JSON 폴링
 ```
-
-**정리**: “보컬 한 번만 돌리고 추천은 프로필만 읽는다”는 제품 흐름을 원하면, **운영 엔트리포인트를 `first_recommendation_worker` 쪽과 맞추거나 `recommendation_worker.process_stage1` 을 같은 방식으로 고쳐야 한다** — 이 불일치는 아래 “통합 vs 분리” 절에도 적어 두었다.
 
 ---
 
@@ -139,8 +186,8 @@ sequenceDiagram
 | 목표 | 보컬 큐 | 추천 큐 | 비고 |
 |------|---------|---------|------|
 | 녹음 분석 리포트만 | ✅ 발행 | ❌ | `analysis_jobs` + `user_vocal_profiles` |
-| 통합 추천 워커 그대로 | 선택 | ✅ 발행 | 1차가 S3 파이프라인 재실행 |
-| 보컬 1회 + 프로필 기반 1차 | ✅ 발행 | 코드 정렬 필요 | 현재 `recommendation_worker` 와 `first_recommendation_worker` 동작이 다름 |
+| 통합 추천 워커 (기본) | 권장 선행 | ✅ 발행 | 1차는 `user_vocal_profiles`, 폴백 시만 S3 파이프라인 |
+| 보컬 없이 추천만 (비권장) | ❌ | ✅ + `FIRST_REC_FORCE_PIPELINE` + `s3_key` | 프로필 없으면 1차 실패 |
 
 ---
 
@@ -156,7 +203,7 @@ sequenceDiagram
 공통으로 워커가 쓰는 값:
 
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
-- `S3_BUCKET_NAME` (오브젝트는 메시지의 `s3_key`로 지정)
+- `S3_BUCKET_NAME` — **보컬 큐** 필수. **추천 워커**는 `FIRST_REC_FORCE_PIPELINE` S3 폴백 시에만 필요
 - 추천 워커 추가: `MONGO_URI`, `MONGO_DB_NAME` (기본 DB 이름 문자열 `singchronize`)
 
 `.env` 로드 순서: `ai/.env` 우선, 없으면 프로젝트 루트 `.env` (워커 공통 패턴).
@@ -209,6 +256,17 @@ Body가 `{"Message": "<JSON 문자열>"}` 이면, 워커가 `Message`를 한 번
 
 ### 3.1 메시지 Body (JSON)
 
+**백엔드가 일반 운영에서 쓰는 최소 예 (1차 = DB 프로필):**
+
+```json
+{
+  "job_id": "<recommendation_logs.id 와 동일 uuid>",
+  "user_id": "<supabase auth user id 등>"
+}
+```
+
+**필드·옵션 전체 예:**
+
 ```json
 {
   "job_id": "<uuid>",
@@ -218,6 +276,7 @@ Body가 `{"Message": "<JSON 문자열>"}` 이면, 워커가 `Message`를 한 번
 }
 ```
 
+- `s3_key`: **선택**. 생략·빈 문자열이면 1차는 **`user_vocal_profiles`만** 사용. `FIRST_REC_FORCE_PIPELINE=1` 폴백 시에만 필요.
 - `stage`: **선택**. 없으면 `recommendation_logs.status`로 자동 분기 (아래 5절).
 - `job_id` 또는 `user_id`가 없으면 워커는 **메시지 삭제** (잘못된 페이로드 드롭).
 
@@ -379,11 +438,11 @@ DDL은 `ai/scripts/vocal_analysis/sql/add_user_vocal_profiles_song_aligned_colum
 
 | 경로 | 1차 유저 특징 소스 |
 |------|---------------------|
-| `recommendation_worker.process_stage1` | **항상** S3 `s3_key` 다운로드 후 `extract_user_features_from_audio` (UserVocalPipeline) |
-| `first_recommendation_worker.process_first_recommendation` (기본) | `user_vocal_profiles` 에서 `try_load_user_features_from_vocal_profile` |
-| 위 모듈, `FIRST_REC_FORCE_PIPELINE=1` | S3 + 파이프라인 (DB 프로필 무시) |
+| `recommendation_worker.process_stage1` (기본) | `user_vocal_profiles` — `try_load_user_features_from_vocal_profile(user_id)` |
+| `first_recommendation_worker.process_first_recommendation` (기본) | 동일 |
+| 둘 다 `FIRST_REC_FORCE_PIPELINE=1` + 유효한 `s3_key` | S3 + `extract_user_features_from_audio` (DB 프로필 무시) |
 
-비동기 파이프라인을 **「보컬 워커로 프로필 채운 뒤 1차 추천은 DB만」** 으로 가져가려면, 운영에서 돌리는 엔트리포인트를 `first_recommendation_worker` 쪽 로직과 맞추거나 `recommendation_worker.process_stage1` 구현을 정렬하는 결정이 필요하다. 현재 코드는 **불일치**가 있다.
+SQS **기본 계약**은 `job_id` + `user_id` 만으로 1차 가능 (`s3_key` 생략). 폴백·로컬 디버그 시에만 `s3_key` 를 넣으면 된다.
 
 ---
 
@@ -446,20 +505,22 @@ DDL은 `ai/scripts/vocal_analysis/sql/add_user_vocal_profiles_song_aligned_colum
 
 `recommendation_worker.get_feedback_from_db` 가 읽는 `selected_genre`, `selected_keyword` 는 **통합 워커의 `adjust_basescore_with_feedback` 계열**과 연결된 필드이고, 2차 워커의 위 피드백 조회와는 **역할이 다르다**. 제품에서 “피드백 화면 → 2차”만 쓰면 `input_preferences.reranking_top3` + 위 테이블들을 우선 맞춘다.
 
-### 11.4 추천 SQS `s3_key` — stage2만 돌릴 때
+### 11.4 추천 SQS `s3_key` — 언제 필요한가
 
-`process_recommendation_job(..., s3_key, stage)` 는 **stage1일 때만** S3 다운로드를 한다. stage2만 큐에 넣는 경우 메시지에 `s3_key` 가 비어 있어도 된다 (다만 워커 CLI/다른 경로에서 빈 문자열이 깨지지 않는지는 호출부에서 확인).
+- **stage1 (기본)**: `user_vocal_profiles` 만 쓰면 되므로 **`s3_key` 생략 가능**.  
+- **stage1 + `FIRST_REC_FORCE_PIPELINE=1`**: S3 폴백이므로 **유효한 `s3_key` 필요**.  
+- **stage2만**: `s3_key` 없어도 됨.
 
 ### 11.5 워커 전용 환경 변수 (백엔드 API와 직접 주고받지 않음)
 
 | 변수 | 쓰는 쪽 | 의미 |
 |------|---------|------|
-| `FIRST_REC_FORCE_PIPELINE` | `first_recommendation_worker` | `1`/`true`/`yes` 이면 S3+파이프라인 강제 (기본은 DB 프로필). SQS 통합 워커와 무관. |
+| `FIRST_REC_FORCE_PIPELINE` | `recommendation_worker.process_stage1`, `first_recommendation_worker` | `1`/`true`/`yes` 이면 S3+파이프라인 강제 (기본은 DB 프로필). |
 
 ### 11.6 레포 **밖**에서 백엔드가 갖추는 것 (AI 코드에 상수로 없음)
 
 - **AWS**: SQS `SendMessage` 권한, 큐 URL(보컬·추천 각각), 리전·자격 증명(ECS 태스크 롤 vs 백엔드 IAM).  
-- **S3**: 업로드 버킷이 워커의 `S3_BUCKET_NAME` 과 **동일**해야 다운로드가 된다.  
+- **S3**: 추천 1차 **폴백**(`FIRST_REC_FORCE_PIPELINE`) 시에만 워커가 받는다. 그때 업로드 버킷이 워커의 `S3_BUCKET_NAME` 과 **동일**해야 한다.  
 - **Supabase**: 워커는 **Service Role** 로 RLS를 우회한다 — 백엔드가 쓰는 anon/key와 권한 모델은 별도 설계.  
 - **메시지 형식**: Body는 **UTF-8 JSON 문자열** 한 덩어리. 워커는 FIFO 전용 필드(`MessageGroupId` 등)를 쓰지 않는다 — **표준 큐** 가정.
 
@@ -483,6 +544,8 @@ DDL은 `ai/scripts/vocal_analysis/sql/add_user_vocal_profiles_song_aligned_colum
 | 영역 | 포함 여부 |
 |------|-----------|
 | 두 개 SQS URL env 이름, Body JSON, 별칭, SNS 래핑, 삭제·Visibility 정책 | ✅ |
+| 문서 상단 **백엔드 → SQS 필드 표** (필수/선택) | ✅ |
+| 추천 1차 DB 프로필·`s3_key` 선택·코드 변경 요약 | ✅ |
 | `analysis_jobs` / `recommendation_logs` 상태 문자열·주요 컬럼 | ✅ |
 | `result_data` 성공·실패 형태 | ✅ |
 | `user_vocal_profiles` 스코어링 컬럼·DDL 경로 | ✅ |
