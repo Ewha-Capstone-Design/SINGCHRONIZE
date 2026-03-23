@@ -4,13 +4,13 @@ import { Button } from '@singchronize/ui';
 import { cn } from '@/shared/lib/cn';
 import { BaseModal } from '@/shared/components';
 
-type EndLiveModalProps = {
+type LiveEndModalProps = {
   onClose: () => void;
   onConfirm: () => void;
   thumbnail?: string;
 };
 
-const EndLiveModal = ({ onClose, onConfirm, thumbnail }: EndLiveModalProps) => {
+const LiveEndModal = ({ onClose, onConfirm, thumbnail }: LiveEndModalProps) => {
   return (
     <BaseModal
       onClose={onClose}
@@ -54,4 +54,4 @@ const EndLiveModal = ({ onClose, onConfirm, thumbnail }: EndLiveModalProps) => {
   );
 };
 
-export default EndLiveModal;
+export default LiveEndModal;
