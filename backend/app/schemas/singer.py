@@ -2,6 +2,7 @@
 from pydantic import BaseModel, field_validator
 from typing import List, Optional
 from datetime import datetime
+from uuid import UUID
 
 
 # ── Random Singers ───────────────────────────────────
@@ -44,8 +45,7 @@ class FavoriteSingersSelectResponse(BaseModel):
 # ── Blocked Singer ───────────────────────────────────
 
 class BlockSingerRequest(BaseModel):
-    type: str        # "ARTIST" | "SONG"
-    target_id: str   # singer_id (문자열로 수신)
+    singer_id: int
 
 
 class BlockSingerResponse(BaseModel):
@@ -61,3 +61,28 @@ class BlockedSingerItem(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class BlockedSingersListResponse(BaseModel):
+    blocked_singers: List[BlockedSingerItem]
+
+
+# ── Blocked Song ──────────────────────────────────────
+
+class BlockSongRequest(BaseModel):
+    song_id: UUID
+
+
+class BlockedSongItem(BaseModel):
+    block_id: int
+    song_id: UUID
+    title: str
+    artist: str
+    album_cover: Optional[str] = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class BlockedSongsListResponse(BaseModel):
+    blocked_songs: List[BlockedSongItem]
