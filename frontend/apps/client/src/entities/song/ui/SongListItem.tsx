@@ -29,6 +29,7 @@ interface SongListItemProps {
 
   // ui state
   isLiked?: boolean;
+  selected?: boolean;
 
   // actions
   onClick?: () => void;
@@ -49,6 +50,7 @@ const SongListItem = ({
   likeCount,
   rightSlot,
   isLiked = false,
+  selected = false,
   onClick,
   onLikeClick,
   onMoreClick,
@@ -61,9 +63,10 @@ const SongListItem = ({
   return (
     <div
       className={cn(
-        'px-5 flex items-center gap-4 w-full rounded-10 bg-gray-800 shrink-0',
+        'px-5 flex items-center gap-4 w-full rounded-10 bg-gray-800 shrink-0 border border-transparent',
         isTall ? 'h-22.5' : 'h-20',
-        onClick && 'cursor-pointer'
+        onClick && 'cursor-pointer',
+        selected && 'border-brand'
       )}
       onClick={onClick}
     >

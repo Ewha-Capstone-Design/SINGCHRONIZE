@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -13,6 +13,7 @@ import {
   verticalListSortingStrategy,
   arrayMove,
 } from '@dnd-kit/sortable';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 
 import SortableSongItem from './SortableSongItem';
 import { SongUiType } from '@/entities/song/model/types';
@@ -20,13 +21,22 @@ import { SongUiType } from '@/entities/song/model/types';
 type SortableSongListProps = {
   initialSongs: SongUiType[];
   onChange?: (songs: SongUiType[]) => void;
+  onRemove?: (songId: string) => void;
 };
 
-const SortableSongList = ({ initialSongs, onChange }: SortableSongListProps) => {
+const SortableSongList = ({
+  initialSongs,
+  onChange,
+  onRemove,
+}: SortableSongListProps) => {
   const [songs, setSongs] = useState<SongUiType[]>(initialSongs);
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(useSensor(PointerSensor));
+
+  useEffect(() => {
+    setSongs(initialSongs);
+  }, [initialSongs]);
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
@@ -48,10 +58,20 @@ const SortableSongList = ({ initialSongs, onChange }: SortableSongListProps) => 
     });
   };
 
+  const handleRemove = (songId: string) => {
+    setSongs((prev) => {
+      const next = prev.filter((song) => song.id !== songId);
+      onChange?.(next);
+      onRemove?.(songId);
+      return next;
+    });
+  };
+
   return (
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
+      modifiers={[restrictToVerticalAxis]}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
@@ -61,7 +81,12 @@ const SortableSongList = ({ initialSongs, onChange }: SortableSongListProps) => 
       >
         <div className='flex flex-col gap-5 w-full'>
           {songs.map((song, index) => (
-            <SortableSongItem key={song.id} song={song} index={index} />
+            <SortableSongItem
+              key={song.id}
+              song={song}
+              index={index}
+              onRemove={handleRemove}
+            />
           ))}
         </div>
       </SortableContext>
