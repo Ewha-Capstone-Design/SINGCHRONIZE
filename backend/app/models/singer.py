@@ -1,4 +1,4 @@
-"""Singer & BlockedSinger & FavoriteSinger 모델"""
+"""Singer & BlockedSinger & BlockedSong & FavoriteSinger 모델"""
 from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Uuid, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
@@ -35,6 +35,19 @@ class BlockedSinger(Base):
 
     __table_args__ = (
         UniqueConstraint("user_id", "singer_id", name="uq_user_singer_block"),
+    )
+
+
+class BlockedSong(Base):
+    __tablename__ = "blocked_songs"
+
+    block_id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    song_id = Column(Uuid, ForeignKey("songs.id", ondelete="CASCADE"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "song_id", name="uq_user_song_block"),
     )
 
 
