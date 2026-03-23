@@ -14,13 +14,17 @@ class User(Base):
     nickname = Column(String, nullable=False)
     email = Column(String, unique=True, index=True, nullable=True)
     profile_img = Column(String, nullable=True)
+    bio = Column(String(200), nullable=True)
 
-    # Auth
-    provider = Column(String, nullable=False)       # kakao, naver
+    # Auth - primary provider
+    provider = Column(String, nullable=False)       # "kakao" | "naver"
     provider_id = Column(String, nullable=False)
 
-    # JSON - 보컬 분석 캐시 (마이페이지 성능)
+    # SNS 추가 연동 ID (primary와 다른 provider)
+    kakao_id = Column(String, unique=True, nullable=True)
+    naver_id = Column(String, unique=True, nullable=True)
 
+    # JSON - 보컬 분석 캐시 (마이페이지 성능)
     vocal_summary_cache = Column(JSON, nullable=True)
 
     # JSON - 설정 통합

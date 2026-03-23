@@ -2,7 +2,7 @@
 from uuid import UUID
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status  # noqa: F401
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, delete
 from sqlalchemy.orm import selectinload
@@ -12,14 +12,11 @@ from app.dependencies.auth import get_current_user
 from app.models.user import User
 from app.models.library import Folder, WishlistItem
 from app.models.archive import Archive
-from app.models.singer import BlockedSinger
 from app.schemas.library import (
     FolderCreate, FolderResponse,
     WishlistItemCreate, WishlistItemResponse,
 )
 from app.schemas.archive import ArchiveCreate, ArchiveUpdate, ArchiveResponse
-from app.schemas.singer import BlockSingerRequest, BlockSingerResponse, BlockedSingerItem
-from app.services.singer_service import SingerService
 
 router = APIRouter(prefix="/api/v1/library", tags=["Library"])
 
@@ -292,67 +289,3 @@ async def delete_history(
     await db.delete(archive)
 
 
-# ═══════════════════════════════════════════════════
-# Blocked endpoints (가수/곡 차단)
-# ═══════════════════════════════════════════════════
-
-@router.post("/blocked", response_model=BlockSingerResponse, status_code=status.HTTP_201_CREATED)
-async def block_target(
-    body: BlockSingerRequest,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """가수 또는 곡 차단 등록 (type: ARTIST | SONG)"""
-    if body.type == "ARTIST":
-        service = SingerService(db)
-        blocked = await service.block_singer(
-            user_id=current_user.id,
-            singer_id=int(body.target_id),
-        )
-        return BlockSingerResponse(
-            id=f"block_{blocked.block_id}",
-            created_at=blocked.created_at,
-        )
-
-    raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail={"code": "UNSUPPORTED_TYPE", "message": "지원하지 않는 차단 type입니다."},
-    )
-
-
-@router.get("/blocked", response_model=List[BlockedSingerItem])
-async def get_blocked_list(
-    type: str = Query("ARTIST", description="차단 유형 (ARTIST)"),
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """차단 목록 조회 (현재 ARTIST 타입만 지원)"""
-    if type == "ARTIST":
-        service = SingerService(db)
-        blocked_list = await service.get_blocked_singers(user_id=current_user.id)
-        return [
-            BlockedSingerItem(
-                block_id=b.block_id,
-                singer_id=b.singer_id,
-                name=b.singer.name,
-                photo_url=b.singer.photo_url,
-                created_at=b.created_at,
-            )
-            for b in blocked_list
-        ]
-
-    raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail={"code": "UNSUPPORTED_TYPE", "message": "지원하지 않는 차단 type입니다."},
-    )
-
-
-@router.delete("/blocked/{block_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def unblock_target(
-    block_id: int,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """차단 해제 - 본인 차단 건만 삭제 가능 (타인 접근 시 403)"""
-    service = SingerService(db)
-    await service.unblock_singer(user_id=current_user.id, block_id=block_id)
