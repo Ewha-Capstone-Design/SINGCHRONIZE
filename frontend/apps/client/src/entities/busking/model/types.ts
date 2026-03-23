@@ -23,3 +23,12 @@ export type ChatMessageType = {
   profileImage?: string;
   message: string;
 };
+
+export type BuskingResultItemType = {
+  id: string | number;
+  rank: number;
+  title: string;
+  artist: string;
+  thumbnail?: string;
+  votePercent: number;
+};

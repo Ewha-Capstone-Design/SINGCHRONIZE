@@ -30,6 +30,7 @@ export const ROUTES = {
 export const route = {
   archiveCategory: (categoryKey: string) => `/archive/${categoryKey}` as const,
   liveRoom: (roomId: string) => `/live/room/${roomId}` as const,
+  liveRoomEnd: (roomId: string) => `/live/room/${roomId}/end` as const,
 };
 
 // 타입 유틸리티: ROUTES 객체 내부의 모든 string 값을 Union 타입으로 추출

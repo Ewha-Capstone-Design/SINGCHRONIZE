@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { Button } from '@singchronize/ui';
 import { cn } from '@/shared/lib/cn';
 import { IcBack } from '@/shared/assets/icons';
-import { SetlistPanel, VotePanel, LiveChat } from '@/features/busking/ui';
+import { EndLiveModal, SetlistPanel, VotePanel, LiveChat } from '@/features/busking/ui';
 import { BuskingSection } from '@/widgets/busking-list/ui';
 
 import { useNavigate } from '@/shared/lib/navigation';
@@ -21,12 +21,13 @@ import { MOCK_PROFILE } from '@/entities/user/model/mock';
 const MOCK_ROLE = 'viewer' as 'viewer' | 'streamer';
 
 const BuskingViewerPage = () => {
-  const { go, back, ROUTES } = useNavigate();
+  const { go, back, ROUTES, dynamic } = useNavigate();
   const params = useParams();
   const roomId = params.roomId as string;
 
   const [showVote, setShowVote] = useState(true);
   const [showEndModal, setShowEndModal] = useState(false);
+  const [showViewerEndModal, setShowViewerEndModal] = useState(false);
 
   const user = MOCK_PROFILE;
   const isStreamer = MOCK_ROLE === 'streamer';
@@ -34,17 +35,24 @@ const BuskingViewerPage = () => {
   const { endLive } = useBuskingSocket({
     roomId,
     onLiveEnd: () => {
-      if (!isStreamer) setShowEndModal(true);
+      if (!isStreamer) setShowViewerEndModal(true);
     },
   });
 
+  // 스트리머: 종료 버튼 → EndLiveModal 오픈
   const handleEndLive = () => {
-    endLive();
-    go(ROUTES.live.root);
+    setShowEndModal(true);
   };
 
-  const handleConfirmEnd = () => {
-    setShowEndModal(false);
+  // 스트리머: 모달에서 확인 → 소켓 종료 후 결과 페이지
+  const handleConfirmEndLive = () => {
+    // endLive(); // TODO: 웹소켓 기능 구현 시 주석 해제
+    go(dynamic.liveRoomEnd(roomId));
+  };
+
+  // 시청자: 방송 종료 알림 모달에서 확인
+  const handleConfirmViewerEnd = () => {
+    setShowViewerEndModal(false);
     go(ROUTES.live.root);
   };
 
@@ -130,17 +138,22 @@ const BuskingViewerPage = () => {
         <LiveChat messages={MOCK_CHAT} />
       </div>
 
-      {/* 라이브 종료 모달 */}
+      {/* 스트리머: 종료 확인 모달 */}
       {showEndModal && (
-        <div className='absolute inset-0 flex items-center justify-center bg-black/60'>
-          <div className='flex flex-col items-center gap-6 w-80 rounded-16 bg-gray-900 p-8'>
+        <EndLiveModal
+          onClose={() => setShowEndModal(false)}
+          onConfirm={handleConfirmEndLive}
+        />
+      )}
+
+      {/* 시청자: 방송 종료 알림 모달 */}
+      {showViewerEndModal && (
+        <div className='absolute inset-0 flex items-center justify-center bg-dim z-20'>
+          <div className='p-8 flex flex-col items-center gap-6 w-80 rounded-10 bg-gray-800'>
             <p className='typo-18sb text-white text-center'>라이브가 종료되었습니다</p>
-            <button
-              onClick={handleConfirmEnd}
-              className='w-full py-3 rounded-10 bg-accent-600 typo-16m text-white'
-            >
+            <Button variant={'accent'} className='w-52' onClick={handleConfirmViewerEnd}>
               확인
-            </button>
+            </Button>
           </div>
         </div>
       )}
