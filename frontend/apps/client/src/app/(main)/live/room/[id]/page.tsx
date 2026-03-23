@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Button } from '@singchronize/ui';
+import { useModal } from '@/shared/hooks';
 import { cn } from '@/shared/lib/cn';
 import { IcBack } from '@/shared/assets/icons';
-import { EndLiveModal, SetlistPanel, VotePanel, LiveChat } from '@/features/busking/ui';
 import { BuskingSection } from '@/widgets/busking-list/ui';
+import { LiveEndModal, SetlistPanel, VotePanel, LiveChat } from '@/features/busking/ui';
 
 import { useNavigate } from '@/shared/lib/navigation';
 import { useBuskingSocket } from '@/features/busking/hooks/useBuskingSocket';
@@ -26,8 +27,9 @@ const BuskingViewerPage = () => {
   const roomId = params.roomId as string;
 
   const [showVote, setShowVote] = useState(true);
-  const [showEndModal, setShowEndModal] = useState(false);
-  const [showViewerEndModal, setShowViewerEndModal] = useState(false);
+
+  const endModal = useModal();
+  const viewerEndModal = useModal();
 
   const user = MOCK_PROFILE;
   const isStreamer = MOCK_ROLE === 'streamer';
@@ -35,13 +37,13 @@ const BuskingViewerPage = () => {
   const { endLive } = useBuskingSocket({
     roomId,
     onLiveEnd: () => {
-      if (!isStreamer) setShowViewerEndModal(true);
+      if (!isStreamer) viewerEndModal.openModal();
     },
   });
 
-  // 스트리머: 종료 버튼 → EndLiveModal 오픈
+  // 스트리머: 종료 버튼 → LiveEndModal 오픈
   const handleEndLive = () => {
-    setShowEndModal(true);
+    endModal.openModal();
   };
 
   // 스트리머: 모달에서 확인 → 소켓 종료 후 결과 페이지
@@ -52,7 +54,7 @@ const BuskingViewerPage = () => {
 
   // 시청자: 방송 종료 알림 모달에서 확인
   const handleConfirmViewerEnd = () => {
-    setShowViewerEndModal(false);
+    viewerEndModal.closeModal();
     go(ROUTES.live.root);
   };
 
@@ -139,15 +141,12 @@ const BuskingViewerPage = () => {
       </div>
 
       {/* 스트리머: 종료 확인 모달 */}
-      {showEndModal && (
-        <EndLiveModal
-          onClose={() => setShowEndModal(false)}
-          onConfirm={handleConfirmEndLive}
-        />
+      {endModal.open && (
+        <LiveEndModal onClose={endModal.closeModal} onConfirm={handleConfirmEndLive} />
       )}
 
       {/* 시청자: 방송 종료 알림 모달 */}
-      {showViewerEndModal && (
+      {viewerEndModal.open && (
         <div className='absolute inset-0 flex items-center justify-center bg-dim z-20'>
           <div className='p-8 flex flex-col items-center gap-6 w-80 rounded-10 bg-gray-800'>
             <p className='typo-18sb text-white text-center'>라이브가 종료되었습니다</p>

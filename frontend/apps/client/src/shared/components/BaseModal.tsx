@@ -23,16 +23,18 @@ const BaseModal = ({
         overlayClassName
       )}
     >
-      <div
-        role='dialog'
-        aria-modal='true'
-        className={cn('relative', className)}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {children}
+      <div className='relative w-full flex justify-center'>
+        <div
+          role='dialog'
+          aria-modal='true'
+          className={cn('relative', className)}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {children}
+        </div>
 
         <button
-          className='absolute -bottom-16 left-1/2 -translate-x-1/2 w-8 h-8 shrink-0 text-gray-300'
+          className='absolute top-full left-1/2 -translate-x-1/2 mt-10 w-8 h-8 shrink-0 text-gray-300'
           onClick={onClose}
         >
           <IcClose />

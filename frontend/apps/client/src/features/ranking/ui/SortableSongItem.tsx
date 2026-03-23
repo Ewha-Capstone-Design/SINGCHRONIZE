@@ -1,15 +1,17 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { SongUiType } from '@/entities/song/model/types';
-import { SongItem } from '@/entities/song/ui';
 import { cn } from '@/shared/lib/cn';
+import { IcTrash } from '@/shared/assets/icons';
+import type { SongUiType } from '@/entities/song/model/types';
+import { SongItem } from '@/entities/song/ui';
 
 type SortableSongItemProps = {
   song: SongUiType;
   index: number;
+  onRemove?: (songId: string) => void;
 };
 
-const SortableSongItem = ({ song, index }: SortableSongItemProps) => {
+const SortableSongItem = ({ song, index, onRemove }: SortableSongItemProps) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: song.id });
 
@@ -21,13 +23,23 @@ const SortableSongItem = ({ song, index }: SortableSongItemProps) => {
   return (
     <div ref={setNodeRef} style={style} className='flex justify-between items-center'>
       {/* 순위 */}
-      <div className='typo-32b'>{index + 1}</div>
+      <div className='typo-32b text-white'>{index + 1}</div>
 
       <SongItem
         song={song}
-        onPlay={() => {
-          // TODO: 미리듣기
-        }}
+        showPlayButton={false}
+        actionSlot={
+          onRemove ? (
+            <button
+              type='button'
+              onClick={() => onRemove(String(song.id))}
+              className='text-gray-300'
+              aria-label='곡 삭제'
+            >
+              <IcTrash />
+            </button>
+          ) : null
+        }
         dragHandleProps={{
           ...attributes,
           ...listeners,
