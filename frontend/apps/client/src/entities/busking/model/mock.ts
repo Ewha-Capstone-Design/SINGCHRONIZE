@@ -1,4 +1,9 @@
-import type { BuskingUiType, SetlistType, ChatMessageType } from './types';
+import type {
+  BuskingUiType,
+  SetlistType,
+  ChatMessageType,
+  BuskingResultItemType,
+} from './types';
 
 export const MOCK_BUSKING_LIST: BuskingUiType[] = [
   {
@@ -94,4 +99,33 @@ export const MOCK_CHAT: ChatMessageType[] = [
   },
   { id: '8', username: '지나2001', message: '잔나비보다는 한로로가 더 잘어울리는듯' },
   { id: '9', username: '나는야보컬왕', message: '최고' },
+];
+
+export const MOCK_BUSKING_RESULT: BuskingResultItemType[] = [
+  { id: 1, rank: 1, title: '이상비행', artist: '한로로', thumbnail: '', votePercent: 86 },
+  {
+    id: 2,
+    rank: 2,
+    title: '주저하는 연인..',
+    artist: '잔나비',
+    thumbnail: '',
+    votePercent: 60,
+  },
+  {
+    id: 3,
+    rank: 3,
+    title: '자몽살구클럽',
+    artist: '한로로',
+    thumbnail: '',
+    votePercent: 92,
+  },
+  {
+    id: 4,
+    rank: 4,
+    title: '바이, 썸머',
+    artist: '아이유',
+    thumbnail: '',
+    votePercent: 32,
+  },
+  { id: 5, rank: 5, title: '파도', artist: '새소년', thumbnail: '', votePercent: 12 },
 ];
