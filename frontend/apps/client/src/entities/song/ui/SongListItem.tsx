@@ -11,7 +11,7 @@ interface SongListItemProps {
   rank?: number;
   thumbnail?: string;
   title: string;
-  artist: string;
+  artist?: string;
 
   // list2
   tag?: string;
@@ -89,7 +89,7 @@ const SongListItem = ({
       {/* [중앙] 곡 정보 */}
       <div className='flex min-w-0 flex-1 flex-col gap-0.5 text-left'>
         <h4 className='truncate typo-18sb text-white'>{title}</h4>
-        <p className='truncate typo-14r text-gray-200'>{artist}</p>
+        {artist && <p className='truncate typo-14r text-gray-200'>{artist}</p>}
       </div>
 
       {/* [오른쪽] 메타 영역 */}
