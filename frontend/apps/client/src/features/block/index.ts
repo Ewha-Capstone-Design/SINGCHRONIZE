@@ -1,1 +1,1 @@
-export { default as BlockedSongsModal } from './ui/BlockedSongsModal';
+export { default as BlockedModal } from './ui/BlockedModal';

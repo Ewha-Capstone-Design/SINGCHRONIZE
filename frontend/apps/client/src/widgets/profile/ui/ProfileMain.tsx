@@ -1,21 +1,17 @@
 'use client';
 
-import { IcKakao, IcNaver } from '@/shared/assets/icons';
 import { useNavigate } from '@/shared/lib/navigation';
 import { useModal } from '@/shared/hooks';
 import { ProfileCard } from '@/entities/user/ui';
-import { BlockedSongsModal } from '@/features/block';
+import { BlockedModal } from '@/features/block';
 import SnsAccountItem from './SnsAccountItem';
 
 import { MOCK_PROFILE, MOCK_SNS_ACCOUNTS } from '@/entities/user/model/mock';
 
 const ProfileMain = () => {
   const { go, ROUTES } = useNavigate();
-  const {
-    open: isBlockedModalOpen,
-    openModal: openBlockedModal,
-    closeModal: closeBlockedModal,
-  } = useModal();
+  const blockedSongModal = useModal();
+  const blockedArtistModal = useModal();
 
   const profile = MOCK_PROFILE;
   const kakaoAccount = MOCK_SNS_ACCOUNTS.find((a) => a.provider === 'kakao');
@@ -27,7 +23,8 @@ const ProfileMain = () => {
   ];
 
   const accountSettings = [
-    { label: '차단한 곡 관리하기', action: openBlockedModal },
+    { label: '차단한 곡 관리하기', action: blockedSongModal.openModal },
+    { label: '차단한 가수 관리하기', action: blockedArtistModal.openModal },
     { label: '로그아웃 하기', action: null },
     { label: '탈퇴하기', action: null },
   ];
@@ -92,7 +89,12 @@ const ProfileMain = () => {
         </div>
       </div>
 
-      {isBlockedModalOpen && <BlockedSongsModal onClose={closeBlockedModal} />}
+      {blockedSongModal.open && (
+        <BlockedModal type='song' onClose={blockedSongModal.closeModal} />
+      )}
+      {blockedArtistModal.open && (
+        <BlockedModal type='artist' onClose={blockedArtistModal.closeModal} />
+      )}
     </div>
   );
 };
