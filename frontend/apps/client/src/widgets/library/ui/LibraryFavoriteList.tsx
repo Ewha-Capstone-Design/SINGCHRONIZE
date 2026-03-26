@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { Button } from '@singchronize/ui';
+import { useModal } from '@/shared/hooks';
+import { AddFolderModal } from '@/features/add-favorite';
 import { FavoriteFolderCard } from '@/entities/library/ui';
 import type { FavoriteFolderUiType } from '@/entities/library/model/types';
 import FavoriteFolderDetail from './FavoriteFolderDetail';
@@ -12,6 +14,8 @@ import {
 } from '@/entities/library/model/mock';
 
 const LibraryFavoriteList = () => {
+  const { open: isAddModalOpen, openModal, closeModal } = useModal(false);
+
   const [selectedFolder, setSelectedFolder] = useState<FavoriteFolderUiType | null>(null);
 
   const folders = MOCK_FAVORITE_FOLDERS;
@@ -23,7 +27,7 @@ const LibraryFavoriteList = () => {
 
   return (
     <section className='flex flex-col'>
-      <Button variant='normal' className='my-6 w-fit'>
+      <Button variant='normal' className='my-6 w-fit' onClick={openModal}>
         찜 폴더 추가하기
       </Button>
 
@@ -41,6 +45,8 @@ const LibraryFavoriteList = () => {
           </li>
         ))}
       </ul>
+
+      {isAddModalOpen && <AddFolderModal onClose={closeModal} />}
     </section>
   );
 };
