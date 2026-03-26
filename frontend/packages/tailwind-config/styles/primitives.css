@@ -38,10 +38,10 @@
     --accent-900: #c2051f;
 
     /* Genre */
-    --genre-ballad: #4dabd0;
-    --genre-pop: #0a4bff;
-    --genre-rock: #ff3822;
-    --genre-rnb: #a200ff;
+    --genre-ballad: #2bc3ff;
+    --genre-pop: #245eff;
+    --genre-rock: #12b560;
+    --genre-rnb: #b33ff5;
     --genre-trot: #ff6c1d;
     --genre-dance: #ff46d7;
   }
