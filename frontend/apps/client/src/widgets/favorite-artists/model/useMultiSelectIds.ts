@@ -22,6 +22,7 @@ export const useMultiSelectIds = ({ initialSelectedIds, maxSelect }: Params) => 
       setSelectedIds((prev) => {
         const exists = prev.includes(id);
         if (exists) return prev.filter((x) => x !== id);
+        if (maxSelect !== undefined && prev.length >= maxSelect) return prev;
 
         return [...prev, id];
       });

@@ -1,14 +1,14 @@
 'use client';
 
 type SelectionCounterProps = {
-  minSelect: number;
+  maxSelect: number;
   selectedCount: number;
 };
 
-const SelectionCounter = ({ minSelect, selectedCount }: SelectionCounterProps) => {
+const SelectionCounter = ({ maxSelect, selectedCount }: SelectionCounterProps) => {
   return (
     <p className='typo-16r text-gray-400'>
-      최소 {minSelect}명을 선택해주세요 ({selectedCount}/{minSelect})
+      최대 {maxSelect}명을 선택해주세요 ({selectedCount}/{maxSelect})
     </p>
   );
 };
