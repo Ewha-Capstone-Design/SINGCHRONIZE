@@ -21,7 +21,7 @@ const CompletePage = () => {
 
         <div className='flex gap-3'>
           <Button variant={'outline'}>나중에 이용하기</Button>
-          <Button onClick={() => go(ROUTES.home)}>로그인 하러가기</Button>
+          <Button onClick={() => go(ROUTES.home)}>홈으로 이동하기</Button>
         </div>
       </main>
     </div>
