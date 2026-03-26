@@ -22,7 +22,13 @@ const LibraryFavoriteList = () => {
   const songs = MOCK_FAVORITE_SONGS;
 
   if (selectedFolder) {
-    return <FavoriteFolderDetail folder={selectedFolder} songs={songs} />;
+    return (
+      <FavoriteFolderDetail
+        folder={selectedFolder}
+        songs={songs}
+        onBack={() => setSelectedFolder(null)}
+      />
+    );
   }
 
   return (

@@ -3,19 +3,21 @@
 import { Button } from '@singchronize/ui';
 import { cn } from '@/shared/lib/cn';
 import { useModal } from '@/shared/hooks';
+import { BackButton } from '@/shared/components';
+import { AddFavoriteModal } from '@/features/add-favorite';
 import { SongListItem } from '@/entities/song/ui';
 import type {
   FavoriteFolderUiType,
   FavoriteSongUiType,
 } from '@/entities/library/model/types';
-import { AddFavoriteModal } from '@/features/add-favorite';
 
 interface FavoriteFolderDetailProps {
   folder: FavoriteFolderUiType;
   songs: FavoriteSongUiType[];
+  onBack: () => void;
 }
 
-const FavoriteFolderDetail = ({ folder, songs }: FavoriteFolderDetailProps) => {
+const FavoriteFolderDetail = ({ folder, songs, onBack }: FavoriteFolderDetailProps) => {
   const { open: isAddModalOpen, openModal, closeModal } = useModal(false);
 
   return (
@@ -24,7 +26,10 @@ const FavoriteFolderDetail = ({ folder, songs }: FavoriteFolderDetailProps) => {
         찜 추가하기
       </Button>
 
-      <h2 className='typo-24b text-gray-100'>{folder.name}</h2>
+      <div className='flex gap-3'>
+        <BackButton onClick={onBack} />
+        <h2 className='typo-24b text-gray-100'>{folder.name}</h2>
+      </div>
 
       <ul
         className={cn(
