@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { Button } from '@singchronize/ui';
 import { useModal } from '@/shared/hooks';
 import { cn } from '@/shared/lib/cn';
-import { IcBack } from '@/shared/assets/icons';
+import { BackButton } from '@/shared/components';
 import { BuskingSection } from '@/widgets/busking-list/ui';
 import { LiveEndModal, SetlistPanel, VotePanel, LiveChat } from '@/features/busking/ui';
 
@@ -22,7 +22,7 @@ import { MOCK_PROFILE } from '@/entities/user/model/mock';
 const MOCK_ROLE = 'viewer' as 'viewer' | 'streamer';
 
 const BuskingViewerPage = () => {
-  const { go, back, ROUTES, dynamic } = useNavigate();
+  const { go, ROUTES, dynamic } = useNavigate();
   const params = useParams();
   const roomId = params.roomId as string;
 
@@ -71,7 +71,7 @@ const BuskingViewerPage = () => {
       <div className='flex flex-col flex-1 overflow-y-auto scrollbar-hide'>
         {/* 헤더 */}
         <div className='px-9 flex items-center h-26 shrink-0'>
-          <IcBack onClick={back} />
+          <BackButton />
 
           <div className='ml-5 flex gap-2'>
             <div className='size-12 rounded-full bg-gray-600 border border-accent-600 shrink-0 overflow-hidden'>

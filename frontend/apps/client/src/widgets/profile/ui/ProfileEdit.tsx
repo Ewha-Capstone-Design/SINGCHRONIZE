@@ -2,8 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { InputField, Button } from '@singchronize/ui';
-import { IcBack } from '@/shared/assets/icons';
-import { useNavigate } from '@/shared/lib/navigation';
+import { BackButton } from '@/shared/components';
 import { ArtistCard } from '@/entities/artist/ui';
 import { EditFavoriteArtistsModal } from '@/features/edit-favorite-artists';
 import SnsAccountItem from './SnsAccountItem';
@@ -12,8 +11,6 @@ import { MOCK_PROFILE, MOCK_SNS_ACCOUNTS } from '@/entities/user/model/mock';
 import { MOCK_ALL_ARTISTS } from '@/entities/artist/model/mock';
 
 const ProfileEdit = () => {
-  const { back } = useNavigate();
-
   const profile = MOCK_PROFILE;
   const artists = MOCK_ALL_ARTISTS.slice(0, 3);
 
@@ -42,9 +39,7 @@ const ProfileEdit = () => {
   return (
     <div className='min-h-screen text-white'>
       <div className='pt-12 pb-5 px-13 flex items-center gap-13'>
-        <button type='button' onClick={back}>
-          <IcBack />
-        </button>
+        <BackButton />
         <h1 className='typo-24b text-white'>프로필 수정하기</h1>
       </div>
 

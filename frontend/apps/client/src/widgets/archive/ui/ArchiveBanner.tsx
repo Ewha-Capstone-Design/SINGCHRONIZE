@@ -2,8 +2,7 @@
 
 import { useNavigate } from '@/shared/lib/navigation';
 import { cn } from '@/shared/lib/cn';
-import { SituationCard, GenreCard } from '@/shared/components';
-import { IcBack } from '@/shared/assets/icons';
+import { SituationCard, GenreCard, BackButton } from '@/shared/components';
 import { CategoryMetaType } from '@/shared/types/category';
 
 type ArchiveBannerProps = {
@@ -39,11 +38,7 @@ const ArchiveBanner = ({ variant, category }: ArchiveBannerProps) => {
       )}
       style={getGradientStyle()}
     >
-      {isDetail && (
-        <button className='w-fit' onClick={handleBack}>
-          <IcBack />
-        </button>
-      )}
+      {isDetail && <BackButton onClick={handleBack} />}
 
       <div className='flex items-end gap-7'>
         {isDetail && category && (
