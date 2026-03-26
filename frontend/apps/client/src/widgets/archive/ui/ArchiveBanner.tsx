@@ -24,10 +24,14 @@ const ArchiveBanner = ({ variant, category }: ArchiveBannerProps) => {
   };
 
   const getGradientStyle = (): React.CSSProperties => {
-    if (!isDetail || !category || category.type === 'situation') return {};
-    return {
-      '--tw-gradient-from': `color-mix(in srgb, var(--genre-${category.key}) 50%, transparent)`,
-    } as React.CSSProperties;
+    if (!isDetail || !category) return {};
+
+    const from =
+      category.type === 'situation'
+        ? 'color-mix(in srgb, var(--color-yellow-700) 50%, transparent)'
+        : `color-mix(in srgb, var(--genre-${category.key}) 50%, transparent)`;
+
+    return { '--tw-gradient-from': from } as React.CSSProperties;
   };
 
   return (
