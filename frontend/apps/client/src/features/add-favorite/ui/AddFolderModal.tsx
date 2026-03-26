@@ -46,7 +46,7 @@ const AddFolderModal = ({ onClose }: AddFolderModalProps) => {
       onClose={onClose}
       className='relative px-25 flex flex-col w-full max-w-198 max-h-178 h-[70vh] bg-bg rounded-20'
     >
-      <div className='pt-14.5 flex flex-col gap-13.5 h-full'>
+      <div className='pt-14.5 flex flex-col gap-13.5 flex-1 overflow-y-auto scrollbar-hide'>
         <div className='flex flex-col gap-4'>
           <h2 className='typo-28b text-white'>찜 폴더 제목</h2>
           <InputField
@@ -56,7 +56,7 @@ const AddFolderModal = ({ onClose }: AddFolderModalProps) => {
           />
         </div>
 
-        <div className='flex flex-1 flex-col gap-4 overflow-y-hidden'>
+        <div className='flex flex-col gap-4'>
           <h2 className='typo-28b text-white'>찜 폴더에 곡 추가</h2>
           <InputField
             value={query}
@@ -83,9 +83,9 @@ const AddFolderModal = ({ onClose }: AddFolderModalProps) => {
                       className='flex items-center justify-center w-8 h-8'
                     >
                       {isSelected ? (
-                        <IcCheck className='text-primary' />
+                        <IcCheck className='text-brand' />
                       ) : (
-                        <IcPlus className='text-gray-400' />
+                        <IcPlus className='text-gray-300' />
                       )}
                     </button>
                   }
@@ -94,12 +94,12 @@ const AddFolderModal = ({ onClose }: AddFolderModalProps) => {
             })}
           </div>
         </div>
+      </div>
 
-        <div className='pb-7 flex justify-center'>
-          <Button variant='primary' onClick={handleSave} disabled={!folderTitle.trim()}>
-            저장하기
-          </Button>
-        </div>
+      <div className='py-7 flex justify-center shrink-0'>
+        <Button variant='primary' onClick={handleSave} disabled={!folderTitle.trim()}>
+          저장하기
+        </Button>
       </div>
     </BaseModal>
   );
