@@ -13,7 +13,7 @@ import { GenderToggleButton, SelectionCounter } from '.';
 
 import { fetchRecommendedArtists } from '@/entities/artist/model/mock';
 
-const MIN_SELECT = 3;
+const MAX_SELECT = 3;
 
 type OnboardingArtistSelectProps = {
   onCompleted?: () => void;
@@ -24,9 +24,9 @@ const OnboardingArtistSelect = ({ onCompleted }: OnboardingArtistSelectProps) =>
   const [artists, setArtists] = useState<ArtistUiType[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const { selectedIds, toggle } = useMultiSelectIds({ maxSelect: MIN_SELECT });
+  const { selectedIds, toggle } = useMultiSelectIds({ maxSelect: MAX_SELECT });
 
-  const canConfirm = validateMinSelect(MIN_SELECT, selectedIds.length);
+  const canConfirm = validateMinSelect(MAX_SELECT, selectedIds.length);
 
   const loadArtists = useCallback(async (nextGender: GenderType) => {
     setIsLoading(true);
@@ -92,7 +92,7 @@ const OnboardingArtistSelect = ({ onCompleted }: OnboardingArtistSelectProps) =>
       </div>
 
       <div className='mt-6 flex flex-col items-center gap-16'>
-        <SelectionCounter minSelect={MIN_SELECT} selectedCount={selectedIds.length} />
+        <SelectionCounter maxSelect={MAX_SELECT} selectedCount={selectedIds.length} />
         <Button variant='primary' disabled={!canConfirm} onClick={handleConfirm}>
           선택 완료하기
         </Button>
