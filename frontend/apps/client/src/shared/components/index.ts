@@ -1,6 +1,7 @@
 export { default as AudioPlayer } from './AudioPlayer';
 export { default as BackButton } from './BackButton';
 export { default as BaseModal } from './BaseModal';
+export { default as Calendar } from './Calendar';
 export { default as GenreCard } from './GenreCard';
 export { default as PageBanner } from './PageBanner';
 export { default as PageHeader } from './PageHeader';
