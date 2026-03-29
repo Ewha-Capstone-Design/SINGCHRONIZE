@@ -53,7 +53,7 @@ const BuskingViewerPage = () => {
   // 스트리머: 모달에서 확인 → 소켓 종료 후 결과 페이지
   const handleConfirmEndLive = () => {
     // endLive(); // TODO: 웹소켓 기능 구현 시 주석 해제
-    go(dynamic.liveRoomEnd(roomId));
+    go(dynamic.liveRoomEnd(roomId, 'live'));
   };
 
   // 시청자: 방송 종료 알림 모달에서 확인

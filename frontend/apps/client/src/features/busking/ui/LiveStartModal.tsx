@@ -44,7 +44,7 @@ const LiveStartModal = ({ open, onClose }: LiveStartModalProps) => {
       setlist: selectedSongs,
     });
     // TODO: API 연결 후 roomId 받아서 dynamic.liveRoom(roomId)로 교체
-    go(dynamic.liveRoom('1'));
+    go(dynamic.liveRoom('1', 'live'));
   };
 
   const handleClose = () => {
