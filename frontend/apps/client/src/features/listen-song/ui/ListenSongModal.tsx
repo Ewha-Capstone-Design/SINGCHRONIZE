@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@singchronize/ui';
 import { BaseModal } from '@/shared/components';
 import { getEulReul } from '@/shared/lib/korean';
+import { openYoutubeSearch } from '@/shared/lib/openYoutubeSearch';
 
 const DEFAULT_COLOR = '255, 217, 0';
 
@@ -75,8 +76,7 @@ const ListenSongModal = ({
   }, [thumbnail]);
 
   const handleListen = () => {
-    const query = encodeURIComponent(`${artistName} ${songTitle}`);
-    window.open(`https://www.youtube.com/results?search_query=${query}`, '_blank');
+    openYoutubeSearch(artistName, songTitle);
     onClose();
   };
 

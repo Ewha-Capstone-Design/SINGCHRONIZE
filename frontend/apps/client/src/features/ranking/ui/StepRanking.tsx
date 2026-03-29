@@ -1,5 +1,6 @@
 import { Button } from '@singchronize/ui';
 import SortableSongList from './SortableSongList';
+import { openYoutubeSearch } from '@/shared/lib/openYoutubeSearch';
 
 import { MOCK_SONG_LIST } from '@/entities/song/model/mock';
 
@@ -16,7 +17,11 @@ const StepRanking = ({ onNext }: { onNext: () => void }) => {
           </p>
         </div>
 
-        <SortableSongList initialSongs={songs} />
+        <SortableSongList
+          initialSongs={songs}
+          variant='play'
+          onPlay={(song) => openYoutubeSearch(song.artist, song.title)}
+        />
 
         <Button variant='normal' onClick={onNext}>
           정렬 완료하기

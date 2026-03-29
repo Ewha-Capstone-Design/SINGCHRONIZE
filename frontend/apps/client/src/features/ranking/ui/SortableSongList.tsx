@@ -20,14 +20,18 @@ import { SongUiType } from '@/entities/song/model/types';
 
 type SortableSongListProps = {
   initialSongs: SongUiType[];
+  variant?: 'delete' | 'play';
   onChange?: (songs: SongUiType[]) => void;
   onRemove?: (songId: string) => void;
+  onPlay?: (song: SongUiType) => void;
 };
 
 const SortableSongList = ({
   initialSongs,
+  variant,
   onChange,
   onRemove,
+  onPlay,
 }: SortableSongListProps) => {
   const [songs, setSongs] = useState<SongUiType[]>(initialSongs);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -85,7 +89,9 @@ const SortableSongList = ({
               key={song.id}
               song={song}
               index={index}
+              variant={variant}
               onRemove={handleRemove}
+              onPlay={onPlay}
             />
           ))}
         </div>
