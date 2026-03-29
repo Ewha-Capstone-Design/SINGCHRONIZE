@@ -10,6 +10,7 @@ interface BuskingSectionProps {
   cardVariant?: 'sm' | 'md' | 'lg';
   titleTypo?: string;
   listClassName?: string;
+  px?: number;
   onItemClick?: (item: BuskingUiType) => void;
 }
 
@@ -19,14 +20,21 @@ const BuskingSection = ({
   cardVariant = 'md',
   titleTypo = 'typo-28b',
   listClassName,
+  px = 8,
   onItemClick,
 }: BuskingSectionProps) => {
   return (
     <section className='flex flex-col gap-4'>
-      <h2 className={cn('px-8 text-gray-100', titleTypo)}>{title}</h2>
+      <h2
+        className={cn('text-gray-100', titleTypo)}
+        style={{ paddingLeft: `${px * 4}px`, paddingRight: `${px * 4}px` }}
+      >
+        {title}
+      </h2>
 
       <div
-        className={cn('px-8 flex gap-4 overflow-x-auto scrollbar-hide', listClassName)}
+        className={cn('flex gap-4 overflow-x-auto scrollbar-hide', listClassName)}
+        style={{ paddingLeft: `${px * 4}px`, paddingRight: `${px * 4}px` }}
       >
         {items.map((item) => (
           <BuskingCard
