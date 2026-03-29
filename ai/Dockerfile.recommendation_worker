@@ -1,0 +1,22 @@
+# 추천 워커 (1차+2차, SQS 소비) 전용 Dockerfile
+# 빌드: cd ai && docker build -f Dockerfile.recommendation_worker -t recommendation-worker .
+
+FROM python:3.11-slim
+
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    libsndfile1 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY requirements.recommendation.txt .
+RUN pip install --no-cache-dir -r requirements.recommendation.txt
+
+COPY scripts/ ./scripts/
+
+WORKDIR /app/scripts/recommendation
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app/scripts/recommendation
+
+CMD ["python", "recommendation_worker.py", "--queue"]
