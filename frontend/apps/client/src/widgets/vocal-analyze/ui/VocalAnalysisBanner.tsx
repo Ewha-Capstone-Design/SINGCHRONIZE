@@ -3,11 +3,10 @@
 import Image from 'next/image';
 import { cn } from '@/shared/lib/cn';
 import { Button } from '@singchronize/ui';
-import { ImgMainTitle } from '@/shared/assets/images';
-import imgHomeBanner from '@/shared/assets/images/img_home_banner.jpg';
+import { ImgMainTitle, ImgHomeBanner } from '@/shared/assets/images';
 import { useNavigate } from '@/shared/lib/navigation';
 
-type BannerSize = 'compact' | 'wide';
+type BannerSize = 'home' | 'recommend';
 
 const bannerStyle: Record<
   BannerSize,
@@ -17,11 +16,11 @@ const bannerStyle: Record<
     section?: string;
   }
 > = {
-  compact: {
-    content: 'pt-24 gap-7 h-76',
+  home: {
+    content: 'pt-16 gap-10 h-72',
     title: 'w-126',
   },
-  wide: {
+  recommend: {
     content: 'pt-42 gap-18 h-[30rem]',
     title: 'w-158',
   },
@@ -32,24 +31,20 @@ type VocalAnalysisBannerProps = {
   className?: string;
 };
 
-const VocalAnalysisBanner = ({
-  size = 'compact',
-  className,
-}: VocalAnalysisBannerProps) => {
+const VocalAnalysisBanner = ({ size = 'home', className }: VocalAnalysisBannerProps) => {
   const { go, ROUTES } = useNavigate();
   const s = bannerStyle[size];
 
   return (
     <section className={cn('relative overflow-hidden rounded-10', s.section, className)}>
       <Image
-        src={imgHomeBanner}
+        src={ImgHomeBanner}
         alt='When Your Voice Finds Its Song'
         aria-hidden='true'
         fill
         priority
-        className='object-cover object-bottom'
+        className='object-cover object-top'
       />
-      <div className='absolute inset-0 bg-black/60' />
 
       <div className={cn('relative z-10 flex flex-col items-center w-full', s.content)}>
         <ImgMainTitle className={s.title} />
