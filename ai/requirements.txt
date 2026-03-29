@@ -34,6 +34,8 @@ seaborn>=0.13.0
 # 유틸리티
 pydub==0.25.1
 tqdm==4.66.1
+# librosa 0.10.x 가 runtime 에 pkg_resources 사용. setuptools 82+ 에서 pkg_resources 제거됨 → 상한 고정
+setuptools>=69.0.0,<81
 
 # 환경 변수
 python-dotenv==1.0.0

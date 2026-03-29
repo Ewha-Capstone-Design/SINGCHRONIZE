@@ -1,0 +1,30 @@
+# 로컬에서 보컬 분석 SQS 워커 실행
+#
+# 준비:
+#   1) ai/.env 에 최소 다음 설정
+#      VOCAL_ANALYSIS_SQS_QUEUE_URL=...
+#      S3_BUCKET_NAME=...
+#      SUPABASE_URL=...
+#      SUPABASE_SERVICE_ROLE_KEY=...
+#      AWS_ACCESS_KEY_ID=...   (또는 호스트 ~/.aws 마운트)
+#      AWS_SECRET_ACCESS_KEY=...
+#      AWS_DEFAULT_REGION=ap-northeast-2
+#   2) analysis_jobs 에 해당 job_id 행 존재, S3 에 s3_key 오브젝트 존재
+#
+# 실행:
+#   cd ai
+#   docker compose -f docker-compose.vocal_analysis_worker.yml up --build
+#
+# 한 번만 돌리고 종료하려면: docker compose ... run --rm vocal-analysis-worker
+
+services:
+  vocal-analysis-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.vocal_analysis_worker
+    env_file:
+      - .env
+    environment:
+      PYTHONUNBUFFERED: "1"
+    stdin_open: true
+    tty: true

@@ -1,0 +1,14 @@
+# 보컬 분석 워커 이미지 컨텍스트 (ai/) 용 — 불필요·대용량 제외
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+
+scripts/vocal_analysis/output/
+scripts/vocal_analysis/test_output/
+scripts/artifacts/
+scripts/results/
+scripts/data/
+
+# 레포에 두더라도 이미지에 넣지 않음 (런타임 HuggingFace 등 캐시 사용)
+scripts/vocal_analysis/pretrained_models/
+scripts/pretrained_models/

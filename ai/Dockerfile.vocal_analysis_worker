@@ -1,0 +1,27 @@
+# 보컬 분석 워커 — SQS 큐 모드: vocal_analysis_worker.py --queue
+# 빌드: cd ai && docker build -f Dockerfile.vocal_analysis_worker -t vocal-analysis-worker .
+
+FROM python:3.11-slim
+
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    libsndfile1 \
+    git \
+    build-essential \
+    cmake \
+    ninja-build \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY scripts/ ./scripts/
+
+WORKDIR /app/scripts/vocal_analysis
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app/scripts/vocal_analysis
+
+# SQS 롱폴링 + 분석 시간을 고려해 기본은 큐 모드
+CMD ["python", "vocal_analysis_worker.py", "--queue"]
