@@ -1,58 +1,57 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { cn } from '@/shared/lib/cn';
-import { BaseModal } from '@/shared/components';
-import { useNavigate } from '@/shared/lib/navigation';
 import { useThumbnail } from '@/shared/hooks';
-import { LiveStartStep1 } from './LiveStartStep1';
-import { LiveStartStep2 } from './LiveStartStep2';
+import { BaseModal } from '@/shared/components';
+import { RecordUploadStep1 } from './RecordUploadStep1';
+import { RecordUploadStep2 } from './RecordUploadStep2';
 import type { SongUiType } from '@/entities/song/model/types';
 
-type LiveStartModalProps = {
+type RecordUploadModalProps = {
   open: boolean;
   onClose: () => void;
 };
 
 type Step = 1 | 2;
 
-const MAX_SETLIST = 5;
-
-const LiveStartModal = ({ open, onClose }: LiveStartModalProps) => {
-  const { go, dynamic } = useNavigate();
-
+const RecordUploadModal = ({ open, onClose }: RecordUploadModalProps) => {
   const [step, setStep] = useState<Step>(1);
   const [title, setTitle] = useState('');
+  const [recordFile, setRecordFile] = useState<File | null>(null);
   const [keyword, setKeyword] = useState('');
   const [selectedSongs, setSelectedSongs] = useState<SongUiType[]>([]);
+  const [endDate, setEndDate] = useState<Date | undefined>();
 
   const { preview, thumbnail, handleThumbnailChange, clearThumbnail } = useThumbnail();
 
   const handleToggleSong = (song: SongUiType) => {
     const isSelected = selectedSongs.some((s) => s.id === song.id);
-    if (isSelected) {
-      setSelectedSongs((prev) => prev.filter((s) => s.id !== song.id));
-    } else if (selectedSongs.length < MAX_SETLIST) {
-      setSelectedSongs((prev) => [...prev, song]);
-    }
+    setSelectedSongs((prev) =>
+      isSelected ? prev.filter((s) => s.id !== song.id) : [...prev, song]
+    );
   };
 
-  const handleStart = () => {
+  const handleSubmit = () => {
     console.log({
       title: title.trim(),
+      file: recordFile,
       thumbnail: thumbnail?.file ?? null,
       setlist: selectedSongs,
+      endDate,
     });
-    // TODO: API 연결 후 roomId 받아서 dynamic.liveRoom(roomId)로 교체
-    go(dynamic.liveRoom('1'));
+
+    handleClose();
   };
 
   const handleClose = () => {
     setStep(1);
     setTitle('');
-    clearThumbnail();
+    setRecordFile(null);
     setKeyword('');
     setSelectedSongs([]);
+    setEndDate(undefined);
+    clearThumbnail();
     onClose();
   };
 
@@ -70,25 +69,27 @@ const LiveStartModal = ({ open, onClose }: LiveStartModalProps) => {
       )}
     >
       {step === 1 ? (
-        <LiveStartStep1
+        <RecordUploadStep1
           title={title}
-          preview={preview}
           onTitleChange={setTitle}
+          preview={preview}
           onThumbnailChange={handleThumbnailChange}
           onNext={() => setStep(2)}
         />
       ) : (
-        <LiveStartStep2
+        <RecordUploadStep2
           keyword={keyword}
           selectedSongs={selectedSongs}
+          endDate={endDate}
           onKeywordChange={setKeyword}
           onToggleSong={handleToggleSong}
           onSetlistChange={setSelectedSongs}
-          onStart={handleStart}
+          onEndDateChange={setEndDate}
+          onSubmit={handleSubmit}
         />
       )}
     </BaseModal>
   );
 };
 
-export default LiveStartModal;
+export default RecordUploadModal;

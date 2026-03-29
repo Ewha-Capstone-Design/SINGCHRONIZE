@@ -5,11 +5,13 @@ import { Button } from '@singchronize/ui';
 import { PageBanner } from '@/shared/components';
 import { useModal } from '@/shared/hooks';
 import { LiveStartModal } from '@/features/busking/ui';
+import { RecordUploadModal } from '@/features/record-upload';
 
 import { MOCK_BUSKING_LIST } from '@/entities/busking/model/mock';
 
 const BuskingListPage = () => {
   const liveStartModal = useModal();
+  const recordUploadModal = useModal();
 
   return (
     <>
@@ -23,7 +25,9 @@ const BuskingListPage = () => {
         <div className='py-9 flex flex-col gap-7'>
           <div className='px-8 flex gap-3'>
             <Button onClick={liveStartModal.openModal}>라이브 버스킹 시작하기</Button>
-            <Button variant='normal'>녹음 버스킹 올리기</Button>
+            <Button variant='normal' onClick={recordUploadModal.openModal}>
+              녹음 버스킹 올리기
+            </Button>
           </div>
 
           <div className='flex flex-col gap-6'>
@@ -39,12 +43,11 @@ const BuskingListPage = () => {
         </div>
       </main>
 
-      <LiveStartModal
-        open={liveStartModal.open}
-        onClose={liveStartModal.closeModal}
-        onSubmit={(payload) => {
-          console.log(payload);
-        }}
+      <LiveStartModal open={liveStartModal.open} onClose={liveStartModal.closeModal} />
+
+      <RecordUploadModal
+        open={recordUploadModal.open}
+        onClose={recordUploadModal.closeModal}
       />
     </>
   );
