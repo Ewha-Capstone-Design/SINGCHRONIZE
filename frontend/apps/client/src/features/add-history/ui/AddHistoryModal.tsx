@@ -1,10 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { BaseModal, SelectChip } from '@/shared/components';
+import { BackButton, BaseModal, SelectChip } from '@/shared/components';
 import { InputField, Button, TextAreaField } from '@singchronize/ui';
 import { SongListItem } from '@/entities/song/ui';
-import { IcBack, IcPlus } from '@/shared/assets/icons';
+import { IcPlus } from '@/shared/assets/icons';
 import { HISTORY_TAG_OPTIONS, HistoryTagKeyType } from '@/entities/library/model/tags';
 import type { SongUiType } from '@/entities/song/model/types';
 
@@ -96,13 +96,7 @@ const AddHistoryModal = ({ onClose }: AddHistoryModalProps) => {
         </div>
       ) : (
         <div className='pt-21 flex flex-col h-full'>
-          <button
-            type='button'
-            className='absolute top-10 left-10'
-            onClick={handleBackToSearch}
-          >
-            <IcBack />
-          </button>
+          <BackButton className='absolute top-10 left-10' onClick={handleBackToSearch} />
 
           <div className='flex flex-1 flex-col gap-7 overflow-y-scroll scrollbar-hide'>
             <div className='flex flex-col gap-3'>

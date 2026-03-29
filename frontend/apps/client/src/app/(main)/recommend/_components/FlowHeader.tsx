@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import SegmentedProgress from './SegmentedProgress';
-import { IcBack } from '@/shared/assets/icons';
 import { InternalRecommendStep, FILLED_COUNT_BY_STEP } from '@/shared/types/recommend';
+import { BackButton } from '@/shared/components';
 
 type FlowHeaderProps = {
   step: InternalRecommendStep;
@@ -31,7 +31,7 @@ const FlowHeader = ({ step, onBack }: FlowHeaderProps) => {
   return (
     <div className='pt-10 px-9 flex flex-col gap-10'>
       <SegmentedProgress filled={animatedFilled} />
-      <IcBack onClick={onBack} />
+      <BackButton onClick={onBack} />
     </div>
   );
 };

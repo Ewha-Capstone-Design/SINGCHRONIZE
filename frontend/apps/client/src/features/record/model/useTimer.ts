@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { RecordingPhase } from '@/shared/types/recommend';
+import { formatTime } from '@/shared/lib/formatTime';
 import {
   MAX_RECORD_SECONDS,
   RECORD_GUIDE_THRESHOLDS,
@@ -27,8 +28,7 @@ export const useTimer = (phase: RecordingPhase) => {
     return 'default'; // 35초 미만
   }, [seconds]);
 
-  const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
-  const ss = String(seconds % 60).padStart(2, '0');
+  const { mm, ss } = formatTime(seconds);
 
   const isMax = seconds >= MAX_RECORD_SECONDS; // 60초 도달
   const canDone = seconds >= RECORD_GUIDE_THRESHOLDS.ENOUGH; // 35초 이상만 종료 가능

@@ -2,8 +2,7 @@
 
 import { useNavigate } from '@/shared/lib/navigation';
 import { cn } from '@/shared/lib/cn';
-import { SituationCard, GenreCard } from '@/shared/components';
-import { IcBack } from '@/shared/assets/icons';
+import { SituationCard, GenreCard, BackButton } from '@/shared/components';
 import { CategoryMetaType } from '@/shared/types/category';
 
 type ArchiveBannerProps = {
@@ -25,10 +24,14 @@ const ArchiveBanner = ({ variant, category }: ArchiveBannerProps) => {
   };
 
   const getGradientStyle = (): React.CSSProperties => {
-    if (!isDetail || !category || category.type === 'situation') return {};
-    return {
-      '--tw-gradient-from': `color-mix(in srgb, var(--genre-${category.key}) 50%, transparent)`,
-    } as React.CSSProperties;
+    if (!isDetail || !category) return {};
+
+    const from =
+      category.type === 'situation'
+        ? 'color-mix(in srgb, var(--color-yellow-700) 50%, transparent)'
+        : `color-mix(in srgb, var(--genre-${category.key}) 50%, transparent)`;
+
+    return { '--tw-gradient-from': from } as React.CSSProperties;
   };
 
   return (
@@ -39,11 +42,7 @@ const ArchiveBanner = ({ variant, category }: ArchiveBannerProps) => {
       )}
       style={getGradientStyle()}
     >
-      {isDetail && (
-        <button className='w-fit' onClick={handleBack}>
-          <IcBack />
-        </button>
-      )}
+      {isDetail && <BackButton onClick={handleBack} />}
 
       <div className='flex items-end gap-7'>
         {isDetail && category && (

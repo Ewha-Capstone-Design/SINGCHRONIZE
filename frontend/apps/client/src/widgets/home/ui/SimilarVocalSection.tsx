@@ -35,7 +35,7 @@ const SimilarVocalSection = ({ onSongClick }: SimilarVocalSectionProps) => {
   return (
     <section className={cn('w-full')}>
       <div className='flex flex-col gap-3'>
-        <SectionHeader title='나랑 닮은 목소리의 pick!' textClassName='typo-28b' />
+        <SectionHeader title='나랑 닮은 목소리의 PICK!' textClassName='typo-28b' />
         <SectionTab
           items={tabs}
           value={tab}
@@ -44,7 +44,7 @@ const SimilarVocalSection = ({ onSongClick }: SimilarVocalSectionProps) => {
         />
       </div>
 
-      <div className='mt-6 w-full overflow-x-auto scrollbar-hide'>
+      <div className='my-5 w-full overflow-x-auto scrollbar-hide'>
         <div className='flex w-max gap-4'>
           {items.map((song) => (
             <SongCard key={song.id} song={song} onClick={onSongClick} />

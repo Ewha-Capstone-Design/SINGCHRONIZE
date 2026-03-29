@@ -1,16 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { Button } from '@singchronize/ui';
 import { useModal } from '@/shared/hooks';
 import { cn } from '@/shared/lib/cn';
-import { IcBack } from '@/shared/assets/icons';
+import { useNavigate } from '@/shared/lib/navigation';
+import { BackButton } from '@/shared/components';
 import { BuskingSection } from '@/widgets/busking-list/ui';
 import { LiveEndModal, SetlistPanel, VotePanel, LiveChat } from '@/features/busking/ui';
-
-import { useNavigate } from '@/shared/lib/navigation';
 import { useBuskingSocket } from '@/features/busking/hooks/useBuskingSocket';
+import { BuskingBadge } from '@/entities/busking/ui';
 
 import {
   MOCK_SETLIST,
@@ -22,9 +22,12 @@ import { MOCK_PROFILE } from '@/entities/user/model/mock';
 const MOCK_ROLE = 'viewer' as 'viewer' | 'streamer';
 
 const BuskingViewerPage = () => {
-  const { go, back, ROUTES, dynamic } = useNavigate();
+  const { go, ROUTES, dynamic } = useNavigate();
   const params = useParams();
+  const searchParams = useSearchParams();
+
   const roomId = params.roomId as string;
+  const isRecord = searchParams.get('type') === 'record';
 
   const [showVote, setShowVote] = useState(true);
 
@@ -32,10 +35,11 @@ const BuskingViewerPage = () => {
   const viewerEndModal = useModal();
 
   const user = MOCK_PROFILE;
-  const isStreamer = MOCK_ROLE === 'streamer';
+  const isStreamer = !isRecord && MOCK_ROLE === 'streamer';
 
-  const { endLive } = useBuskingSocket({
+  useBuskingSocket({
     roomId,
+    enabled: !isRecord,
     onLiveEnd: () => {
       if (!isStreamer) viewerEndModal.openModal();
     },
@@ -49,7 +53,7 @@ const BuskingViewerPage = () => {
   // 스트리머: 모달에서 확인 → 소켓 종료 후 결과 페이지
   const handleConfirmEndLive = () => {
     // endLive(); // TODO: 웹소켓 기능 구현 시 주석 해제
-    go(dynamic.liveRoomEnd(roomId));
+    go(dynamic.liveRoomEnd(roomId, 'live'));
   };
 
   // 시청자: 방송 종료 알림 모달에서 확인
@@ -71,7 +75,7 @@ const BuskingViewerPage = () => {
       <div className='flex flex-col flex-1 overflow-y-auto scrollbar-hide'>
         {/* 헤더 */}
         <div className='px-9 flex items-center h-26 shrink-0'>
-          <IcBack onClick={back} />
+          <BackButton />
 
           <div className='ml-5 flex gap-2'>
             <div className='size-12 rounded-full bg-gray-600 border border-accent-600 shrink-0 overflow-hidden'>
@@ -89,11 +93,11 @@ const BuskingViewerPage = () => {
             </div>
           </div>
 
-          <div className='ml-4 px-3 py-1 flex gap-1 rounded-10 bg-accent-600 typo-16m text-white'>
-            <span>LIVE</span>
-            <span>·</span>
-            <span>2:30</span>
-          </div>
+          <BuskingBadge
+            isRecord={isRecord}
+            duration={isRecord ? '3:30' : '2:30'}
+            className='ml-4'
+          />
 
           {isStreamer && (
             <Button variant={'accent'} className='ml-auto' onClick={handleEndLive}>
@@ -108,13 +112,17 @@ const BuskingViewerPage = () => {
 
           {/* 셋리스트 오버레이 */}
           <div className='absolute top-3 left-3'>
-            <SetlistPanel title='버스킹 첫 도전!' items={MOCK_SETLIST} />
+            <SetlistPanel
+              title='버스킹 첫 도전!'
+              items={MOCK_SETLIST}
+              isRecord={isRecord}
+            />
           </div>
 
           {/* 투표 패널 */}
           {showVote && !isStreamer && (
             <div className='absolute bottom-3 right-3'>
-              <VotePanel />
+              <VotePanel timeLeft={isRecord ? '00:07:30' : undefined} />
             </div>
           )}
         </div>

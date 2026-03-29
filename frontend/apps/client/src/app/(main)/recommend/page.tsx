@@ -8,7 +8,7 @@ import { MOCK_VOCAL_REPORT } from '@/entities/vocal-report/model/mock';
 const RecommendPage = () => {
   return (
     <div>
-      <VocalAnalysisBanner size='wide' />
+      <VocalAnalysisBanner size='recommend' />
       <div className='py-12 px-[10vw] flex flex-col gap-6'>
         <div className='mx-auto'>
           <h2 className='typo-28b text-gray-100'>나의 보컬 리포트</h2>

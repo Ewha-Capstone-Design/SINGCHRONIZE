@@ -13,7 +13,7 @@ type MicTestStepProps = {
 };
 
 const MicTestStep = ({ gain, onChangeGain, onFinish }: MicTestStepProps) => {
-  const { isTesting, levelStatus, startTest, stopTest } = useMicTest();
+  const { isTesting, levelStatus, formattedTime, startTest, stopTest } = useMicTest();
 
   const text = !isTesting
     ? MIC_TEST_TEXT_BY_STATE.beforeTest
@@ -28,7 +28,7 @@ const MicTestStep = ({ gain, onChangeGain, onFinish }: MicTestStepProps) => {
   };
 
   return (
-    <div className='flex flex-col items-center gap-[42]'>
+    <div className='flex flex-col items-center gap-17.5'>
       <div className='flex flex-col gap-[6] text-center'>
         <p className='typo-32b'>{text.title}</p>
         <p className='typo-20r text-gray-200'>{text.subtitle}</p>
@@ -41,7 +41,9 @@ const MicTestStep = ({ gain, onChangeGain, onFinish }: MicTestStepProps) => {
           gain={gain}
         />
 
-        <div className='w-[372] flex items-center gap-3'>
+        <span className='typo-14r text-gray-300'>{formattedTime}</span>
+
+        <div className='w-93 flex items-center gap-3'>
           <IcVolumeOff />
           <input
             className='flex-1 mic-slider'
@@ -63,20 +65,6 @@ const MicTestStep = ({ gain, onChangeGain, onFinish }: MicTestStepProps) => {
       >
         {isTesting ? '마이크 테스트 종료하기' : '마이크 테스트 시작하기'}
       </Button>
-
-      <div className='flex flex-col items-center gap-6 w-full'>
-        <div className='w-full h-[1] bg-gray-700' />
-        <div className='flex gap-12 typo-16r'>
-          <p>안내사항</p>
-          <ul className='flex flex-col gap-1'>
-            <li>∙ 마이크에 대고 말을 해주세요!</li>
-            <li>
-              ∙ 음량이 너무 작으면 분석 정확도가 낮아질 수 있으며, 너무 크면 소리가 왜곡될
-              수 있어요!
-            </li>
-          </ul>
-        </div>
-      </div>
     </div>
   );
 };

@@ -12,6 +12,7 @@ type BuskingSocketEvent =
 
 interface UseBuskingSocketOptions {
   roomId: string;
+  enabled?: boolean;
   onLiveEnd?: () => void;
   onMessage?: (
     payload: Extract<BuskingSocketEvent, { type: 'CHAT_MESSAGE' }>['payload']
@@ -23,6 +24,7 @@ interface UseBuskingSocketOptions {
 
 export const useBuskingSocket = ({
   roomId,
+  enabled = true,
   onLiveEnd,
   onMessage,
   onVote,
@@ -55,6 +57,8 @@ export const useBuskingSocket = ({
   }, [onLeave]);
 
   useEffect(() => {
+    if (!enabled) return;
+
     const ws = new WebSocket(`${process.env.NEXT_PUBLIC_WS_URL}/busking/${roomId}`);
     wsRef.current = ws;
 
@@ -85,7 +89,7 @@ export const useBuskingSocket = ({
     return () => {
       ws.close();
     };
-  }, [roomId]); // roomId 바뀔 때만 재연결
+  }, [roomId, enabled]);
 
   const sendMessage = useCallback((message: string) => {
     wsRef.current?.send(JSON.stringify({ type: 'CHAT_MESSAGE', payload: { message } }));

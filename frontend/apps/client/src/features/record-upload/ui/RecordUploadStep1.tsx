@@ -1,29 +1,29 @@
 'use client';
 
-import { Button, InputField } from '@singchronize/ui';
 import { ThumbnailUploader } from '@/shared/components';
+import { Button, InputField } from '@singchronize/ui';
 
-type LiveStartStep1Props = {
+type RecordUploadStep1Props = {
   title: string;
-  preview: string | null;
   onTitleChange: (value: string) => void;
+  preview: string | null;
   onThumbnailChange: (file: File, preview: string) => void;
   onNext: () => void;
 };
 
-export const LiveStartStep1 = ({
+export const RecordUploadStep1 = ({
   title,
-  preview,
   onTitleChange,
+  preview,
   onThumbnailChange,
   onNext,
-}: LiveStartStep1Props) => {
+}: RecordUploadStep1Props) => {
   const canGoNext = title.trim().length > 0;
 
   return (
     <div className='flex flex-col'>
       <section className='flex flex-col gap-4'>
-        <h2 className='typo-28b text-white'>라이브 버스킹 제목</h2>
+        <h2 className='typo-28b text-white'>녹음 버스킹 제목</h2>
         <InputField
           value={title}
           onChange={(e) => onTitleChange(e.target.value)}
@@ -32,7 +32,7 @@ export const LiveStartStep1 = ({
       </section>
 
       <section className='mt-11 flex flex-col gap-4'>
-        <h2 className='typo-28b text-white'>라이브 버스킹 썸네일</h2>
+        <h2 className='typo-28b text-white'>녹음 버스킹 썸네일</h2>
         <ThumbnailUploader preview={preview} onChange={onThumbnailChange} />
         <ul className='ml-2 typo-16r text-gray-200'>
           <li>∙ 내 버스킹을 돋보이게 할 썸네일을 설정해 보세요.</li>
