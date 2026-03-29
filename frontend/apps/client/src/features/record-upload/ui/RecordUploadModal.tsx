@@ -6,6 +6,7 @@ import { useThumbnail } from '@/shared/hooks';
 import { BaseModal } from '@/shared/components';
 import { RecordUploadStep1 } from './RecordUploadStep1';
 import { RecordUploadStep2 } from './RecordUploadStep2';
+import { RecordUploadComplete } from './RecordUploadComplete';
 import type { SongUiType } from '@/entities/song/model/types';
 
 type RecordUploadModalProps = {
@@ -13,7 +14,7 @@ type RecordUploadModalProps = {
   onClose: () => void;
 };
 
-type Step = 1 | 2;
+type Step = 1 | 2 | 3;
 
 const RecordUploadModal = ({ open, onClose }: RecordUploadModalProps) => {
   const [step, setStep] = useState<Step>(1);
@@ -27,9 +28,7 @@ const RecordUploadModal = ({ open, onClose }: RecordUploadModalProps) => {
 
   const handleToggleSong = (song: SongUiType) => {
     const isSelected = selectedSongs.some((s) => s.id === song.id);
-    setSelectedSongs((prev) =>
-      isSelected ? prev.filter((s) => s.id !== song.id) : [...prev, song]
-    );
+    setSelectedSongs(isSelected ? [] : [song]);
   };
 
   const handleSubmit = () => {
@@ -41,7 +40,7 @@ const RecordUploadModal = ({ open, onClose }: RecordUploadModalProps) => {
       endDate,
     });
 
-    handleClose();
+    setStep(3);
   };
 
   const handleClose = () => {
@@ -62,13 +61,14 @@ const RecordUploadModal = ({ open, onClose }: RecordUploadModalProps) => {
       onClose={handleClose}
       className={cn(
         'relative flex flex-col w-full bg-bg rounded-20',
-        'overflow-y-auto scrollbar-hide',
         step === 1
-          ? 'px-25 pt-14.5 pb-12.5 max-w-198 max-h-178 h-[70vh]'
-          : 'px-17 py-12 pb-0 max-w-310 max-h-198 h-[80vh]'
+          ? 'px-25 pt-14.5 pb-12.5 max-w-198 max-h-178 h-[70vh] overflow-y-auto scrollbar-hide'
+          : step === 2
+            ? 'px-17 py-12 pb-0 max-w-310 max-h-198 h-[80vh]'
+            : 'px-25 py-16 max-w-198 max-h-178 h-[70vh] overflow-y-auto scrollbar-hide'
       )}
     >
-      {step === 1 ? (
+      {step === 1 && (
         <RecordUploadStep1
           title={title}
           onTitleChange={setTitle}
@@ -76,7 +76,8 @@ const RecordUploadModal = ({ open, onClose }: RecordUploadModalProps) => {
           onThumbnailChange={handleThumbnailChange}
           onNext={() => setStep(2)}
         />
-      ) : (
+      )}
+      {step === 2 && (
         <RecordUploadStep2
           keyword={keyword}
           selectedSongs={selectedSongs}
@@ -87,6 +88,9 @@ const RecordUploadModal = ({ open, onClose }: RecordUploadModalProps) => {
           onEndDateChange={setEndDate}
           onSubmit={handleSubmit}
         />
+      )}
+      {step === 3 && (
+        <RecordUploadComplete thumbnailPreview={preview} onClose={handleClose} />
       )}
     </BaseModal>
   );

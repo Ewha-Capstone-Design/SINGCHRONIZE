@@ -11,7 +11,7 @@ import type { SongUiType } from '@/entities/song/model/types';
 
 import { MOCK_SONG_LIST } from '@/entities/song/model/mock';
 
-const MAX_SETLIST = 5;
+const MAX_SETLIST = 1;
 
 type RecordUploadStep2Props = {
   keyword: string;
@@ -57,9 +57,9 @@ export const RecordUploadStep2 = ({
 
   return (
     <div className='flex flex-col h-full'>
-      <div className='flex flex-1 gap-25 min-h-0 overflow-hidden'>
+      <div className='flex flex-1 gap-25 min-h-0'>
         {/* 노래 선택 */}
-        <section className='flex flex-1 flex-col min-w-0'>
+        <section className='flex flex-1 flex-col min-w-0 overflow-hidden'>
           <div className='mb-8'>
             <h2 className='typo-28b text-white'>노래 선택</h2>
             <p className='typo-16r text-gray-200'>1곡 선택할 수 있어요</p>
@@ -134,7 +134,7 @@ export const RecordUploadStep2 = ({
                 onClick={isDateOpen ? closeDate : openDate}
               />
               {isDateOpen && (
-                <div className='absolute left-0 top-full mt-2 z-100 w-max'>
+                <div className='absolute left-0 top-full mt-3 z-50 w-max'>
                   <DateSelectModal
                     selected={endDate}
                     onClose={closeDate}
