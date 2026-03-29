@@ -1,16 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { Button } from '@singchronize/ui';
 import { useModal } from '@/shared/hooks';
 import { cn } from '@/shared/lib/cn';
+import { useNavigate } from '@/shared/lib/navigation';
 import { BackButton } from '@/shared/components';
 import { BuskingSection } from '@/widgets/busking-list/ui';
 import { LiveEndModal, SetlistPanel, VotePanel, LiveChat } from '@/features/busking/ui';
-
-import { useNavigate } from '@/shared/lib/navigation';
 import { useBuskingSocket } from '@/features/busking/hooks/useBuskingSocket';
+import { BuskingBadge } from '@/entities/busking/ui';
 
 import {
   MOCK_SETLIST,
@@ -24,7 +24,10 @@ const MOCK_ROLE = 'viewer' as 'viewer' | 'streamer';
 const BuskingViewerPage = () => {
   const { go, ROUTES, dynamic } = useNavigate();
   const params = useParams();
+  const searchParams = useSearchParams();
+
   const roomId = params.roomId as string;
+  const isRecord = searchParams.get('type') === 'record';
 
   const [showVote, setShowVote] = useState(true);
 
@@ -32,10 +35,11 @@ const BuskingViewerPage = () => {
   const viewerEndModal = useModal();
 
   const user = MOCK_PROFILE;
-  const isStreamer = MOCK_ROLE === 'streamer';
+  const isStreamer = !isRecord && MOCK_ROLE === 'streamer';
 
-  const { endLive } = useBuskingSocket({
+  useBuskingSocket({
     roomId,
+    enabled: !isRecord,
     onLiveEnd: () => {
       if (!isStreamer) viewerEndModal.openModal();
     },
@@ -89,11 +93,11 @@ const BuskingViewerPage = () => {
             </div>
           </div>
 
-          <div className='ml-4 px-3 py-1 flex gap-1 rounded-10 bg-accent-600 typo-16m text-white'>
-            <span>LIVE</span>
-            <span>·</span>
-            <span>2:30</span>
-          </div>
+          <BuskingBadge
+            isRecord={isRecord}
+            duration={isRecord ? '3:30' : '2:30'}
+            className='ml-4'
+          />
 
           {isStreamer && (
             <Button variant={'accent'} className='ml-auto' onClick={handleEndLive}>
@@ -108,13 +112,17 @@ const BuskingViewerPage = () => {
 
           {/* 셋리스트 오버레이 */}
           <div className='absolute top-3 left-3'>
-            <SetlistPanel title='버스킹 첫 도전!' items={MOCK_SETLIST} />
+            <SetlistPanel
+              title='버스킹 첫 도전!'
+              items={MOCK_SETLIST}
+              isRecord={isRecord}
+            />
           </div>
 
           {/* 투표 패널 */}
           {showVote && !isStreamer && (
             <div className='absolute bottom-3 right-3'>
-              <VotePanel />
+              <VotePanel timeLeft={isRecord ? '00:07:30' : undefined} />
             </div>
           )}
         </div>
