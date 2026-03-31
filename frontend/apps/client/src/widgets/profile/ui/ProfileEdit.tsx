@@ -9,7 +9,12 @@ import { EditFavoriteArtistsModal } from '@/features/edit-favorite-artists';
 import SnsAccountItem from './SnsAccountItem';
 import type { ArtistUiType } from '@/entities/artist/model/types';
 
-import { useMe, useUpdateProfile, useOnboardingStep2 } from '@/entities/user';
+import {
+  useMe,
+  useUpdateMe,
+  useUpdateProfile,
+  useOnboardingStep2,
+} from '@/entities/user';
 import { toSnsAccountsUiType } from '@/entities/user';
 
 type ProfileFormState = {
@@ -26,7 +31,8 @@ const EMPTY_FORM: ProfileFormState = {
 
 const ProfileEdit = () => {
   const { data: userData, isLoading, error } = useMe();
-  const { mutate: updateProfile, isPending: isSaving } = useUpdateProfile();
+  const { mutate: updateMe, isPending: isUpdatingMe } = useUpdateMe();
+  const { mutate: updateProfile, isPending: isUpdatingProfile } = useUpdateProfile();
   const { mutate: updateFavoriteSingers, isPending: isUpdatingFavorites } =
     useOnboardingStep2();
 
@@ -103,41 +109,41 @@ const ProfileEdit = () => {
   const handleSave = () => {
     if (!userData) return;
 
-    const formData = new FormData();
-
-    const originalNickname = userData.nickname;
-    const originalBio = userData.bio ?? '';
-    const originalArtistIds = userData.favorite_singers.map((artist) => artist.singer_id);
-
     const trimmedNickname = form.nickname.trim();
     const trimmedBio = form.bio.trim();
+
+    const isNicknameChanged = trimmedNickname !== userData.nickname;
+    const isBioChanged = trimmedBio !== (userData.bio ?? '');
+    const isImageChanged = !!thumbnail?.file;
+
+    const originalArtistIds = userData.favorite_singers.map((artist) => artist.singer_id);
     const selectedArtistIds = form.favoriteArtists.map((artist) => artist.id);
-
-    if (trimmedNickname && trimmedNickname !== originalNickname) {
-      formData.append('nickname', trimmedNickname);
-    }
-
-    if (trimmedBio !== originalBio) {
-      formData.append('bio', trimmedBio);
-    }
-
-    if (thumbnail?.file) {
-      formData.append('profile_image', thumbnail.file);
-    }
-
-    const hasProfileChanges = [...formData.keys()].length > 0;
-    const hasFavoriteArtistsChanges = !isSameArtistIds(
+    const isFavoriteArtistsChanged = !isSameArtistIds(
       originalArtistIds,
       selectedArtistIds,
     );
 
-    if (!hasProfileChanges && !hasFavoriteArtistsChanges) return;
+    if (isNicknameChanged) {
+      updateMe({
+        nickname: trimmedNickname,
+      });
+    }
 
-    if (hasProfileChanges) {
+    if (isBioChanged || isImageChanged) {
+      const formData = new FormData();
+
+      if (isBioChanged) {
+        formData.append('bio', trimmedBio);
+      }
+
+      if (thumbnail?.file) {
+        formData.append('profile_image', thumbnail.file);
+      }
+
       updateProfile(formData);
     }
 
-    if (hasFavoriteArtistsChanges) {
+    if (isFavoriteArtistsChanged) {
       updateFavoriteSingers(selectedArtistIds);
     }
   };
@@ -262,7 +268,10 @@ const ProfileEdit = () => {
 
           {/* 저장 */}
           <div className='flex justify-center py-4'>
-            <Button onClick={handleSave} disabled={isSaving || isUpdatingFavorites}>
+            <Button
+              onClick={handleSave}
+              disabled={isUpdatingMe || isUpdatingProfile || isUpdatingFavorites}
+            >
               저장하기
             </Button>
           </div>
