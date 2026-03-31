@@ -20,7 +20,7 @@ type PatchPathItem<PI> = PI extends object ? { [K in keyof PI]: PatchMethod<PI[K
 
 type paths = { [P in keyof _paths]: PatchPathItem<_paths[P]> };
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+export const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
 export const publicClient = createClient<paths>({ baseUrl: BASE_URL });
 

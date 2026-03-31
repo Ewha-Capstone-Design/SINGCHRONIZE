@@ -1,9 +1,9 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { InputField, Button } from '@singchronize/ui';
 import { useNavigate } from '@/shared/lib/navigation';
 import { cn } from '@/shared/lib/cn';
-import { InputField, Button } from '@singchronize/ui';
 import { IcLogo, IcPlus, IcProfile } from '@/shared/assets/icons';
 
 const ProfilePage = () => {
@@ -39,7 +39,11 @@ const ProfilePage = () => {
         <div className='relative'>
           <div className={cn('w-44 h-44 overflow-hidden rounded-full', 'bg-gray-800')}>
             {previewUrl ? (
-              <img src={previewUrl} alt='' className='h-full w-full object-cover' />
+              <img
+                src={previewUrl}
+                alt='프로필 미리보기'
+                className='h-full w-full object-cover'
+              />
             ) : (
               <IcProfile />
             )}
@@ -51,7 +55,7 @@ const ProfilePage = () => {
             className={cn(
               'absolute -bottom-1 -right-1',
               'flex h-10 w-10 items-center justify-center rounded-full',
-              'bg-white text-black'
+              'bg-white text-black',
             )}
           >
             <IcPlus />

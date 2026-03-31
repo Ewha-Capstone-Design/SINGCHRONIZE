@@ -4,14 +4,17 @@ import type { AuthProvider, LoginResponse, TokenResponse } from '../model/types'
 export const authApi = {
   login: async (
     provider: AuthProvider,
-    accessToken: string,
+    credential: string,
     fcmToken?: string,
   ): Promise<LoginResponse> => {
     const { data, error } = await publicClient.POST('/api/v1/auth/login/{provider}', {
       params: { path: { provider } },
-      body: { access_token: accessToken, fcm_token: fcmToken },
+      body: { access_token: credential, fcm_token: fcmToken },
     });
+
     if (error) throw error;
+    if (!data) throw new Error('로그인 응답 데이터가 없습니다.');
+
     return data;
   },
 
@@ -19,7 +22,10 @@ export const authApi = {
     const { data, error } = await publicClient.POST('/api/v1/auth/refresh', {
       headers: { Authorization: `Bearer ${refreshToken}` },
     });
+
     if (error) throw error;
+    if (!data) throw new Error('토큰 재발급 응답 데이터가 없습니다.');
+
     return data;
   },
 
@@ -27,6 +33,7 @@ export const authApi = {
     const { error } = await privateClient.POST('/api/v1/auth/withdraw', {
       body: { reason },
     });
+
     if (error) throw error;
   },
 };
