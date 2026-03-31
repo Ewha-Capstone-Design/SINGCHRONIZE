@@ -7,19 +7,24 @@ import { BlockedModal } from '@/features/block';
 import SnsAccountItem from './SnsAccountItem';
 
 import { useWithdraw } from '@/entities/auth';
-
-import { MOCK_PROFILE, MOCK_SNS_ACCOUNTS } from '@/entities/user/model/mock';
+import { useMe } from '@/entities/user';
+import { toUserUiType, toSnsAccountsUiType } from '@/entities/user/model/types';
 
 const ProfileMain = () => {
   const { go, ROUTES } = useNavigate();
   const blockedSongModal = useModal();
   const blockedArtistModal = useModal();
 
+  const { data: userData, isLoading, error } = useMe();
   const { mutate: withdraw } = useWithdraw();
 
-  const profile = MOCK_PROFILE;
-  const kakaoAccount = MOCK_SNS_ACCOUNTS.find((a) => a.provider === 'kakao');
-  const naverAccount = MOCK_SNS_ACCOUNTS.find((a) => a.provider === 'naver');
+  // TODO: 추후 예외 처리 필요
+  if (isLoading || error || !userData) {
+    return <div className='min-h-screen text-white flex items-center justify-center' />;
+  }
+
+  const profile = toUserUiType(userData);
+  const snsAccounts = toSnsAccountsUiType(profile.linkedProviders);
 
   const handleWithdraw = () => {
     // TODO: 탈퇴 확인 커스텀 팝업 추가
@@ -58,19 +63,16 @@ const ProfileMain = () => {
       <div className='px-8 pb-8 grid grid-cols-1 lg:grid-cols-3 gap-8'>
         {/* SNS 연동 */}
         <div className='flex flex-col gap-3'>
-          {kakaoAccount?.connected && (
-            <SnsAccountItem
-              provider='kakao'
-              email={kakaoAccount.email}
-              connected={kakaoAccount.connected}
-            />
-          )}
-          {naverAccount?.connected && (
-            <SnsAccountItem
-              provider='naver'
-              email={naverAccount.email}
-              connected={naverAccount.connected}
-            />
+          {snsAccounts.map(
+            (account) =>
+              account.connected && (
+                <SnsAccountItem
+                  key={account.provider}
+                  provider={account.provider}
+                  email={account.email}
+                  connected={account.connected}
+                />
+              ),
           )}
         </div>
 
