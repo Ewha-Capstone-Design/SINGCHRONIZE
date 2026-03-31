@@ -1,21 +1,10 @@
 'use client';
 
-import { useNavigate } from '@/shared/lib/navigation';
 import { IcLogo } from '@/shared/assets/icons';
 import { SocialLoginButton } from './_components';
+import { loginWithKakao, loginWithNaver } from '@/entities/auth/api/socialAuth';
 
 const LoginPage = () => {
-  const { go, ROUTES } = useNavigate();
-
-  // TODO: 임시 라우팅 코드, 추후 'use client' 삭제 필요
-  const handleKakaoLogin = () => {
-    go(ROUTES.login.profile);
-  };
-
-  const handleNaverLogin = () => {
-    go(ROUTES.login.profile);
-  };
-
   return (
     <main className='flex flex-col items-center gap-34'>
       <div className='flex flex-col items-center gap-8'>
@@ -28,8 +17,8 @@ const LoginPage = () => {
       </div>
 
       <div className='flex flex-col gap-4'>
-        <SocialLoginButton provider='kakao' onClick={handleKakaoLogin} />
-        <SocialLoginButton provider='naver' onClick={handleNaverLogin} />
+        <SocialLoginButton provider='kakao' onClick={loginWithKakao} />
+        <SocialLoginButton provider='naver' onClick={loginWithNaver} />
       </div>
     </main>
   );
