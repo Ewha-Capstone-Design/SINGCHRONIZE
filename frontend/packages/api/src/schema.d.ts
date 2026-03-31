@@ -72,8 +72,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 내 정보 조회
-         * @description 현재 로그인된 사용자의 정보를 반환합니다. 캐시된 보컬 분석 정보(vocal_summary)도 포함됩니다.
+         * 내 정보 조회 (마이페이지)
+         * @description 선호 가수, 차단 가수, 연동된 SNS 계정 목록을 포함한 전체 프로필을 반환합니다.
          */
         get: operations["get_me_api_v1_users_me_get"];
         put?: never;
@@ -81,8 +81,121 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** 프로필 수정 */
+        /**
+         * 닉네임 수정 (JSON)
+         * @description 닉네임만 JSON으로 빠르게 수정할 때 사용합니다. 사진/소개글은 `/me/profile`을 사용하세요.
+         */
         patch: operations["update_profile_api_v1_users_me_patch"];
+        trace?: never;
+    };
+    "/api/v1/users/me/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * 마이페이지 프로필 수정
+         * @description `multipart/form-data`로 전송. `nickname`, `bio`, `profile_image` 중 하나 이상 포함해야 합니다. `bio`를 빈 문자열로 보내면 소개글이 삭제됩니다.
+         */
+        patch: operations["update_mypage_profile_api_v1_users_me_profile_patch"];
+        trace?: never;
+    };
+    "/api/v1/users/me/linked-accounts/{provider}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * SNS 계정 연동 해제
+         * @description 연동된 카카오 또는 네이버 계정을 해제합니다. 기본 로그인 계정은 해제할 수 없습니다.
+         */
+        delete: operations["unlink_account_api_v1_users_me_linked_accounts__provider__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/blocked-singers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 차단한 가수 목록 조회 */
+        get: operations["get_blocked_singers_api_v1_users_me_blocked_singers_get"];
+        put?: never;
+        /** 가수 차단 */
+        post: operations["block_singer_api_v1_users_me_blocked_singers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/blocked-singers/{singer_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 가수 차단 해제 */
+        delete: operations["unblock_singer_api_v1_users_me_blocked_singers__singer_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/blocked-songs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 차단한 곡 목록 조회 */
+        get: operations["get_blocked_songs_api_v1_users_me_blocked_songs_get"];
+        put?: never;
+        /** 곡 차단 */
+        post: operations["block_song_api_v1_users_me_blocked_songs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/blocked-songs/{song_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 곡 차단 해제 */
+        delete: operations["unblock_song_api_v1_users_me_blocked_songs__song_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/users/me/settings": {
@@ -271,8 +384,155 @@ export interface paths {
          */
         get: operations["get_rooms_api_v1_busking_rooms_get"];
         put?: never;
-        /** Create Room */
+        /**
+         * Create Room
+         * @description 버스킹 방 생성 (로그인 필수)
+         */
         post: operations["create_room_api_v1_busking_rooms_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/recommendations/upload-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Upload Url
+         * @description 1단계: S3 업로드 URL 발급
+         */
+        post: operations["get_upload_url_api_v1_recommendations_upload_url_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/recommendations/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Recommendation
+         * @description [1차 추천 프로세스 시작]
+         *     1. DB에 추천 작업 생성 (상태: QUEUED)
+         *     2. SQS에 메시지 발행 (AI Worker에게 알림)
+         *     3. job_id(DB ID) 즉시 반환
+         */
+        post: operations["start_recommendation_api_v1_recommendations_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/recommendations/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Recommendation Status
+         * @description [추천 작업 상태 조회]
+         *     프론트엔드에서 결과가 나올 때까지 주기적으로 호출할 API
+         */
+        get: operations["get_recommendation_status_api_v1_recommendations__job_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/singers/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search Singers
+         * @description 가수 이름 또는 별칭으로 검색 (부분 일치)
+         */
+        get: operations["search_singers_api_v1_singers_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/singers/random": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Random Singers
+         * @description 성별 필터 후 차단 제외 랜덤 가수 목록 반환
+         */
+        get: operations["get_random_singers_api_v1_singers_random_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/onboarding/step1": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 프로필 설정 1단계
+         * @description 회원가입 직후 온보딩 1단계. 닉네임(필수)과 프로필 사진(선택)을 설정합니다. `multipart/form-data`로 전송하세요.
+         */
+        post: operations["onboarding_step1_api_v1_users_me_onboarding_step1_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/onboarding/step2": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 즐겨부르는 가수 선택 (온보딩 2단계)
+         * @description 가수 ID 목록을 받아 즐겨부르는 가수로 저장합니다. 기존 선택을 전부 교체하므로 마이페이지 수정 시에도 동일하게 호출할 수 있습니다. 가수 목록은 `GET /api/v1/singers/random` API로 조회하세요.
+         */
+        post: operations["onboarding_step2_api_v1_users_me_onboarding_step2_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -402,6 +662,97 @@ export interface components {
             /** Memo */
             memo?: string | null;
         };
+        /** BlockSingerRequest */
+        BlockSingerRequest: {
+            /** Singer Id */
+            singer_id: number;
+        };
+        /** BlockSongRequest */
+        BlockSongRequest: {
+            /**
+             * Song Id
+             * Format: uuid
+             */
+            song_id: string;
+        };
+        /** BlockedSingerItem */
+        BlockedSingerItem: {
+            /** Block Id */
+            block_id: number;
+            /** Singer Id */
+            singer_id: number;
+            /** Name */
+            name: string;
+            /** Photo Url */
+            photo_url?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** BlockedSingersListResponse */
+        BlockedSingersListResponse: {
+            /** Blocked Singers */
+            blocked_singers: components["schemas"]["BlockedSingerItem"][];
+        };
+        /** BlockedSongItem */
+        BlockedSongItem: {
+            /** Block Id */
+            block_id: number;
+            /**
+             * Song Id
+             * Format: uuid
+             */
+            song_id: string;
+            /** Title */
+            title: string;
+            /** Artist */
+            artist: string;
+            /** Album Cover */
+            album_cover?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** BlockedSongsListResponse */
+        BlockedSongsListResponse: {
+            /** Blocked Songs */
+            blocked_songs: components["schemas"]["BlockedSongItem"][];
+        };
+        /** Body_onboarding_step1_api_v1_users_me_onboarding_step1_post */
+        Body_onboarding_step1_api_v1_users_me_onboarding_step1_post: {
+            /**
+             * Nickname
+             * @description 닉네임 (1~20자, 공백만 불가)
+             */
+            nickname: string;
+            /**
+             * Profile Image
+             * @description 프로필 사진 (jpeg/png/webp, 최대 5MB)
+             */
+            profile_image?: string | null;
+        };
+        /** Body_update_mypage_profile_api_v1_users_me_profile_patch */
+        Body_update_mypage_profile_api_v1_users_me_profile_patch: {
+            /**
+             * Nickname
+             * @description 닉네임 (1~20자)
+             */
+            nickname?: string | null;
+            /**
+             * Bio
+             * @description 소개글 (최대 200자, 빈 문자열 = 삭제)
+             */
+            bio?: string | null;
+            /**
+             * Profile Image
+             * @description 프로필 사진 (jpeg/png/webp, 최대 5MB)
+             */
+            profile_image?: string | null;
+        };
         /** BuskingRoomCreate */
         BuskingRoomCreate: {
             /** Title */
@@ -431,6 +782,16 @@ export interface components {
             total_viewers: number;
             /** Started At */
             started_at: string | null;
+        };
+        /** FavoriteSingersSelectRequest */
+        FavoriteSingersSelectRequest: {
+            /** Singer Ids */
+            singer_ids: number[];
+        };
+        /** FavoriteSingersSelectResponse */
+        FavoriteSingersSelectResponse: {
+            /** Singers */
+            singers: components["schemas"]["SingerInfo"][];
         };
         /** FolderCreate */
         FolderCreate: {
@@ -486,6 +847,11 @@ export interface components {
             /** Is New User */
             is_new_user: boolean;
         };
+        /** RandomSingersResponse */
+        RandomSingersResponse: {
+            /** Singers */
+            singers: components["schemas"]["SingerInfo"][];
+        };
         /**
          * SettingsUpdateRequest
          * @description PATCH /users/me/settings 요청 - JSONB 부분 업데이트
@@ -495,6 +861,20 @@ export interface components {
             push_enabled?: boolean | null;
             /** Marketing Agree */
             marketing_agree?: boolean | null;
+        };
+        /** SingerInfo */
+        SingerInfo: {
+            /** Singer Id */
+            singer_id: number;
+            /** Name */
+            name: string;
+            /** Photo Url */
+            photo_url?: string | null;
+        };
+        /** SingerSearchResponse */
+        SingerSearchResponse: {
+            /** Singers */
+            singers: components["schemas"]["SingerInfo"][];
         };
         /**
          * SocialLoginRequest
@@ -528,8 +908,60 @@ export interface components {
             token_type: string;
         };
         /**
+         * UserMeResponse
+         * @description GET /users/me 전용 - 선호 가수, 차단 가수, 차단 곡, 연동 SNS 포함
+         */
+        UserMeResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Nickname */
+            nickname: string;
+            /** Email */
+            email?: string | null;
+            /** Profile Img */
+            profile_img?: string | null;
+            /** Bio */
+            bio?: string | null;
+            /** Provider */
+            provider: string;
+            /** Vocal Summary */
+            vocal_summary?: Record<string, never> | null;
+            /** Settings */
+            settings: Record<string, never>;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Updated At */
+            updated_at?: string | null;
+            /**
+             * Favorite Singers
+             * @default []
+             */
+            favorite_singers: components["schemas"]["SingerInfo"][];
+            /**
+             * Blocked Singers
+             * @default []
+             */
+            blocked_singers: components["schemas"]["SingerInfo"][];
+            /**
+             * Blocked Songs
+             * @default []
+             */
+            blocked_songs: components["schemas"]["BlockedSongItem"][];
+            /**
+             * Linked Providers
+             * @default []
+             */
+            linked_providers: string[];
+        };
+        /**
          * UserResponse
-         * @description GET /users/me 응답 - 보컬 캐시 포함
+         * @description 기본 유저 응답 - 인증/수정 결과 반환용
          */
         UserResponse: {
             /**
@@ -543,6 +975,8 @@ export interface components {
             email?: string | null;
             /** Profile Img */
             profile_img?: string | null;
+            /** Bio */
+            bio?: string | null;
             /** Provider */
             provider: string;
             /** Vocal Summary */
@@ -641,10 +1075,7 @@ export type $defs = Record<string, never>;
 export interface operations {
     social_login_api_v1_auth_login__provider__post: {
         parameters: {
-            query: {
-                args: unknown;
-                kwargs: unknown;
-            };
+            query?: never;
             header?: never;
             path: {
                 provider: string;
@@ -679,10 +1110,7 @@ export interface operations {
     };
     refresh_api_v1_auth_refresh_post: {
         parameters: {
-            query: {
-                args: unknown;
-                kwargs: unknown;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -698,23 +1126,11 @@ export interface operations {
                     "application/json": components["schemas"]["TokenResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     withdraw_api_v1_auth_withdraw_post: {
         parameters: {
-            query: {
-                args: unknown;
-                kwargs: unknown;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -745,10 +1161,7 @@ export interface operations {
     };
     get_me_api_v1_users_me_get: {
         parameters: {
-            query: {
-                args: unknown;
-                kwargs: unknown;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -761,26 +1174,14 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UserResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["UserMeResponse"];
                 };
             };
         };
     };
     update_profile_api_v1_users_me_patch: {
         parameters: {
-            query: {
-                args: unknown;
-                kwargs: unknown;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -811,12 +1212,235 @@ export interface operations {
             };
         };
     };
+    update_mypage_profile_api_v1_users_me_profile_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_update_mypage_profile_api_v1_users_me_profile_patch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unlink_account_api_v1_users_me_linked_accounts__provider__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_blocked_singers_api_v1_users_me_blocked_singers_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlockedSingersListResponse"];
+                };
+            };
+        };
+    };
+    block_singer_api_v1_users_me_blocked_singers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BlockSingerRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlockedSingerItem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unblock_singer_api_v1_users_me_blocked_singers__singer_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                singer_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_blocked_songs_api_v1_users_me_blocked_songs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlockedSongsListResponse"];
+                };
+            };
+        };
+    };
+    block_song_api_v1_users_me_blocked_songs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BlockSongRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlockedSongItem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unblock_song_api_v1_users_me_blocked_songs__song_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                song_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     update_settings_api_v1_users_me_settings_patch: {
         parameters: {
-            query: {
-                args: unknown;
-                kwargs: unknown;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -880,10 +1504,7 @@ export interface operations {
     };
     get_folders_api_v1_library_folders_get: {
         parameters: {
-            query: {
-                args: unknown;
-                kwargs: unknown;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -899,23 +1520,11 @@ export interface operations {
                     "application/json": components["schemas"]["FolderResponse"][];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     create_folder_api_v1_library_folders_post: {
         parameters: {
-            query: {
-                args: unknown;
-                kwargs: unknown;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -948,10 +1557,7 @@ export interface operations {
     };
     delete_folder_api_v1_library_folders__folder_id__delete: {
         parameters: {
-            query: {
-                args: unknown;
-                kwargs: unknown;
-            };
+            query?: never;
             header?: never;
             path: {
                 folder_id: string;
@@ -980,13 +1586,11 @@ export interface operations {
     };
     get_wishlist_api_v1_library_wishlist_get: {
         parameters: {
-            query: {
+            query?: {
                 /** @description 폴더 ID (없으면 전체) */
                 folder_id?: string | null;
                 /** @description 정렬 기준 (LATEST) */
                 sort?: string;
-                args: unknown;
-                kwargs: unknown;
             };
             header?: never;
             path?: never;
@@ -1016,10 +1620,7 @@ export interface operations {
     };
     add_wishlist_item_api_v1_library_wishlist_post: {
         parameters: {
-            query: {
-                args: unknown;
-                kwargs: unknown;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -1052,10 +1653,7 @@ export interface operations {
     };
     delete_wishlist_item_api_v1_library_wishlist__item_id__delete: {
         parameters: {
-            query: {
-                args: unknown;
-                kwargs: unknown;
-            };
+            query?: never;
             header?: never;
             path: {
                 item_id: string;
@@ -1084,11 +1682,9 @@ export interface operations {
     };
     get_history_api_v1_library_history_get: {
         parameters: {
-            query: {
+            query?: {
                 /** @description 태그 필터 (예: AGAIN, HIGH_PITCH) */
                 tag?: string | null;
-                args: unknown;
-                kwargs: unknown;
             };
             header?: never;
             path?: never;
@@ -1118,10 +1714,7 @@ export interface operations {
     };
     create_history_api_v1_library_history_post: {
         parameters: {
-            query: {
-                args: unknown;
-                kwargs: unknown;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -1154,10 +1747,7 @@ export interface operations {
     };
     delete_history_api_v1_library_history__archive_id__delete: {
         parameters: {
-            query: {
-                args: unknown;
-                kwargs: unknown;
-            };
+            query?: never;
             header?: never;
             path: {
                 archive_id: string;
@@ -1186,10 +1776,7 @@ export interface operations {
     };
     update_history_api_v1_library_history__archive_id__patch: {
         parameters: {
-            query: {
-                args: unknown;
-                kwargs: unknown;
-            };
+            query?: never;
             header?: never;
             path: {
                 archive_id: string;
@@ -1224,10 +1811,7 @@ export interface operations {
     };
     get_rooms_api_v1_busking_rooms_get: {
         parameters: {
-            query: {
-                args: unknown;
-                kwargs: unknown;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -1243,23 +1827,11 @@ export interface operations {
                     "application/json": components["schemas"]["BuskingRoomResponse"][];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     create_room_api_v1_busking_rooms_post: {
         parameters: {
-            query: {
-                args: unknown;
-                kwargs: unknown;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -1277,6 +1849,233 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BuskingRoomResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_upload_url_api_v1_recommendations_upload_url_post: {
+        parameters: {
+            query: {
+                user_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_recommendation_api_v1_recommendations_start_post: {
+        parameters: {
+            query: {
+                user_id: string;
+                s3_key: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_recommendation_status_api_v1_recommendations__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_singers_api_v1_singers_search_get: {
+        parameters: {
+            query: {
+                /** @description 검색할 가수 이름 */
+                q: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SingerSearchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_random_singers_api_v1_singers_random_get: {
+        parameters: {
+            query: {
+                /** @description 성별 필터 (male | female) */
+                gender: string;
+                /** @description 반환할 가수 수 */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RandomSingersResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    onboarding_step1_api_v1_users_me_onboarding_step1_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_onboarding_step1_api_v1_users_me_onboarding_step1_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    onboarding_step2_api_v1_users_me_onboarding_step2_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FavoriteSingersSelectRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FavoriteSingersSelectResponse"];
                 };
             };
             /** @description Validation Error */
@@ -1314,8 +2113,6 @@ export interface operations {
         parameters: {
             query: {
                 code: string;
-                args: unknown;
-                kwargs: unknown;
             };
             header?: never;
             path?: never;
