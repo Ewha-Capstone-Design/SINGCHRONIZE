@@ -98,7 +98,7 @@ const GenreFitCard = ({
 }: {
   data: GenreDatum[];
   bestGenre: string;
-  description: string;
+  description?: string;
 }) => {
   const { open, openModal, closeModal } = useModal();
 
@@ -130,7 +130,7 @@ const GenreFitCard = ({
               <GenreFitChart data={data} bestGenre={bestGenre} />
             </div>
           }
-          description={description}
+          description={description ?? ""}
           onClose={closeModal}
         />
       )}

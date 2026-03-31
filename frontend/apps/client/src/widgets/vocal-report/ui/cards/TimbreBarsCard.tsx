@@ -31,7 +31,7 @@ const TimbreBarsCard = ({
   description,
 }: {
   data: TimbreDatum[];
-  description: string;
+  description?: string;
 }) => {
   const { open, openModal, closeModal } = useModal();
 
@@ -50,7 +50,7 @@ const TimbreBarsCard = ({
         <VocalReportDetailModal
           title='음색 분석'
           chart={<TimbreBarsChart data={data} />}
-          description={description}
+          description={description ?? ""}
           onClose={closeModal}
         />
       )}
