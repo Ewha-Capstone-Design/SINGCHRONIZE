@@ -6,6 +6,8 @@ import { ProfileCard } from '@/entities/user/ui';
 import { BlockedModal } from '@/features/block';
 import SnsAccountItem from './SnsAccountItem';
 
+import { useWithdraw } from '@/entities/auth';
+
 import { MOCK_PROFILE, MOCK_SNS_ACCOUNTS } from '@/entities/user/model/mock';
 
 const ProfileMain = () => {
@@ -13,9 +15,27 @@ const ProfileMain = () => {
   const blockedSongModal = useModal();
   const blockedArtistModal = useModal();
 
+  const { mutate: withdraw } = useWithdraw();
+
   const profile = MOCK_PROFILE;
   const kakaoAccount = MOCK_SNS_ACCOUNTS.find((a) => a.provider === 'kakao');
   const naverAccount = MOCK_SNS_ACCOUNTS.find((a) => a.provider === 'naver');
+
+  const handleWithdraw = () => {
+    // TODO: 탈퇴 확인 커스텀 팝업 추가
+    if (confirm('정말로 탈퇴하시겠습니까? 모든 데이터가 삭제되며 복구할 수 없습니다.')) {
+      withdraw(undefined, {
+        onSuccess: () => {
+          alert('탈퇴가 완료되었습니다.');
+          go(ROUTES.login.root);
+        },
+        onError: (error) => {
+          console.error('탈퇴 실패:', error);
+          alert('탈퇴 처리 중 에러가 발생했습니다.');
+        },
+      });
+    }
+  };
 
   const myRecords = [
     { label: '나의 보컬 리포트', route: ROUTES.my.vocalReport },
@@ -26,7 +46,7 @@ const ProfileMain = () => {
     { label: '차단한 곡 관리하기', action: blockedSongModal.openModal },
     { label: '차단한 가수 관리하기', action: blockedArtistModal.openModal },
     { label: '로그아웃 하기', action: null },
-    { label: '탈퇴하기', action: null },
+    { label: '탈퇴하기', action: handleWithdraw },
   ];
 
   return (
