@@ -1,12 +1,16 @@
-import type { ProfileUiType, SnsAccountUiType } from '@/entities/user/model/types';
+import type { UserUiType, SnsAccountUiType } from '@/entities/user/model/types';
 
-export const MOCK_PROFILE: ProfileUiType = {
+export const MOCK_PROFILE: UserUiType = {
+  id: 'mock-id',
   nickname: '지연',
+  email: null,
   profileImage: null,
   bio: '음악을 사랑하는 사람',
+  provider: 'kakao',
+  linkedProviders: ['kakao'],
 };
 
 export const MOCK_SNS_ACCOUNTS: SnsAccountUiType[] = [
-  { id: '1', provider: 'kakao', email: 'kimjiyeon1234@gmail.com', connected: true },
-  { id: '2', provider: 'naver', connected: false },
+  { provider: 'kakao', connected: true },
+  { provider: 'naver', connected: false },
 ];

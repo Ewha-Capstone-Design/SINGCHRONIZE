@@ -102,7 +102,7 @@ const ProfileEdit = () => {
             <div className='flex flex-col gap-2'>
               {MOCK_SNS_ACCOUNTS.map((account) => (
                 <SnsAccountItem
-                  key={account.id}
+                  key={account.provider}
                   provider={account.provider}
                   email={account.email}
                   connected={account.connected}

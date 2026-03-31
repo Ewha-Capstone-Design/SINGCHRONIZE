@@ -3,15 +3,14 @@
 import { cn } from '@/shared/lib/cn';
 import { Button } from '@singchronize/ui';
 import { IcKakao, IcNaver } from '@/shared/assets/icons';
-
-type Provider = 'kakao' | 'naver';
+import type { AuthProvider } from '@/entities/auth';
 
 type SocialLoginButtonProps = {
-  provider: Provider;
+  provider: AuthProvider;
   onClick?: () => void;
 };
 
-const PROVIDER_META: Record<Provider, { label: string; icon: React.ReactNode }> = {
+const PROVIDER_META: Record<AuthProvider, { label: string; icon: React.ReactNode }> = {
   kakao: {
     label: '카카오로 시작하기',
     icon: <IcKakao />,
