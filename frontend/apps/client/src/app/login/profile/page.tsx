@@ -5,11 +5,14 @@ import { InputField, Button } from '@singchronize/ui';
 import { useNavigate } from '@/shared/lib/navigation';
 import { cn } from '@/shared/lib/cn';
 import { IcLogo, IcPlus, IcProfile } from '@/shared/assets/icons';
+import { useOnboardingStep1 } from '@/entities/user';
 
 const ProfilePage = () => {
   const { go, ROUTES } = useNavigate();
+  const { mutateAsync: onboardingStep1, isPending } = useOnboardingStep1();
 
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const fileObjRef = useRef<File | null>(null);
 
   const [nickname, setNickname] = useState('');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -22,11 +25,22 @@ const ProfilePage = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    fileObjRef.current = file;
     const url = URL.createObjectURL(file);
     setPreviewUrl(url);
   };
 
   const isValid = nickname.trim().length >= 2 && nickname.trim().length <= 10;
+
+  const handleNext = async () => {
+    const formData = new FormData();
+    formData.append('nickname', nickname.trim());
+    if (fileObjRef.current) {
+      formData.append('profile_image', fileObjRef.current);
+    }
+    await onboardingStep1(formData);
+    go(ROUTES.login.taste);
+  };
 
   return (
     <main className='flex flex-col items-center'>
@@ -81,11 +95,8 @@ const ProfilePage = () => {
         <div className='flex justify-center w-full'>
           <Button
             variant={'primary'}
-            disabled={!isValid}
-            onClick={() => {
-              // TODO: 프로필 저장 API 호출
-              go(ROUTES.login.taste);
-            }}
+            disabled={!isValid || isPending}
+            onClick={handleNext}
           >
             다음으로 넘어가기
           </Button>

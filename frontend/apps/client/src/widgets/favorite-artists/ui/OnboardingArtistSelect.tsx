@@ -12,6 +12,7 @@ import { validateMinSelect } from '../model/validateMinSelect';
 import { GenderToggleButton, SelectionCounter } from '.';
 
 import { fetchRecommendedArtists } from '@/entities/artist/model/mock';
+import { useOnboardingStep2 } from '@/entities/user';
 
 const MAX_SELECT = 3;
 
@@ -20,6 +21,7 @@ type OnboardingArtistSelectProps = {
 };
 
 const OnboardingArtistSelect = ({ onCompleted }: OnboardingArtistSelectProps) => {
+  const { mutateAsync: onboardingStep2 } = useOnboardingStep2();
   const [gender, setGender] = useState<GenderType>('male');
   const [artists, setArtists] = useState<ArtistUiType[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -50,8 +52,8 @@ const OnboardingArtistSelect = ({ onCompleted }: OnboardingArtistSelectProps) =>
     loadArtists(gender);
   };
 
-  const submitSelectedArtists = async (_ids: ArtistIdType[]) => {
-    // TODO: 선택한 아티스트 저장 API 호출
+  const submitSelectedArtists = async (ids: ArtistIdType[]) => {
+    await onboardingStep2(ids as number[]);
   };
 
   const handleConfirm = async () => {
@@ -73,7 +75,7 @@ const OnboardingArtistSelect = ({ onCompleted }: OnboardingArtistSelectProps) =>
           disabled={isLoading}
           className={cn(
             'inline-flex h-8 w-8 items-center justify-center',
-            'disabled:opacity-50'
+            'disabled:opacity-50',
           )}
         >
           <IcRefresh />
