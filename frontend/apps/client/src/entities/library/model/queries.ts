@@ -1,6 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { libraryApi } from '../api/libraryApi';
-import type { FolderCreate, WishlistItemCreate, FavoriteFolderApiType } from '../model/types';
+import type {
+  FolderCreate,
+  WishlistItemCreate,
+  FavoriteFolderApiType,
+} from '../model/types';
 import { queryKeys } from '@/shared/api/queryKeys';
 import { toFavoriteFolderUi, toFavoriteSongUiType } from './mapper';
 
@@ -21,14 +25,16 @@ export const useCreateFolder = () => {
   });
 };
 
-// DELETE: 폴더 삭제 (낙관적 업데이트)
+// DELETE: 폴더 삭제
 export const useDeleteFolder = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (folderId: string) => libraryApi.deleteFolder(folderId),
     onMutate: async (folderId) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.folders });
-      const previous = queryClient.getQueryData<FavoriteFolderApiType[]>(queryKeys.folders);
+      const previous = queryClient.getQueryData<FavoriteFolderApiType[]>(
+        queryKeys.folders,
+      );
       queryClient.setQueryData<FavoriteFolderApiType[]>(queryKeys.folders, (old = []) =>
         old.filter((f) => f.id !== folderId),
       );
