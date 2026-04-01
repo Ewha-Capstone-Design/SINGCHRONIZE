@@ -1,12 +1,6 @@
-export type SongApiType = {
-  id: string;
-  title: string;
-  artist: string;
-  album_cover?: string | null;
-  tags?: unknown;
-  features?: unknown;
-  created_at?: string;
-};
+import type { components } from '@singchronize/api';
+
+export type SongApiType = components['schemas']['ArchiveSongInfo'];
 
 export type SongUiType = {
   id: string | number;
