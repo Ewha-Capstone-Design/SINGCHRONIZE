@@ -1,12 +1,10 @@
+import type { components } from '@singchronize/api';
+
 export type GenderType = 'male' | 'female';
 
 export type ArtistIdType = number;
 
-export type ArtistApiType = {
-  id: number;
-  name: string;
-  image_url: string | null;
-};
+export type ArtistApiType = components['schemas']['SingerInfo'];
 
 export type ArtistUiType = {
   id: number;
