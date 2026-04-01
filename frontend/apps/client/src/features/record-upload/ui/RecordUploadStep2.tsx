@@ -9,7 +9,7 @@ import { DateSelectButton, DateSelectModal } from '@/features/date-select';
 import { SongListItem } from '@/entities/song/ui';
 import type { SongUiType } from '@/entities/song/model/types';
 
-import { MOCK_SONG_LIST } from '@/entities/song/model/mock';
+import { useSearchMusic } from '@/entities/song';
 
 const MAX_SETLIST = 1;
 
@@ -43,15 +43,7 @@ export const RecordUploadStep2 = ({
   const dateWrapperRef = useRef<HTMLDivElement>(null);
   useClickOutside(dateWrapperRef, closeDate);
 
-  const searchedSongs = useMemo(() => {
-    const normalized = keyword.trim().toLowerCase();
-    if (!normalized) return MOCK_SONG_LIST;
-    return MOCK_SONG_LIST.filter(
-      (song) =>
-        song.title.toLowerCase().includes(normalized) ||
-        song.artist.toLowerCase().includes(normalized)
-    );
-  }, [keyword]);
+  const { data: searchedSongs = [] } = useSearchMusic(keyword);
 
   const canSubmit = selectedSongs.length >= 1;
 

@@ -20,3 +20,10 @@ export type MatchedSongType = SongUiType & {
   matchRate: number;
   isLiked?: boolean;
 };
+
+export type MusicSearchResultType = {
+  uri: string;
+  name: string;
+  artist: string;
+  album_image?: string | null;
+};

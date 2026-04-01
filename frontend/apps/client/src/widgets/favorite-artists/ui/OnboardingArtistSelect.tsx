@@ -5,7 +5,7 @@ import { Button } from '@singchronize/ui';
 import { cn } from '@/shared/lib/cn';
 import { IcRefresh } from '@/shared/assets/icons';
 
-import ArtistCard from '@/entities/artist/ui/ArtistCard';
+import { ArtistCard } from '@/entities/artist/ui';
 import { useMultiSelectIds } from '../model/useMultiSelectIds';
 import { validateMinSelect } from '../model/validateMinSelect';
 import { GenderToggleButton, SelectionCounter } from '.';
