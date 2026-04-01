@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { InputField, Button } from '@singchronize/ui';
 import { BaseModal } from '@/shared/components';
 import { IcCheck, IcPlus } from '@/shared/assets/icons';
 import { SongListItem } from '@/entities/song/ui';
-import { SongUiType } from '@/entities/song/model/types';
 
-import { MOCK_SONG_LIST } from '@/entities/song/model/mock';
+import { useSearchMusic } from '@/entities/song';
+import { useCreateFolder, useAddWishlistItem } from '@/entities/library';
 
 type AddFolderModalProps = {
   onClose: () => void;
@@ -17,28 +17,36 @@ const AddFolderModal = ({ onClose }: AddFolderModalProps) => {
   const [folderTitle, setFolderTitle] = useState('');
   const [query, setQuery] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [songs, setSongs] = useState<SongUiType[]>([]);
 
-  useEffect(() => {
-    // TODO: 곡 목록 fetch API 호출
-    setSongs(MOCK_SONG_LIST);
-  }, []);
+  const { mutate: createFolder, isPending: isCreatingFolder } = useCreateFolder();
+  const { mutate: addWishlistItem } = useAddWishlistItem();
 
-  const filteredSongs = songs.filter(
-    (song) =>
-      song.title.toLowerCase().includes(query.toLowerCase()) ||
-      song.artist.toLowerCase().includes(query.toLowerCase())
-  );
+  const { data: searchedItems = [] } = useSearchMusic(query);
 
   const toggle = (id: string) => {
     setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
   };
 
   const handleSave = async () => {
-    // TODO: 폴더 생성 + 곡 추가 API 호출
-    onClose();
+    if (!folderTitle.trim()) return;
+
+    createFolder(
+      { name: folderTitle },
+      {
+        onSuccess: (createdFolder) => {
+          // 선택된 곡들을 폴더에 추가
+          selectedIds.forEach((songId) => {
+            addWishlistItem({
+              song_id: songId,
+              folder_id: createdFolder.id,
+            });
+          });
+          onClose();
+        },
+      },
+    );
   };
 
   return (
@@ -65,7 +73,7 @@ const AddFolderModal = ({ onClose }: AddFolderModalProps) => {
           />
 
           <div className='flex flex-col gap-4'>
-            {filteredSongs.map((song) => {
+            {searchedItems.map((song) => {
               const isSelected = selectedIds.includes(String(song.id));
               return (
                 <SongListItem
@@ -97,7 +105,11 @@ const AddFolderModal = ({ onClose }: AddFolderModalProps) => {
       </div>
 
       <div className='py-7 flex justify-center shrink-0'>
-        <Button variant='primary' onClick={handleSave} disabled={!folderTitle.trim()}>
+        <Button
+          variant='primary'
+          onClick={handleSave}
+          disabled={!folderTitle.trim() || isCreatingFolder}
+        >
           저장하기
         </Button>
       </div>

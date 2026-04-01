@@ -8,24 +8,19 @@ import { FavoriteFolderCard } from '@/entities/library/ui';
 import type { FavoriteFolderUiType } from '@/entities/library/model/types';
 import FavoriteFolderDetail from './FavoriteFolderDetail';
 
-import {
-  MOCK_FAVORITE_FOLDERS,
-  MOCK_FAVORITE_SONGS,
-} from '@/entities/library/model/mock';
+import { useFolders, useDeleteFolder } from '@/entities/library';
 
 const LibraryFavoriteList = () => {
   const { open: isAddModalOpen, openModal, closeModal } = useModal(false);
-
   const [selectedFolder, setSelectedFolder] = useState<FavoriteFolderUiType | null>(null);
 
-  const folders = MOCK_FAVORITE_FOLDERS;
-  const songs = MOCK_FAVORITE_SONGS;
+  const { data: folders = [] } = useFolders();
+  const { mutate: deleteFolder } = useDeleteFolder();
 
   if (selectedFolder) {
     return (
       <FavoriteFolderDetail
         folder={selectedFolder}
-        songs={songs}
         onBack={() => setSelectedFolder(null)}
       />
     );
@@ -45,8 +40,8 @@ const LibraryFavoriteList = () => {
             <FavoriteFolderCard
               folder={folder}
               onClick={() => setSelectedFolder(folder)}
-              onRenameClick={() => {}}
-              onDeleteClick={() => {}}
+              onRenameClick={() => {}} // TODO: 폴더 이름 변경 기능 논의 필요
+              onDeleteClick={() => deleteFolder(folder.id)}
             />
           </li>
         ))}

@@ -1,13 +1,11 @@
-import type { SongApiType } from '@/entities/song/model/types';
+import type { components } from '@singchronize/api';
 import { HistoryTagType } from './tags';
 
-export type HistoryItemApiType = {
-  history_id: string;
-  song: SongApiType;
-  tags: string[];
-  memo?: string | null;
-  date: string; // "2026.02.15"
-};
+export type HistoryItemApiType = components['schemas']['ArchiveResponse'];
+export type FavoriteFolderApiType = components['schemas']['FolderResponse'];
+export type FolderCreate = components['schemas']['FolderCreate'];
+export type FavoriteSongApiType = components['schemas']['WishlistItemResponse'];
+export type WishlistItemCreate = components['schemas']['WishlistItemCreate'];
 
 export type HistoryItemUiType = {
   historyId: string;
@@ -19,41 +17,19 @@ export type HistoryItemUiType = {
   date: string;
 };
 
-export interface FavoriteFolderApiType {
-  id: string;
-  name: string;
-  thumbnail?: string[];
-  count: number;
-  updated_at: string;
-}
-
-export interface FavoriteFoldersResponse {
-  folders: FavoriteFolderApiType[];
-}
-
-export interface FavoriteFolderUiType {
+export type FavoriteFolderUiType = {
   id: string;
   name: string;
   coverImages: string[];
   songCount: number;
   updatedAt: string;
-}
+};
 
-export interface FavoriteSongApiType {
-  item_id: string;
-  song: SongApiType;
-  is_liked: boolean;
-}
-
-export interface FavoriteSongsResponse {
-  items: FavoriteSongApiType[];
-}
-
-export interface FavoriteSongUiType {
+export type FavoriteSongUiType = {
   itemId: string;
   songId: string;
   title: string;
   artist: string;
   thumbnail?: string;
   isLiked: boolean;
-}
+};

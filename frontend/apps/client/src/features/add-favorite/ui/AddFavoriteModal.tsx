@@ -4,27 +4,33 @@ import { useState } from 'react';
 import { InputField } from '@singchronize/ui';
 import { BaseModal } from '@/shared/components';
 import { LikeIconButton, SongListItem } from '@/entities/song/ui';
-
 import { useSearchMusic } from '@/entities/song';
+import { useAddWishlistItem } from '@/entities/library';
 
 type AddFavoriteModalProps = {
+  folderId?: string;
   onClose: () => void;
 };
 
-const AddFavoriteModal = ({ onClose }: AddFavoriteModalProps) => {
+const AddFavoriteModal = ({ folderId, onClose }: AddFavoriteModalProps) => {
   const [query, setQuery] = useState('');
   const [likedIds, setLikedIds] = useState<Set<string>>(() => new Set());
+
+  const { mutate: addWishlistItem, isPending: isAdding } = useAddWishlistItem();
+  const { data: searchedItems = [] } = useSearchMusic(query);
 
   const toggleLike = (id: string) => {
     setLikedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+        addWishlistItem({ song_id: id, folder_id: folderId });
+      }
       return next;
     });
   };
-
-  const { data: searchedItems = [] } = useSearchMusic(query);
 
   return (
     <BaseModal
@@ -59,6 +65,7 @@ const AddFavoriteModal = ({ onClose }: AddFavoriteModalProps) => {
                   <LikeIconButton
                     isLiked={likedIds.has(String(song.id))}
                     onClick={() => toggleLike(String(song.id))}
+                    disabled={isAdding}
                   />
                 }
               />

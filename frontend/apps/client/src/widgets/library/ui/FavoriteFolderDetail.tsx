@@ -8,20 +8,19 @@ import { AddFavoriteModal } from '@/features/add-favorite';
 import { SongBlockMenu } from '@/features/block';
 import { SongLikeButton } from '@/features/like';
 import { SongListItem } from '@/entities/song/ui';
+import type { FavoriteFolderUiType } from '@/entities/library/model/types';
 
-import type {
-  FavoriteFolderUiType,
-  FavoriteSongUiType,
-} from '@/entities/library/model/types';
+import { useWishlist } from '@/entities/library';
 
 interface FavoriteFolderDetailProps {
   folder: FavoriteFolderUiType;
-  songs: FavoriteSongUiType[];
   onBack: () => void;
 }
 
-const FavoriteFolderDetail = ({ folder, songs, onBack }: FavoriteFolderDetailProps) => {
+const FavoriteFolderDetail = ({ folder, onBack }: FavoriteFolderDetailProps) => {
   const { open: isAddModalOpen, openModal, closeModal } = useModal(false);
+
+  const { data: songs = [] } = useWishlist(folder.id);
 
   return (
     <section className='flex flex-col'>
@@ -49,7 +48,11 @@ const FavoriteFolderDetail = ({ folder, songs, onBack }: FavoriteFolderDetailPro
               artist={song.artist}
               rightSlot={
                 <div className='flex items-center gap-4'>
-                  <SongLikeButton songId={song.songId} isLiked={song.isLiked} />
+                  <SongLikeButton
+                    isLiked={song.isLiked}
+                    songId={song.songId}
+                    folderId={folder.id}
+                  />
                   <SongBlockMenu songId={song.songId} />
                 </div>
               }
@@ -58,7 +61,7 @@ const FavoriteFolderDetail = ({ folder, songs, onBack }: FavoriteFolderDetailPro
         ))}
       </ul>
 
-      {isAddModalOpen && <AddFavoriteModal onClose={closeModal} />}
+      {isAddModalOpen && <AddFavoriteModal folderId={folder.id} onClose={closeModal} />}
     </section>
   );
 };

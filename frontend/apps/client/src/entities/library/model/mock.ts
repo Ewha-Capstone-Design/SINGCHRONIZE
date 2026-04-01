@@ -1,13 +1,10 @@
-import type {
-  FavoriteFolderApiType,
-  FavoriteSongUiType,
-  HistoryItemApiType,
-} from './types';
-import { toFavoriteFolderUi, toHistoryItemUi } from './mapper';
+import type { HistoryItemApiType } from './types';
+import { toHistoryItemUi } from './mapper';
 
 const MOCK_HISTORY_ITEMS_API: HistoryItemApiType[] = [
   {
-    history_id: 'h1',
+    id: 'h1',
+    user_id: 'user1',
     song: {
       id: 's1',
       title: '야생화',
@@ -16,10 +13,11 @@ const MOCK_HISTORY_ITEMS_API: HistoryItemApiType[] = [
     },
     tags: ['AGAIN', 'PRACTICE'],
     memo: '전체적으로 리듬은 잘 맞았고 초반 흐름도 안정적이었음. 다만 후반부로 갈수록 호흡이 부족해지면서 음정이 점점 흔들렸음. 특히 고음 구간에서 목에 힘이 들어가 소리가 얇아지고 답답하게 들렸음. 녹음으로 다시 들어보니 발음이 뭉개지는 부분도 있었고, 감정 표현이 일정하지 않았음. 다음에는 호흡을 더 길게 가져가고 고음 파트를 따로 나눠 연습할 필요가 있음. 전체적으로 힘을 빼고 부르는 연습도 같이 해보면 좋을 것 같음.',
-    date: '2026.02.15',
+    recorded_date: '2026-02-15T10:00:00Z',
   },
   {
-    history_id: 'h2',
+    id: 'h2',
+    user_id: 'user1',
     song: {
       id: 's2',
       title: '밤편지',
@@ -28,10 +26,11 @@ const MOCK_HISTORY_ITEMS_API: HistoryItemApiType[] = [
     },
     tags: ['COMFORTABLE'],
     memo: null,
-    date: '2026.02.10',
+    recorded_date: '2026-02-10T14:30:00Z',
   },
   {
-    history_id: 'h3',
+    id: 'h3',
+    user_id: 'user1',
     song: {
       id: 's3',
       title: '사건의 지평선',
@@ -40,38 +39,8 @@ const MOCK_HISTORY_ITEMS_API: HistoryItemApiType[] = [
     },
     tags: ['BAD_CONDITION', 'NOT_MY_STYLE'],
     memo: '키가 높아서 힘들었음',
-    date: '2026.02.03',
+    recorded_date: '2026-02-03T18:00:00Z',
   },
 ];
 
 export const MOCK_HISTORY_ITEMS = MOCK_HISTORY_ITEMS_API.map(toHistoryItemUi);
-
-export const MOCK_FAVORITE_FOLDERS_API: FavoriteFolderApiType[] = [
-  {
-    id: 'f1',
-    name: '남자친구랑 데이트',
-    thumbnail: ['', '', '', ''],
-    count: 4,
-    updated_at: '2026-03-10T09:30:00Z',
-  },
-  {
-    id: 'f2',
-    name: '등교할 때',
-    thumbnail: ['', '', '', ''],
-    count: 11,
-    updated_at: '2026-03-01T12:00:00Z',
-  },
-];
-
-export const MOCK_FAVORITE_FOLDERS = MOCK_FAVORITE_FOLDERS_API.map(toFavoriteFolderUi);
-
-export const MOCK_FAVORITE_SONGS: FavoriteSongUiType[] = [
-  { itemId: '1', songId: '1', title: '전설', artist: '잔나비', isLiked: true },
-  {
-    itemId: '2',
-    songId: '2',
-    title: 'NOT CUTE ANYMORE',
-    artist: '아일릿(ILLIT)',
-    isLiked: true,
-  },
-];
