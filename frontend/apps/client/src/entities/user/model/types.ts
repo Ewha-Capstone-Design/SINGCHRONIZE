@@ -2,7 +2,6 @@ import type { components } from '@singchronize/api';
 import type { AuthProvider } from '@/entities/auth';
 
 export type UserUpdateRequest = components['schemas']['UserUpdateRequest'];
-export type SettingsUpdateRequest = components['schemas']['SettingsUpdateRequest'];
 export type BlockSingerRequest = components['schemas']['BlockSingerRequest'];
 export type BlockSongRequest = components['schemas']['BlockSongRequest'];
 export type UserMeResponse = components['schemas']['UserMeResponse'];

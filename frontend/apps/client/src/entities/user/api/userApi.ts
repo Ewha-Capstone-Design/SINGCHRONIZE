@@ -2,7 +2,6 @@ import { privateClient } from '@/shared/api/client';
 import type { AuthProvider } from '@/entities/auth';
 import type {
   UserUpdateRequest,
-  SettingsUpdateRequest,
   BlockSingerRequest,
   BlockSongRequest,
 } from '../model/types';
