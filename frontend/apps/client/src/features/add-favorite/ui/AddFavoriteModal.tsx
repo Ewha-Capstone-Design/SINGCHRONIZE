@@ -1,11 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { BaseModal } from '@/shared/components';
+import { useState } from 'react';
 import { InputField } from '@singchronize/ui';
+import { BaseModal } from '@/shared/components';
 import { LikeIconButton, SongListItem } from '@/entities/song/ui';
 
-import { MOCK_SONG_LIST } from '@/entities/song/model/mock';
+import { useSearchMusic } from '@/entities/song';
 
 type AddFavoriteModalProps = {
   onClose: () => void;
@@ -24,13 +24,7 @@ const AddFavoriteModal = ({ onClose }: AddFavoriteModalProps) => {
     });
   };
 
-  // TODO: 추후에 API로 교체
-  const searchedItems = useMemo(() => {
-    const q = query.trim();
-    if (!q) return MOCK_SONG_LIST;
-
-    return MOCK_SONG_LIST.filter((song) => `${song.title} ${song.artist}`.includes(q));
-  }, [query]);
+  const { data: searchedItems = [] } = useSearchMusic(query);
 
   return (
     <BaseModal

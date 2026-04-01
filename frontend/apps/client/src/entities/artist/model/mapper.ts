@@ -1,7 +1,7 @@
 import type { ArtistApiType, ArtistUiType } from './types';
 
 export const toArtistUi = (artist: ArtistApiType): ArtistUiType => ({
-  id: artist.id,
+  id: artist.singer_id,
   name: artist.name,
-  imageUrl: artist.image_url ?? null,
+  imageUrl: artist.photo_url ?? null,
 });

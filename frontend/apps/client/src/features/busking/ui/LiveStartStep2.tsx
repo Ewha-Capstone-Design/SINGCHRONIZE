@@ -8,7 +8,7 @@ import { SortableSongList } from '@/features/ranking';
 import { SongListItem } from '@/entities/song/ui';
 import type { SongUiType } from '@/entities/song/model/types';
 
-import { MOCK_SONG_LIST } from '@/entities/song/model/mock';
+import { useSearchMusic } from '@/entities/song';
 
 const MIN_SETLIST = 3;
 const MAX_SETLIST = 5;
@@ -35,15 +35,7 @@ export const LiveStartStep2 = ({
     [selectedSongs]
   );
 
-  const searchedSongs = useMemo(() => {
-    const normalized = keyword.trim().toLowerCase();
-    if (!normalized) return MOCK_SONG_LIST;
-    return MOCK_SONG_LIST.filter(
-      (song) =>
-        song.title.toLowerCase().includes(normalized) ||
-        song.artist.toLowerCase().includes(normalized)
-    );
-  }, [keyword]);
+  const { data: searchedSongs = [] } = useSearchMusic(keyword);
 
   const canStart = selectedSongs.length >= MIN_SETLIST;
 

@@ -1,14 +1,14 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { BackButton, BaseModal, SelectChip } from '@/shared/components';
+import { useState } from 'react';
 import { InputField, Button, TextAreaField } from '@singchronize/ui';
-import { SongListItem } from '@/entities/song/ui';
+import { BackButton, BaseModal, SelectChip } from '@/shared/components';
 import { IcPlus } from '@/shared/assets/icons';
-import { HISTORY_TAG_OPTIONS, HistoryTagKeyType } from '@/entities/library/model/tags';
+import { SongListItem } from '@/entities/song/ui';
 import type { SongUiType } from '@/entities/song/model/types';
+import { HISTORY_TAG_OPTIONS, HistoryTagKeyType } from '@/entities/library/model/tags';
 
-import { MOCK_SONG_LIST } from '@/entities/song/model/mock';
+import { useSearchMusic } from '@/entities/song';
 
 type AddHistoryModalProps = {
   onClose: () => void;
@@ -23,7 +23,7 @@ const AddHistoryModal = ({ onClose }: AddHistoryModalProps) => {
 
   const [memo, setMemo] = useState('');
   const [selectedTags, setSelectedTags] = useState<Set<HistoryTagKeyType>>(
-    () => new Set()
+    () => new Set(),
   );
 
   const toggleTag = (key: HistoryTagKeyType) => {
@@ -35,16 +35,7 @@ const AddHistoryModal = ({ onClose }: AddHistoryModalProps) => {
     });
   };
 
-  // TODO: 검색 결과를 API로 교체
-  const searchedItems = useMemo(() => {
-    const q = query.trim();
-    if (!q) return [];
-
-    return MOCK_SONG_LIST.filter((song) => {
-      const hay = `${song.title} ${song.artist}`;
-      return hay.includes(q);
-    });
-  }, [query]);
+  const { data: searchedItems = [] } = useSearchMusic(query);
 
   const handleSelectSong = (song: SongUiType) => {
     setSelectedSong(song);
@@ -73,7 +64,7 @@ const AddHistoryModal = ({ onClose }: AddHistoryModalProps) => {
             />
           </div>
 
-          <div className='flex flex-col gap-4 overflow-y-auto min-h-0 scrollbar-hide'>
+          <div className='pb-4 flex flex-col gap-4 overflow-y-auto min-h-0 scrollbar-hide'>
             {searchedItems.map((song) => (
               <div key={song.id}>
                 <SongListItem
