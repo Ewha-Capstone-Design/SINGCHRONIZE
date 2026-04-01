@@ -64,7 +64,7 @@ const VocalTraitsRadarCard = ({
   description,
 }: {
   data: RadarDatum[];
-  description: string;
+  description?: string;
 }) => {
   const { open, openModal, closeModal } = useModal();
 
@@ -89,7 +89,7 @@ const VocalTraitsRadarCard = ({
               <VocalTraitsRadarChart data={data} />
             </div>
           }
-          description={description}
+          description={description ?? ''}
           onClose={closeModal}
         />
       )}

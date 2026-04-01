@@ -1,9 +1,9 @@
 import { Button } from '@singchronize/ui';
 import { useNavigate } from '@/shared/lib/navigation';
-import type { ProfileUiType } from '../model/types';
+import type { UserUiType } from '../model/types';
 
 interface ProfileCardProps {
-  profile: ProfileUiType;
+  profile: UserUiType;
 }
 
 const ProfileCard = ({ profile }: ProfileCardProps) => {

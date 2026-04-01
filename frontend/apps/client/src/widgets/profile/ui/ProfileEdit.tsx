@@ -1,40 +1,166 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { InputField, Button } from '@singchronize/ui';
 import { BackButton } from '@/shared/components';
+import { useThumbnail } from '@/shared/hooks';
 import { ArtistCard } from '@/entities/artist/ui';
 import { EditFavoriteArtistsModal } from '@/features/edit-favorite-artists';
 import SnsAccountItem from './SnsAccountItem';
+import type { ArtistUiType } from '@/entities/artist/model/types';
 
-import { MOCK_PROFILE, MOCK_SNS_ACCOUNTS } from '@/entities/user/model/mock';
-import { MOCK_ALL_ARTISTS } from '@/entities/artist/model/mock';
+import {
+  useMe,
+  useUpdateMe,
+  useUpdateProfile,
+  useOnboardingStep2,
+} from '@/entities/user';
+import { toSnsAccountsUiType } from '@/entities/user';
+
+type ProfileFormState = {
+  nickname: string;
+  bio: string;
+  favoriteArtists: ArtistUiType[];
+};
+
+const EMPTY_FORM: ProfileFormState = {
+  nickname: '',
+  bio: '',
+  favoriteArtists: [],
+};
 
 const ProfileEdit = () => {
-  const profile = MOCK_PROFILE;
-  const artists = MOCK_ALL_ARTISTS.slice(0, 3);
+  const { data: userData, isLoading, error } = useMe();
+  const { mutate: updateMe, isPending: isUpdatingMe } = useUpdateMe();
+  const { mutate: updateProfile, isPending: isUpdatingProfile } = useUpdateProfile();
+  const { mutate: updateFavoriteSingers, isPending: isUpdatingFavorites } =
+    useOnboardingStep2();
 
-  const [nickname, setNickname] = useState(profile.nickname);
-  const [bio, setBio] = useState(profile.bio);
-  const [preview, setPreview] = useState<string | null>(profile.profileImage ?? null);
-  const [profileFile, setProfileFile] = useState<File | null>(null);
+  const [form, setForm] = useState<ProfileFormState>(EMPTY_FORM);
+  const [isEditArtistsModalOpen, setIsEditArtistsModalOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { thumbnail, preview, handleThumbnailChange, clearThumbnail } = useThumbnail();
 
-  const [isEditArtistsModalOpen, setIsEditArtistsModalOpen] = useState(false);
+  useEffect(() => {
+    if (!userData) return;
+
+    setForm({
+      nickname: userData.nickname,
+      bio: userData.bio ?? '',
+      favoriteArtists: userData.favorite_singers.map((singer) => ({
+        id: singer.singer_id,
+        name: singer.name,
+        imageUrl: singer.photo_url ?? null,
+      })),
+    });
+
+    clearThumbnail();
+  }, [userData, clearThumbnail]);
+
+  const snsAccounts = useMemo(() => {
+    return toSnsAccountsUiType(userData?.linked_providers ?? []);
+  }, [userData?.linked_providers]);
+
+  const handleNicknameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+
+    setForm((prev) => ({
+      ...prev,
+      nickname: value,
+    }));
+  };
+
+  const handleBioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+
+    setForm((prev) => ({
+      ...prev,
+      bio: value,
+    }));
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setProfileFile(file);
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      setPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    const previewUrl = URL.createObjectURL(file);
+    handleThumbnailChange(file, previewUrl);
   };
+
+  const isSameArtistIds = (prevIds: number[], nextIds: number[]) => {
+    if (prevIds.length !== nextIds.length) return false;
+
+    const sortedPrevIds = [...prevIds].sort((a, b) => a - b);
+    const sortedNextIds = [...nextIds].sort((a, b) => a - b);
+
+    return sortedPrevIds.every((id, index) => id === sortedNextIds[index]);
+  };
+
+  const handleArtistsConfirm = (selectedArtists: ArtistUiType[]) => {
+    setForm((prev) => ({
+      ...prev,
+      favoriteArtists: selectedArtists,
+    }));
+
+    setIsEditArtistsModalOpen(false);
+  };
+
+  const handleSave = () => {
+    if (!userData) return;
+
+    const trimmedNickname = form.nickname.trim();
+    const trimmedBio = form.bio.trim();
+
+    const isNicknameChanged = trimmedNickname !== userData.nickname;
+    const isBioChanged = trimmedBio !== (userData.bio ?? '');
+    const isImageChanged = !!thumbnail?.file;
+
+    const originalArtistIds = userData.favorite_singers.map((artist) => artist.singer_id);
+    const selectedArtistIds = form.favoriteArtists.map((artist) => artist.id);
+    const isFavoriteArtistsChanged = !isSameArtistIds(
+      originalArtistIds,
+      selectedArtistIds,
+    );
+
+    if (isNicknameChanged) {
+      updateMe({
+        nickname: trimmedNickname,
+      });
+    }
+
+    if (isBioChanged || isImageChanged) {
+      const formData = new FormData();
+
+      if (isBioChanged) {
+        formData.append('bio', trimmedBio);
+      }
+
+      if (thumbnail?.file) {
+        formData.append('profile_image', thumbnail.file);
+      }
+
+      updateProfile(formData);
+    }
+
+    if (isFavoriteArtistsChanged) {
+      updateFavoriteSingers(selectedArtistIds);
+    }
+  };
+
+  if (isLoading) {
+    return <div className='min-h-screen flex items-center justify-center text-white' />;
+  }
+
+  if (error || !userData) {
+    return (
+      <div className='min-h-screen flex items-center justify-center text-white'>
+        오류가 발생했습니다.
+      </div>
+    );
+  }
+
+  const profileImageSrc = preview ?? userData.profile_img ?? null;
 
   return (
     <div className='min-h-screen text-white'>
@@ -47,8 +173,12 @@ const ProfileEdit = () => {
         {/* 프로필 이미지 */}
         <div className='flex flex-col items-center shrink-0'>
           <div className='size-38.5 rounded-full overflow-hidden bg-gray-800'>
-            {preview ? (
-              <img src={preview} alt={nickname} className='size-full object-cover' />
+            {profileImageSrc ? (
+              <img
+                src={profileImageSrc}
+                alt={form.nickname || '프로필 이미지'}
+                className='size-full object-cover'
+              />
             ) : (
               <div className='size-full bg-gray-700' />
             )}
@@ -70,6 +200,7 @@ const ProfileEdit = () => {
           >
             사진 설정하기
           </Button>
+
           <p className='typo-16r text-gray-600'>JPG, PNG 파일 (최대 5MB)</p>
         </div>
 
@@ -78,18 +209,17 @@ const ProfileEdit = () => {
           {/* 프로필 정보 */}
           <section className='flex flex-col gap-3'>
             <h2 className='typo-24b text-gray-100'>프로필 정보</h2>
+
             <div className='flex flex-col gap-2'>
               <label className='typo-16m text-gray-300'>닉네임</label>
-              <InputField
-                value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
-              />
+              <InputField value={form.nickname} onChange={handleNicknameChange} />
             </div>
+
             <div className='flex flex-col gap-2'>
               <label className='typo-16m text-gray-300'>소개</label>
               <InputField
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
+                value={form.bio}
+                onChange={handleBioChange}
                 placeholder='100자 이내로 입력해주세요'
                 maxLength={100}
               />
@@ -100,11 +230,10 @@ const ProfileEdit = () => {
           <section className='flex flex-col gap-3'>
             <h2 className='typo-24b text-gray-100'>SNS 계정 연동</h2>
             <div className='flex flex-col gap-2'>
-              {MOCK_SNS_ACCOUNTS.map((account) => (
+              {snsAccounts.map((account) => (
                 <SnsAccountItem
-                  key={account.id}
+                  key={account.provider}
                   provider={account.provider}
-                  email={account.email}
                   connected={account.connected}
                   onConnect={() => {}}
                 />
@@ -124,8 +253,9 @@ const ProfileEdit = () => {
                 수정하기
               </button>
             </div>
+
             <div className='flex gap-4'>
-              {artists.map((artist) => (
+              {form.favoriteArtists.map((artist) => (
                 <ArtistCard
                   key={artist.id}
                   artist={artist}
@@ -139,9 +269,8 @@ const ProfileEdit = () => {
           {/* 저장 */}
           <div className='flex justify-center py-4'>
             <Button
-              onClick={() => {
-                // TODO: 저장 API
-              }}
+              onClick={handleSave}
+              disabled={isUpdatingMe || isUpdatingProfile || isUpdatingFavorites}
             >
               저장하기
             </Button>
@@ -151,11 +280,9 @@ const ProfileEdit = () => {
 
       {isEditArtistsModalOpen && (
         <EditFavoriteArtistsModal
-          initialSelectedIds={artists.map((a) => a.id)}
+          initialSelectedIds={form.favoriteArtists.map((artist) => artist.id)}
           onClose={() => setIsEditArtistsModalOpen(false)}
-          onConfirm={(artists) => {
-            // TODO: 저장
-          }}
+          onConfirm={handleArtistsConfirm}
         />
       )}
     </div>

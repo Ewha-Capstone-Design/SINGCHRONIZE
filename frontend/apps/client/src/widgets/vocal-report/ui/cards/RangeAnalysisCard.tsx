@@ -79,7 +79,7 @@ const RangeAnalysisCard = ({
   data: RangePoint[];
   comfort: { from: string; to: string };
   stats: { max: string; avg: string; min: string };
-  description: string;
+  description?: string;
 }) => {
   const { open, openModal, closeModal } = useModal();
 
@@ -120,7 +120,7 @@ const RangeAnalysisCard = ({
               <RangeAnalysisChart data={data} comfort={comfort} />
             </div>
           }
-          description={description}
+          description={description ?? ""}
           onClose={closeModal}
         />
       )}

@@ -27,7 +27,7 @@ const CONFIG = {
 
 const BlockedModal = ({ type, onClose }: BlockedModalProps) => {
   const config = CONFIG[type];
-  const { query, setQuery, normalizedItems } = useBlockedItems(type);
+  const { query, setQuery, normalizedItems, unblock, isLoading } = useBlockedItems(type);
 
   return (
     <BaseModal
@@ -63,9 +63,8 @@ const BlockedModal = ({ type, onClose }: BlockedModalProps) => {
                     <Button
                       variant='normal'
                       size='medium'
-                      onClick={() => {
-                        /* TODO: 차단 해제 API */
-                      }}
+                      disabled={isLoading}
+                      onClick={() => unblock(item.id)}
                     >
                       차단 해제하기
                     </Button>

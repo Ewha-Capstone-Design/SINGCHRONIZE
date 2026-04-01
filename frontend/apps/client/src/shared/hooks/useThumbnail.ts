@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 type Thumbnail = {
   file: File;
@@ -8,19 +8,27 @@ type Thumbnail = {
 const useThumbnail = () => {
   const [thumbnail, setThumbnail] = useState<Thumbnail | null>(null);
 
-  const handleThumbnailChange = (file: File, preview: string) => {
+  const handleThumbnailChange = useCallback((file: File, preview: string) => {
     setThumbnail((prev) => {
       if (prev?.preview) URL.revokeObjectURL(prev.preview);
       return { file, preview };
     });
-  };
+  }, []);
 
-  const clearThumbnail = () => {
+  const clearThumbnail = useCallback(() => {
     setThumbnail((prev) => {
       if (prev?.preview) URL.revokeObjectURL(prev.preview);
       return null;
     });
-  };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (thumbnail?.preview) {
+        URL.revokeObjectURL(thumbnail.preview);
+      }
+    };
+  }, [thumbnail]);
 
   return {
     thumbnail,

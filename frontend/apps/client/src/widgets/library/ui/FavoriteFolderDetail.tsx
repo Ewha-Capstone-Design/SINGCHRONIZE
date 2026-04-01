@@ -5,7 +5,10 @@ import { cn } from '@/shared/lib/cn';
 import { useModal } from '@/shared/hooks';
 import { BackButton } from '@/shared/components';
 import { AddFavoriteModal } from '@/features/add-favorite';
+import { SongBlockMenu } from '@/features/block';
+import { SongLikeButton } from '@/features/like';
 import { SongListItem } from '@/entities/song/ui';
+
 import type {
   FavoriteFolderUiType,
   FavoriteSongUiType,
@@ -34,7 +37,7 @@ const FavoriteFolderDetail = ({ folder, songs, onBack }: FavoriteFolderDetailPro
       <ul
         className={cn(
           'mt-2 px-10 py-7 flex flex-col gap-4',
-          'rounded-10 border-2 border-gray-800 bg-gray-900'
+          'rounded-10 border-2 border-gray-800 bg-gray-900',
         )}
       >
         {songs.map((song) => (
@@ -44,9 +47,12 @@ const FavoriteFolderDetail = ({ folder, songs, onBack }: FavoriteFolderDetailPro
               thumbnail={song.thumbnail}
               title={song.title}
               artist={song.artist}
-              isLiked={song.isLiked}
-              onLikeClick={() => {}}
-              onMoreClick={() => {}}
+              rightSlot={
+                <div className='flex items-center gap-4'>
+                  <SongLikeButton songId={song.songId} isLiked={song.isLiked} />
+                  <SongBlockMenu songId={song.songId} />
+                </div>
+              }
             />
           </li>
         ))}

@@ -1,50 +1,47 @@
 import { useMemo, useState } from 'react';
-import type { SongUiType } from '@/entities/song/model/types';
-import type { ArtistUiType } from '@/entities/artist/model/types';
-
-import { MOCK_SONG_LIST } from '@/entities/song/model/mock';
-import { MOCK_ALL_ARTISTS } from '@/entities/artist/model/mock';
+import { useBlockedSingers, useBlockedSongs, useUnblockSinger, useUnblockSong } from '@/entities/user';
 
 export const useBlockedItems = (type: 'song' | 'artist') => {
   const [query, setQuery] = useState('');
 
-  // TODO: API로 교체
-  // song:   const { data } = useQuery(fetchBlockedSongs())
-  //         const blockedItems: SongUiType[] = data.map(toSongUi)
-  // artist: const { data } = useQuery(fetchBlockedArtists())
-  //         const blockedItems: ArtistUiType[] = data.map(toArtistUi)
-  const blockedItems = type === 'song' ? MOCK_SONG_LIST : MOCK_ALL_ARTISTS;
+  const blockedSongQuery = useBlockedSongs();
+  const blockedSingerQuery = useBlockedSingers();
 
-  const filteredItems = useMemo(() => {
-    const q = query.trim();
-    if (!q) return blockedItems;
+  const { mutate: unblockSong } = useUnblockSong();
+  const { mutate: unblockSinger } = useUnblockSinger();
 
+  const rawItems = useMemo(() => {
     if (type === 'song') {
-      return (blockedItems as SongUiType[]).filter((item) =>
-        `${item.title} ${item.artist}`.includes(q)
-      );
+      return (blockedSongQuery.data?.blocked_songs ?? []).map((item) => ({
+        id: item.song_id,
+        thumbnail: item.album_cover ?? undefined,
+        title: item.title,
+        artist: item.artist,
+      }));
     }
-
-    return (blockedItems as ArtistUiType[]).filter((item) => item.name.includes(q));
-  }, [query, blockedItems, type]);
+    return (blockedSingerQuery.data?.blocked_singers ?? []).map((item) => ({
+      id: String(item.singer_id),
+      thumbnail: item.photo_url ?? undefined,
+      title: item.name,
+      artist: undefined as string | undefined,
+    }));
+  }, [type, blockedSongQuery.data, blockedSingerQuery.data]);
 
   const normalizedItems = useMemo(() => {
-    return filteredItems.map((item) =>
-      type === 'song'
-        ? {
-            id: (item as SongUiType).id,
-            thumbnail: (item as SongUiType).thumbnail,
-            title: (item as SongUiType).title,
-            artist: (item as SongUiType).artist,
-          }
-        : {
-            id: (item as ArtistUiType).id,
-            thumbnail: (item as ArtistUiType).imageUrl ?? '',
-            title: (item as ArtistUiType).name,
-            artist: undefined,
-          }
+    const q = query.trim();
+    if (!q) return rawItems;
+    return rawItems.filter((item) =>
+      `${item.title} ${item.artist ?? ''}`.includes(q)
     );
-  }, [filteredItems, type]);
+  }, [query, rawItems]);
 
-  return { query, setQuery, normalizedItems };
+  const unblock = (id: string) => {
+    if (type === 'song') unblockSong(id);
+    else unblockSinger(Number(id));
+  };
+
+  const isLoading =
+    type === 'song' ? blockedSongQuery.isLoading : blockedSingerQuery.isLoading;
+
+  return { query, setQuery, normalizedItems, unblock, isLoading };
 };

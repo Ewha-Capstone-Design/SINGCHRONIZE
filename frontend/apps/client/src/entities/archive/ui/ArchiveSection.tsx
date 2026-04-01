@@ -3,6 +3,8 @@
 import { cn } from '@/shared/lib/cn';
 import { SongListItem } from '@/entities/song/ui';
 import { IcDownload } from '@/shared/assets/icons';
+import { SongBlockMenu } from '@/features/block';
+import { SongLikeButton } from '@/features/like';
 import { ArchiveSectionUiType } from '../model/types';
 
 type ArchiveSectionProps = {
@@ -19,7 +21,7 @@ const ArchiveSection = ({ group }: ArchiveSectionProps) => {
   return (
     <section
       className={cn(
-        'px-10 py-7 flex flex-col gap-4 bg-gray-900 border-2 border-gray-800 rounded-10'
+        'px-10 py-7 flex flex-col gap-4 bg-gray-900 border-2 border-gray-800 rounded-10',
       )}
     >
       <div className='flex items-center justify-between gap-4'>
@@ -31,7 +33,7 @@ const ArchiveSection = ({ group }: ArchiveSectionProps) => {
           disabled={!group.recordingUrl}
           className={cn(
             'inline-flex items-center gap-1 text-gray-200',
-            'disabled:cursor-default'
+            'disabled:cursor-default',
           )}
         >
           <IcDownload />
@@ -47,13 +49,15 @@ const ArchiveSection = ({ group }: ArchiveSectionProps) => {
             thumbnail={song.thumbnail}
             title={song.title}
             artist={song.artist}
-            isLiked={song.isLiked}
-            onLikeClick={() => {
-              console.log('like', group.id, song.id);
-            }}
-            onMoreClick={() => {
-              console.log('more', group.id, song.id);
-            }}
+            rightSlot={
+              <div className='flex items-center gap-4'>
+                <SongLikeButton
+                  songId={String(song.id)}
+                  isLiked={song.isLiked ?? false}
+                />
+                <SongBlockMenu songId={String(song.id)} />
+              </div>
+            }
           />
         ))}
       </div>

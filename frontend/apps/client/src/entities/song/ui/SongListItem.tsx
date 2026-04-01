@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/shared/lib/cn';
-import { LikeIconButton, MoreActionButton } from '.';
+import { LikeIconButton } from '.';
 
 type ListVariant = 'list2' | 'list3' | 'list4' | 'list5';
 
@@ -34,7 +34,6 @@ interface SongListItemProps {
   // actions
   onClick?: () => void;
   onLikeClick?: () => void;
-  onMoreClick?: () => void;
 }
 
 const SongListItem = ({
@@ -53,7 +52,6 @@ const SongListItem = ({
   selected = false,
   onClick,
   onLikeClick,
-  onMoreClick,
 }: SongListItemProps) => {
   const showRank = variant === 'list2' || variant === 'list4' || variant === 'list5';
   const isTall = variant === 'list2' || variant === 'list3'; // 90
@@ -138,15 +136,8 @@ const SongListItem = ({
       {variant !== 'list4' && (
         <div className='flex items-center' onClick={(e) => e.stopPropagation()}>
           {/* list3: 하트 + 더보기 */}
-          {variant === 'list3' ? (
-            rightSlot ? (
-              <div className='flex items-center'>{rightSlot}</div>
-            ) : (
-              <div className='flex items-center gap-4'>
-                <LikeIconButton isLiked={isLiked} onClick={onLikeClick} />
-                <MoreActionButton onClick={onMoreClick} />
-              </div>
-            )
+          {variant === 'list3' && rightSlot ? (
+            <div className='flex items-center'>{rightSlot}</div>
           ) : null}
 
           {/* list2, list5: 하트 */}
