@@ -280,7 +280,7 @@ const ProfileEdit = () => {
 
       {isEditArtistsModalOpen && (
         <EditFavoriteArtistsModal
-          initialSelectedIds={form.favoriteArtists.map((artist) => artist.id)}
+          initialSelectedArtists={form.favoriteArtists}
           onClose={() => setIsEditArtistsModalOpen(false)}
           onConfirm={handleArtistsConfirm}
         />
