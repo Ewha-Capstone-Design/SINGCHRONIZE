@@ -1,0 +1,52 @@
+import { privateClient } from '@/shared/api/client';
+import type { FolderCreate, WishlistItemCreate } from '../model/types';
+
+export const libraryApi = {
+  // GET: 폴더 목록 조회
+  getFolders: async () => {
+    const { data, error } = await privateClient.GET('/api/v1/library/folders');
+    if (error) throw error;
+    return data;
+  },
+
+  // POST: 폴더 생성
+  createFolder: async (body: FolderCreate) => {
+    const { data, error } = await privateClient.POST('/api/v1/library/folders', { body });
+    if (error) throw error;
+    return data;
+  },
+
+  // DELETE: 폴더 삭제
+  deleteFolder: async (folderId: string) => {
+    const { error } = await privateClient.DELETE('/api/v1/library/folders/{folder_id}', {
+      params: { path: { folder_id: folderId } },
+    });
+    if (error) throw error;
+  },
+
+  // GET: 위시리스트 조회
+  getWishlist: async (folderId?: string) => {
+    const { data, error } = await privateClient.GET('/api/v1/library/wishlist', {
+      ...(folderId && { params: { query: { folder_id: folderId } } as any }),
+    });
+    if (error) throw error;
+    return data;
+  },
+
+  // POST: 위시리스트 곡 추가
+  addWishlistItem: async (body: WishlistItemCreate) => {
+    const { data, error } = await privateClient.POST('/api/v1/library/wishlist', {
+      body,
+    });
+    if (error) throw error;
+    return data;
+  },
+
+  // DELETE: 위시리스트 곡 삭제
+  deleteWishlistItem: async (itemId: string) => {
+    const { error } = await privateClient.DELETE('/api/v1/library/wishlist/{item_id}', {
+      params: { path: { item_id: itemId } },
+    });
+    if (error) throw error;
+  },
+};

@@ -5,4 +5,6 @@ export const queryKeys = {
   searchMusic: (q: string) => ['music', 'search', q] as const,
   searchSingers: (q: string) => ['singers', 'search', q] as const,
   randomSingers: (gender: string) => ['singers', 'random', gender] as const,
+  folders: ['library', 'folders'] as const,
+  wishlist: (folderId?: string) => ['library', 'wishlist', folderId ?? 'all'] as const,
 };

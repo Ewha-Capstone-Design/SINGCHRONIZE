@@ -1,5 +1,5 @@
 import { isHistoryTag } from './tags';
-import {
+import type {
   FavoriteFolderApiType,
   FavoriteFolderUiType,
   FavoriteSongApiType,
@@ -8,18 +8,26 @@ import {
   HistoryItemUiType,
 } from './types';
 
-export const toHistoryItemUi = (item: HistoryItemApiType): HistoryItemUiType => ({
-  historyId: item.history_id,
-  title: item.song.title,
-  artist: item.song.artist ?? '',
-  thumbnail: item.song.album_cover ?? undefined,
-  tags: (item.tags ?? []).filter(isHistoryTag),
-  memo: item.memo ?? undefined,
-  date: item.date,
-});
+export const toHistoryItemUi = (item: HistoryItemApiType): HistoryItemUiType => {
+  const date = new Date(item.recorded_date);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const formattedDate = `${year}.${month}.${day}`;
 
-const formatUpdatedAtLabel = (updatedAt: string) => {
-  const date = new Date(updatedAt);
+  return {
+    historyId: item.id,
+    title: item.song?.title ?? '',
+    artist: item.song?.artist ?? '',
+    thumbnail: item.song?.album_cover ?? undefined,
+    tags: (item.tags ?? []).filter(isHistoryTag),
+    memo: item.memo ?? undefined,
+    date: formattedDate,
+  };
+};
+
+const formatUpdatedAtLabel = (dateStr: string) => {
+  const date = new Date(dateStr);
   const today = new Date();
 
   const isSameDate =
@@ -37,20 +45,20 @@ const formatUpdatedAtLabel = (updatedAt: string) => {
 };
 
 export const toFavoriteFolderUi = (
-  folder: FavoriteFolderApiType
+  folder: FavoriteFolderApiType,
 ): FavoriteFolderUiType => ({
   id: folder.id,
   name: folder.name,
-  coverImages: folder.thumbnail ?? [],
-  songCount: folder.count,
-  updatedAt: formatUpdatedAtLabel(folder.updated_at),
+  coverImages: [],
+  songCount: folder.item_count,
+  updatedAt: formatUpdatedAtLabel(folder.created_at),
 });
 
 export const toFavoriteSongUiType = (item: FavoriteSongApiType): FavoriteSongUiType => ({
-  itemId: item.item_id,
+  itemId: item.id,
   songId: item.song.id,
   title: item.song.title,
   artist: item.song.artist,
   thumbnail: item.song.album_cover ?? undefined,
-  isLiked: item.is_liked,
+  isLiked: true,
 });
