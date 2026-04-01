@@ -27,15 +27,6 @@ export const useUpdateProfile = () => {
   });
 };
 
-// PATCH: 사용자 설정
-export const useUpdateSettings = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: userApi.updateSettings,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.me }),
-  });
-};
-
 // DELETE: SNS 연동 해제
 export const useUnlinkAccount = () => {
   const queryClient = useQueryClient();
@@ -84,8 +75,7 @@ export const useBlockSong = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: userApi.blockSong,
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: queryKeys.blockedSongs }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.blockedSongs }),
   });
 };
 
@@ -94,8 +84,7 @@ export const useUnblockSong = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: userApi.unblockSong,
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: queryKeys.blockedSongs }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.blockedSongs }),
   });
 };
 

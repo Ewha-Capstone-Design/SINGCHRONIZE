@@ -31,15 +31,6 @@ export const userApi = {
     return data;
   },
 
-  // PATCH: 사용자 설정
-  updateSettings: async (body: SettingsUpdateRequest) => {
-    const { data, error } = await privateClient.PATCH('/api/v1/users/me/settings', {
-      body,
-    });
-    if (error) throw error;
-    return data;
-  },
-
   // DELETE: SNS 연동 해제
   unlinkAccount: async (provider: AuthProvider) => {
     const { error } = await privateClient.DELETE(
