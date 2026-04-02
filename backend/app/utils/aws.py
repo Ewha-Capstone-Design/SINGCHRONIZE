@@ -17,7 +17,7 @@ sqs_client = boto3.client(
     region_name=settings.AWS_REGION,
 )
 
-def generate_presigned_url(object_name, expiration=3600):
+def generate_presigned_url(object_name, expiration=3600, content_type: str = "audio/wav"):
     """프론트엔드가 S3에 직접 업로드할 수 있는 URL 생성"""
     try:
         response = s3_client.generate_presigned_url(
@@ -25,7 +25,7 @@ def generate_presigned_url(object_name, expiration=3600):
             Params={
                 'Bucket': settings.S3_BUCKET_NAME,
                 'Key': object_name,
-                'ContentType': 'audio/wav'  # 음성 파일 형식에 맞게 수정 가능
+                'ContentType': content_type,
             },
             ExpiresIn=expiration
         )

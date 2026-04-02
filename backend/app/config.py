@@ -60,6 +60,11 @@ class Settings(BaseSettings):
     SUPABASE_SERVICE_ROLE_KEY: str = ""
     YOUTUBE_API_KEY: str = ""
 
+    # LiveKit Cloud
+    LIVEKIT_URL: str = ""          # wss://your-project.livekit.cloud
+    LIVEKIT_API_KEY: str = ""
+    LIVEKIT_API_SECRET: str = ""
+
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=True,
