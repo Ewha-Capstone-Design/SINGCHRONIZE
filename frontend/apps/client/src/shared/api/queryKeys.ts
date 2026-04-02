@@ -7,4 +7,5 @@ export const queryKeys = {
   randomSingers: (gender: string) => ['singers', 'random', gender] as const,
   folders: ['library', 'folders'] as const,
   wishlist: (folderId?: string) => ['library', 'wishlist', folderId ?? 'all'] as const,
+  history: ['library', 'history'] as const,
 };

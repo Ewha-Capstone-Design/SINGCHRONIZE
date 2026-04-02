@@ -4,9 +4,12 @@ import type {
   FolderCreate,
   WishlistItemCreate,
   FavoriteFolderApiType,
+  HistoryItemApiType,
+  ArchiveCreate,
+  ArchiveUpdate,
 } from '../model/types';
 import { queryKeys } from '@/shared/api/queryKeys';
-import { toFavoriteFolderUi, toFavoriteSongUiType } from './mapper';
+import { toFavoriteFolderUi, toFavoriteSongUiType, toHistoryItemUi } from './mapper';
 
 // GET: 폴더 목록 조회
 export const useFolders = () =>
@@ -70,5 +73,52 @@ export const useDeleteWishlistItem = () => {
   return useMutation({
     mutationFn: (itemId: string) => libraryApi.deleteWishlistItem(itemId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['library', 'wishlist'] }),
+  });
+};
+
+// GET: 보컬 기록 조회
+export const useHistory = () =>
+  useQuery({
+    queryKey: queryKeys.history,
+    queryFn: libraryApi.getHistory,
+    select: (data) => data.map(toHistoryItemUi),
+  });
+
+// POST: 보컬 기록 생성
+export const useCreateHistory = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: ArchiveCreate) => libraryApi.createHistory(body),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.history }),
+  });
+};
+
+// PATCH: 보컬 기록 수정
+export const useUpdateHistory = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ archiveId, body }: { archiveId: string; body: ArchiveUpdate }) =>
+      libraryApi.updateHistory(archiveId, body),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.history }),
+  });
+};
+
+// DELETE: 보컬 기록 삭제
+export const useDeleteHistory = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (archiveId: string) => libraryApi.deleteHistory(archiveId),
+    onMutate: async (archiveId) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.history });
+      const previous = queryClient.getQueryData<HistoryItemApiType[]>(queryKeys.history);
+      queryClient.setQueryData<HistoryItemApiType[]>(queryKeys.history, (old = []) =>
+        old.filter((h) => h.id !== archiveId),
+      );
+      return { previous };
+    },
+    onError: (_err, _archiveId, context) => {
+      queryClient.setQueryData(queryKeys.history, context?.previous);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.history }),
   });
 };
