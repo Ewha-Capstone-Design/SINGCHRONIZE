@@ -9,6 +9,7 @@ import type { SongUiType } from '@/entities/song/model/types';
 import { HISTORY_TAG_OPTIONS, HistoryTagKeyType } from '@/entities/library/model/tags';
 
 import { useSearchMusic } from '@/entities/song';
+import { useCreateHistory } from '@/entities/library';
 
 type AddHistoryModalProps = {
   onClose: () => void;
@@ -20,11 +21,13 @@ const AddHistoryModal = ({ onClose }: AddHistoryModalProps) => {
   const [step, setStep] = useState<Step>('search');
   const [query, setQuery] = useState('');
   const [selectedSong, setSelectedSong] = useState<SongUiType | null>(null);
-
   const [memo, setMemo] = useState('');
   const [selectedTags, setSelectedTags] = useState<Set<HistoryTagKeyType>>(
     () => new Set(),
   );
+
+  const { mutate: createHistory, isPending } = useCreateHistory();
+  const { data: searchedItems = [] } = useSearchMusic(query);
 
   const toggleTag = (key: HistoryTagKeyType) => {
     setSelectedTags((prev) => {
@@ -35,8 +38,6 @@ const AddHistoryModal = ({ onClose }: AddHistoryModalProps) => {
     });
   };
 
-  const { data: searchedItems = [] } = useSearchMusic(query);
-
   const handleSelectSong = (song: SongUiType) => {
     setSelectedSong(song);
     setStep('form');
@@ -46,6 +47,18 @@ const AddHistoryModal = ({ onClose }: AddHistoryModalProps) => {
     setStep('search');
     setSelectedSong(null);
     setSelectedTags(new Set());
+  };
+
+  const handleSave = () => {
+    if (!selectedSong) return;
+    createHistory(
+      {
+        song_id: String(selectedSong.id),
+        tags: Array.from(selectedTags),
+        memo: memo || null,
+      },
+      { onSuccess: onClose },
+    );
   };
 
   return (
@@ -92,7 +105,7 @@ const AddHistoryModal = ({ onClose }: AddHistoryModalProps) => {
           <div className='flex flex-1 flex-col gap-7 overflow-y-scroll scrollbar-hide'>
             <div className='flex flex-col gap-3'>
               <h2 className='typo-24b text-gray-100'>선택한 노래</h2>
-              {selectedSong ? (
+              {selectedSong && (
                 <SongListItem
                   variant='list3'
                   title={selectedSong.title}
@@ -100,7 +113,7 @@ const AddHistoryModal = ({ onClose }: AddHistoryModalProps) => {
                   thumbnail={selectedSong.thumbnail ?? ''}
                   rightSlot={<></>}
                 />
-              ) : null}
+              )}
             </div>
 
             <div className='flex flex-col gap-3'>
@@ -137,11 +150,8 @@ const AddHistoryModal = ({ onClose }: AddHistoryModalProps) => {
           <div className='py-7 mx-auto'>
             <Button
               variant='normal'
-              onClick={() => {
-                // TODO: 저장 API 연결
-                onClose();
-              }}
-              disabled={!selectedSong || selectedTags.size === 0}
+              onClick={handleSave}
+              disabled={!selectedSong || selectedTags.size === 0 || isPending}
             >
               저장하기
             </Button>
