@@ -7,26 +7,43 @@ import { IcPlus } from '@/shared/assets/icons';
 import { SongListItem } from '@/entities/song/ui';
 import type { SongUiType } from '@/entities/song/model/types';
 import { HISTORY_TAG_OPTIONS, HistoryTagKeyType } from '@/entities/library/model/tags';
+import type { HistoryItemUiType } from '@/entities/library';
 
 import { useSearchMusic } from '@/entities/song';
-import { useCreateHistory } from '@/entities/library';
+import { useCreateHistory, useUpdateHistory } from '@/entities/library';
 
 type AddHistoryModalProps = {
   onClose: () => void;
+  initialHistory?: HistoryItemUiType;
 };
 
 type Step = 'search' | 'form';
 
-const AddHistoryModal = ({ onClose }: AddHistoryModalProps) => {
-  const [step, setStep] = useState<Step>('search');
+const AddHistoryModal = ({ onClose, initialHistory }: AddHistoryModalProps) => {
+  const isEditMode = Boolean(initialHistory);
+
+  const [step, setStep] = useState<Step>(isEditMode ? 'form' : 'search');
+
   const [query, setQuery] = useState('');
-  const [selectedSong, setSelectedSong] = useState<SongUiType | null>(null);
-  const [memo, setMemo] = useState('');
+  const [selectedSong, setSelectedSong] = useState<SongUiType | null>(
+    initialHistory
+      ? {
+          id: initialHistory.historyId, // 수정 모드에서는 songId 대신 historyId 사용
+          title: initialHistory.title,
+          artist: initialHistory.artist,
+          thumbnail: initialHistory.thumbnail,
+        }
+      : null,
+  );
+  const [memo, setMemo] = useState(initialHistory?.memo ?? '');
   const [selectedTags, setSelectedTags] = useState<Set<HistoryTagKeyType>>(
-    () => new Set(),
+    () => new Set(initialHistory?.tags ?? []),
   );
 
-  const { mutate: createHistory, isPending } = useCreateHistory();
+  const { mutate: createHistory, isPending: isCreating } = useCreateHistory();
+  const { mutate: updateHistory, isPending: isUpdating } = useUpdateHistory();
+  const isPending = isCreating || isUpdating;
+
   const { data: searchedItems = [] } = useSearchMusic(query);
 
   const toggleTag = (key: HistoryTagKeyType) => {
@@ -51,14 +68,24 @@ const AddHistoryModal = ({ onClose }: AddHistoryModalProps) => {
 
   const handleSave = () => {
     if (!selectedSong) return;
-    createHistory(
-      {
-        song_id: String(selectedSong.id),
-        tags: Array.from(selectedTags),
-        memo: memo || null,
-      },
-      { onSuccess: onClose },
-    );
+    if (isEditMode && initialHistory) {
+      updateHistory(
+        {
+          archiveId: initialHistory.historyId,
+          body: { tags: Array.from(selectedTags), memo: memo || null },
+        },
+        { onSuccess: onClose },
+      );
+    } else {
+      createHistory(
+        {
+          song_id: String(selectedSong.id),
+          tags: Array.from(selectedTags),
+          memo: memo || null,
+        },
+        { onSuccess: onClose },
+      );
+    }
   };
 
   return (
@@ -100,7 +127,12 @@ const AddHistoryModal = ({ onClose }: AddHistoryModalProps) => {
         </div>
       ) : (
         <div className='pt-21 flex flex-col h-full'>
-          <BackButton className='absolute top-10 left-10' onClick={handleBackToSearch} />
+          {!isEditMode && (
+            <BackButton
+              className='absolute top-10 left-10'
+              onClick={handleBackToSearch}
+            />
+          )}
 
           <div className='flex flex-1 flex-col gap-7 overflow-y-scroll scrollbar-hide'>
             <div className='flex flex-col gap-3'>
@@ -153,7 +185,7 @@ const AddHistoryModal = ({ onClose }: AddHistoryModalProps) => {
               onClick={handleSave}
               disabled={!selectedSong || selectedTags.size === 0 || isPending}
             >
-              저장하기
+              {isEditMode ? '수정하기' : '저장하기'}
             </Button>
           </div>
         </div>

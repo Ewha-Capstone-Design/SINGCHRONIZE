@@ -9,6 +9,7 @@ import { useModal } from '@/shared/hooks';
 import { AddHistoryModal } from '@/features/add-history';
 import { HistoryItem } from '@/entities/library/ui';
 import { HISTORY_FILTER_OPTIONS, HistoryTagType } from '@/entities/library/model/tags';
+import type { HistoryItemUiType } from '@/entities/library';
 
 import { useHistory, useDeleteHistory } from '@/entities/library';
 
@@ -17,9 +18,17 @@ type TagKey = 'all' | HistoryTagType;
 const LibraryHistoryList = () => {
   const [selected, setSelected] = useState<Set<TagKey>>(() => new Set(['all']));
   const { open: isAddModalOpen, openModal, closeModal } = useModal(false);
+  const [editingHistory, setEditingHistory] = useState<HistoryItemUiType | null>(null);
 
   const { data: allItems = [] } = useHistory();
   const { mutate: deleteHistory } = useDeleteHistory();
+
+  const handleEditClick = (historyId: string) => {
+    const item = allItems.find((h) => h.historyId === historyId);
+    if (item) setEditingHistory(item);
+  };
+
+  const handleEditClose = () => setEditingHistory(null);
 
   const toggleTag = (key: TagKey) => {
     setSelected((prev) => nextSelectedWithAll(prev, key));
@@ -58,6 +67,7 @@ const LibraryHistoryList = () => {
             <HistoryItem
               key={item.historyId}
               item={item}
+              onEditClick={handleEditClick}
               onDeleteClick={(historyId) => deleteHistory(historyId)}
             />
           ))}
@@ -65,6 +75,9 @@ const LibraryHistoryList = () => {
       </section>
 
       {isAddModalOpen && <AddHistoryModal onClose={closeModal} />}
+      {editingHistory && (
+        <AddHistoryModal onClose={handleEditClose} initialHistory={editingHistory} />
+      )}
     </>
   );
 };
