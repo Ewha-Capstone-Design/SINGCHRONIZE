@@ -1,6 +1,7 @@
 """Library 모델 - Folder & WishlistItem"""
 import uuid
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Uuid, UniqueConstraint
+from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Uuid
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 
@@ -25,12 +26,8 @@ class WishlistItem(Base):
     id = Column(Uuid, primary_key=True, default=uuid.uuid4)
     user_id = Column(Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     folder_id = Column(Uuid, ForeignKey("folders.id", ondelete="SET NULL"), nullable=True, index=True)
-    song_id = Column(Uuid, ForeignKey("songs.id", ondelete="CASCADE"), nullable=False)
+    # Spotify 검색 결과 JSON 그대로 저장 { name, artist, album_image, uri }
+    song_data = Column(JSONB, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     folder = relationship("Folder", back_populates="items")
-    song = relationship("Song")
-
-    __table_args__ = (
-        UniqueConstraint("folder_id", "song_id", name="uq_folder_song"),
-    )
