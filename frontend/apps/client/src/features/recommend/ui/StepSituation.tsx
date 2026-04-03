@@ -1,14 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-
 import { Button } from '@singchronize/ui';
 import { SituationCard } from '@/shared/components';
 import { MAX_SITUATION_SELECT, SITUATION_KEYS } from '@/shared/constants/situation';
 import type { SituationKey } from '@/shared/types/category';
 
 type StepSituationProps = {
-  onNext: () => void;
+  onNext: (selectedKeys: SituationKey[]) => void;
 };
 
 const StepSituation = ({ onNext }: StepSituationProps) => {
@@ -51,7 +50,7 @@ const StepSituation = ({ onNext }: StepSituationProps) => {
           ))}
         </div>
 
-        <Button variant='normal' onClick={onNext}>
+        <Button variant='normal' onClick={() => onNext(selectedKeys)}>
           선택 완료하기
         </Button>
       </div>
