@@ -28,6 +28,7 @@ export const ROUTES = {
 
 // 동적 라우트
 export const route = {
+  recommendResult: (jobId: string) => `/recommend/result/${jobId}` as const,
   archiveCategory: (categoryKey: string) => `/archive/${categoryKey}` as const,
   liveRoom: (roomId: string, type?: 'live' | 'record') =>
     `/live/room/${roomId}${type ? `?type=${type}` : ''}` as const,

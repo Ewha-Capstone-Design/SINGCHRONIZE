@@ -1,12 +1,16 @@
+import { useState } from 'react';
 import { Button } from '@singchronize/ui';
 import SortableSongList from './SortableSongList';
 import { openYoutubeSearch } from '@/shared/lib/openYoutubeSearch';
+import type { SongUiType } from '@/entities/song/model/types';
 
-import { MOCK_SONG_LIST } from '@/entities/song/model/mock';
+type StepRankingProps = {
+  songs: SongUiType[];
+  onNext: (sortedSongIds: string[]) => void;
+};
 
-const StepRanking = ({ onNext }: { onNext: () => void }) => {
-  // TODO: 쿼리 훅으로 교체
-  const songs = MOCK_SONG_LIST;
+const StepRanking = ({ songs, onNext }: StepRankingProps) => {
+  const [sortedSongs, setSortedSongs] = useState<SongUiType[]>(songs);
 
   return (
     <div className='mt-[4vh] mb-[8vh] flex flex-col justify-center h-full'>
@@ -18,12 +22,13 @@ const StepRanking = ({ onNext }: { onNext: () => void }) => {
         </div>
 
         <SortableSongList
-          initialSongs={songs}
+          initialSongs={sortedSongs}
           variant='play'
+          onChange={setSortedSongs}
           onPlay={(song) => openYoutubeSearch(song.artist, song.title)}
         />
 
-        <Button variant='normal' onClick={onNext}>
+        <Button variant='normal' onClick={() => onNext(sortedSongs.map((s) => String(s.id)))}>
           정렬 완료하기
         </Button>
       </div>
