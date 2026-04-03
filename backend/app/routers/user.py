@@ -44,11 +44,11 @@ async def get_me(
     return UserMeResponse(
         **UserResponse.model_validate(profile.user).model_dump(),
         favorite_singers=[
-            SingerInfo(singer_id=s.singer_id, name=s.name, photo_url=s.photo_url)
+            SingerInfo(singer_id=s.singer_id, name=s.name, gender=s.gender, photo_url=s.photo_url)
             for s in profile.favorite_singers
         ],
         blocked_singers=[
-            SingerInfo(singer_id=s.singer_id, name=s.name, photo_url=s.photo_url)
+            SingerInfo(singer_id=s.singer_id, name=s.name, gender=s.gender, photo_url=s.photo_url)
             for s in profile.blocked_singers
         ],
         blocked_songs=[BlockedSongItem(**item) for item in profile.blocked_songs],
