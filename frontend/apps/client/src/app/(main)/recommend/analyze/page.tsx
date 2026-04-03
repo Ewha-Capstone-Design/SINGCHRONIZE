@@ -1,10 +1,11 @@
 'use client';
 
-import { FlowHeader } from '../_components';
+import { FlowHeader } from '@/shared/components';
 import { StepRecord } from '@/features/record';
 import { StepRanking } from '@/features/ranking';
 import { StepAnalyze, StepSituation, StepGenre } from '@/features/recommend/ui';
 import { useRecommendFlow } from '@/features/recommend/model';
+import { FILLED_COUNT_BY_STEP } from '@/shared/types/recommend';
 
 const BG_CLASS = {
   record:
@@ -25,6 +26,8 @@ const RecommendAnalyzePage = () => {
     onGenreDone,
   } = useRecommendFlow();
 
+  const filled = FILLED_COUNT_BY_STEP[step];
+
   return (
     <div
       className={`
@@ -33,7 +36,7 @@ const RecommendAnalyzePage = () => {
         ${step === 'record' ? BG_CLASS.record : BG_CLASS.other}
       `}
     >
-      <FlowHeader step={step} onBack={goBack} />
+      <FlowHeader filled={filled} onBack={goBack} />
       <div className='flex-1 flex flex-col items-center'>
         {step === 'record' && <StepRecord onNext={onRecordDone} />}
         {step === 'analyze' && <StepAnalyze onNext={onAnalyzeDone} />}
