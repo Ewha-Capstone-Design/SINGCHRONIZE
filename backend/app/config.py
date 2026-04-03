@@ -56,7 +56,7 @@ class Settings(BaseSettings):
     
     
     # 추가 설정 (필요시)
-    SUPABASE_URL: str = "https://dzahkghhyoufwjhmbvkh.supabase.co"
+    SUPABASE_URL: str = ""
     SUPABASE_SERVICE_ROLE_KEY: str = ""
     YOUTUBE_API_KEY: str = ""
 
@@ -64,6 +64,9 @@ class Settings(BaseSettings):
     LIVEKIT_URL: str = ""          # wss://your-project.livekit.cloud
     LIVEKIT_API_KEY: str = ""
     LIVEKIT_API_SECRET: str = ""
+
+    # SQS — 보컬 분석 전용 큐 (AI 워커: vocal_analysis_worker)
+    VOCAL_ANALYSIS_SQS_QUEUE_URL: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -49,14 +49,27 @@ def upload_image_to_s3(file_bytes: bytes, key: str, content_type: str = "image/j
         return None
 
 
-def send_sqs_message(message_body):
-    """SQS 큐에 추천 작업 메시지 전송"""
+def send_sqs_message(message_body: str) -> str | None:
+    """추천 SQS 큐에 메시지 전송 (SQS_QUEUE_URL)"""
     try:
         response = sqs_client.send_message(
             QueueUrl=settings.SQS_QUEUE_URL,
-            MessageBody=message_body
+            MessageBody=message_body,
         )
     except ClientError as e:
-        print(f"❌ SQS 메시지 전송 실패: {e}")
+        print(f"❌ 추천 SQS 메시지 전송 실패: {e}")
         return None
-    return response['MessageId']
+    return response["MessageId"]
+
+
+def send_vocal_sqs_message(message_body: str) -> str | None:
+    """보컬 분석 SQS 큐에 메시지 전송 (VOCAL_ANALYSIS_SQS_QUEUE_URL)"""
+    try:
+        response = sqs_client.send_message(
+            QueueUrl=settings.VOCAL_ANALYSIS_SQS_QUEUE_URL,
+            MessageBody=message_body,
+        )
+    except ClientError as e:
+        print(f"❌ 보컬 SQS 메시지 전송 실패: {e}")
+        return None
+    return response["MessageId"]
