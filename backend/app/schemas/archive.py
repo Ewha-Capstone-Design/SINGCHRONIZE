@@ -1,12 +1,13 @@
 """Archive 스키마 - 부른 노래 기록"""
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 from datetime import datetime
 
 
 class ArchiveCreate(BaseModel):
-    song_id: UUID
+    # Spotify 검색 결과 그대로: { name, artist, album_image, uri }
+    song_data: Dict[str, Any]
     tags: List[str] = []
     memo: Optional[str] = None
 
@@ -16,19 +17,10 @@ class ArchiveUpdate(BaseModel):
     memo: Optional[str] = None
 
 
-class ArchiveSongInfo(BaseModel):
-    id: UUID
-    title: str
-    artist: str
-    album_cover: Optional[str] = None
-
-    model_config = {"from_attributes": True}
-
-
 class ArchiveResponse(BaseModel):
     id: UUID
     user_id: UUID
-    song: Optional[ArchiveSongInfo] = None
+    song_data: Dict[str, Any]
     tags: List[str] = []
     memo: Optional[str] = None
     recorded_date: datetime
