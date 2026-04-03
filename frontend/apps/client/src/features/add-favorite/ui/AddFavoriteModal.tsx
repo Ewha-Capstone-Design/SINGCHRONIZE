@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { InputField } from '@singchronize/ui';
 import { BaseModal } from '@/shared/components';
 import { LikeIconButton, SongListItem } from '@/entities/song/ui';
+import type { SongUiType } from '@/entities/song/model/types';
+
 import { useSearchMusic } from '@/entities/song';
 import { useAddWishlistItem } from '@/entities/library';
 
@@ -19,14 +21,23 @@ const AddFavoriteModal = ({ folderId, onClose }: AddFavoriteModalProps) => {
   const { mutate: addWishlistItem, isPending: isAdding } = useAddWishlistItem();
   const { data: searchedItems = [] } = useSearchMusic(query);
 
-  const toggleLike = (id: string) => {
+  const toggleLike = (song: SongUiType) => {
+    const id = String(song.id);
     setLikedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
         next.delete(id);
       } else {
         next.add(id);
-        addWishlistItem({ song_id: id, folder_id: folderId });
+        addWishlistItem({
+          song_data: {
+            name: song.title,
+            artist: song.artist,
+            album_image: song.thumbnail ?? null,
+            uri: id,
+          } as unknown as Record<string, never>,
+          folder_id: folderId,
+        });
       }
       return next;
     });
@@ -64,7 +75,7 @@ const AddFavoriteModal = ({ folderId, onClose }: AddFavoriteModalProps) => {
                 rightSlot={
                   <LikeIconButton
                     isLiked={likedIds.has(String(song.id))}
-                    onClick={() => toggleLike(String(song.id))}
+                    onClick={() => toggleLike(song)}
                     disabled={isAdding}
                   />
                 }

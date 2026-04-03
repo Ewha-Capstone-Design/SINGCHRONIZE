@@ -1,4 +1,5 @@
 import { isHistoryTag } from './tags';
+import type { SongDataType } from '@/entities/song/model/types';
 import type {
   FavoriteFolderApiType,
   FavoriteFolderUiType,
@@ -15,11 +16,13 @@ export const toHistoryItemUi = (item: HistoryItemApiType): HistoryItemUiType => 
   const day = String(date.getDate()).padStart(2, '0');
   const formattedDate = `${year}.${month}.${day}`;
 
+  const songData = item.song_data as unknown as SongDataType;
+
   return {
     historyId: item.id,
-    title: item.song?.title ?? '',
-    artist: item.song?.artist ?? '',
-    thumbnail: item.song?.album_cover ?? undefined,
+    title: songData?.name ?? '',
+    artist: songData?.artist ?? '',
+    thumbnail: songData?.album_image ?? undefined,
     tags: (item.tags ?? []).filter(isHistoryTag),
     memo: item.memo ?? undefined,
     date: formattedDate,
@@ -54,11 +57,14 @@ export const toFavoriteFolderUi = (
   updatedAt: formatUpdatedAtLabel(folder.created_at),
 });
 
-export const toFavoriteSongUiType = (item: FavoriteSongApiType): FavoriteSongUiType => ({
-  itemId: item.id,
-  songId: item.song.id,
-  title: item.song.title,
-  artist: item.song.artist,
-  thumbnail: item.song.album_cover ?? undefined,
-  isLiked: true,
-});
+export const toFavoriteSongUiType = (item: FavoriteSongApiType): FavoriteSongUiType => {
+  const songData = item.song_data as unknown as SongDataType;
+  return {
+    itemId: item.id,
+    songId: songData.uri,
+    title: songData.name,
+    artist: songData.artist,
+    thumbnail: songData.album_image ?? undefined,
+    isLiked: true,
+  };
+};

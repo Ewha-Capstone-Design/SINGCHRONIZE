@@ -14,16 +14,17 @@ import { getHistoryTagLabel } from '../model/tags';
 type HistoryItemProps = {
   item: HistoryItemUiType;
   onEditClick?: (historyId: string) => void;
+  onDeleteClick?: (historyId: string) => void;
 };
 
-const HistoryItem = ({ item, onEditClick }: HistoryItemProps) => {
+const HistoryItem = ({ item, onEditClick, onDeleteClick }: HistoryItemProps) => {
   const hasTags = (item.tags?.length ?? 0) > 0;
   const hasMemo = Boolean(item.memo && item.memo.trim().length > 0);
 
   return (
     <article
       className={cn(
-        'px-10 py-7 flex gap-6 bg-gray-900 border-2 border-gray-800 rounded-10'
+        'px-10 py-7 flex gap-6 bg-gray-900 border-2 border-gray-800 rounded-10',
       )}
     >
       <div className='relative size-23 shrink-0 overflow-hidden rounded-10'>
@@ -45,18 +46,21 @@ const HistoryItem = ({ item, onEditClick }: HistoryItemProps) => {
 
           {/* 더보기 드롭다운 */}
           <DropdownMenu>
-            <DropdownMenuTrigger asChild onClick={() => onEditClick?.(item.historyId)}>
+            <DropdownMenuTrigger asChild>
               <IcMore className='rotate-90 cursor-pointer' />
             </DropdownMenuTrigger>
-
             <DropdownMenuContent
               side='bottom'
               align='end'
               sideOffset={12}
               alignOffset={-28}
             >
-              <DropdownMenuItem>기록 수정하기</DropdownMenuItem>
-              <DropdownMenuItem>기록 삭제하기</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onEditClick?.(item.historyId)}>
+                기록 수정하기
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onDeleteClick?.(item.historyId)}>
+                기록 삭제하기
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -71,7 +75,7 @@ const HistoryItem = ({ item, onEditClick }: HistoryItemProps) => {
                   key={tag}
                   className={cn(
                     'px-5 py-2 bg-gray-800 rounded-full',
-                    'typo-16m text-gray-100'
+                    'typo-16m text-gray-100',
                   )}
                 >
                   {getHistoryTagLabel(tag)}

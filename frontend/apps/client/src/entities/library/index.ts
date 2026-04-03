@@ -6,6 +6,10 @@ export {
   useWishlist,
   useAddWishlistItem,
   useDeleteWishlistItem,
+  useHistory,
+  useCreateHistory,
+  useUpdateHistory,
+  useDeleteHistory,
 } from './model/queries';
 export type {
   FavoriteFolderApiType,

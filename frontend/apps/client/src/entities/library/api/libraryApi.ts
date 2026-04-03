@@ -1,5 +1,5 @@
 import { privateClient } from '@/shared/api/client';
-import type { FolderCreate, WishlistItemCreate } from '../model/types';
+import type { FolderCreate, WishlistItemCreate, ArchiveCreate, ArchiveUpdate } from '../model/types';
 
 export const libraryApi = {
   // GET: 폴더 목록 조회
@@ -35,9 +35,7 @@ export const libraryApi = {
 
   // POST: 위시리스트 곡 추가
   addWishlistItem: async (body: WishlistItemCreate) => {
-    const { data, error } = await privateClient.POST('/api/v1/library/wishlist', {
-      body,
-    });
+    const { data, error } = await privateClient.POST('/api/v1/library/wishlist', { body });
     if (error) throw error;
     return data;
   },
@@ -46,6 +44,38 @@ export const libraryApi = {
   deleteWishlistItem: async (itemId: string) => {
     const { error } = await privateClient.DELETE('/api/v1/library/wishlist/{item_id}', {
       params: { path: { item_id: itemId } },
+    });
+    if (error) throw error;
+  },
+
+  // GET: 보컬 기록 조회
+  getHistory: async () => {
+    const { data, error } = await privateClient.GET('/api/v1/library/history');
+    if (error) throw error;
+    return data;
+  },
+
+  // POST: 보컬 기록 생성
+  createHistory: async (body: ArchiveCreate) => {
+    const { data, error } = await privateClient.POST('/api/v1/library/history', { body });
+    if (error) throw error;
+    return data;
+  },
+
+  // PATCH: 보컬 기록 수정
+  updateHistory: async (archiveId: string, body: ArchiveUpdate) => {
+    const { data, error } = await privateClient.PATCH('/api/v1/library/history/{archive_id}', {
+      params: { path: { archive_id: archiveId } },
+      body,
+    });
+    if (error) throw error;
+    return data;
+  },
+
+  // DELETE: 보컬 기록 삭제
+  deleteHistory: async (archiveId: string) => {
+    const { error } = await privateClient.DELETE('/api/v1/library/history/{archive_id}', {
+      params: { path: { archive_id: archiveId } },
     });
     if (error) throw error;
   },

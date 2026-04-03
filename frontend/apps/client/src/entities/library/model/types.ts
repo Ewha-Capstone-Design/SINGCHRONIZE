@@ -6,6 +6,8 @@ export type FavoriteFolderApiType = components['schemas']['FolderResponse'];
 export type FolderCreate = components['schemas']['FolderCreate'];
 export type FavoriteSongApiType = components['schemas']['WishlistItemResponse'];
 export type WishlistItemCreate = components['schemas']['WishlistItemCreate'];
+export type ArchiveCreate = components['schemas']['ArchiveCreate'];
+export type ArchiveUpdate = components['schemas']['ArchiveUpdate'];
 
 export type HistoryItemUiType = {
   historyId: string;
