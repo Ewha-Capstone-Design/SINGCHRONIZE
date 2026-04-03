@@ -1,105 +1,147 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from app.database import get_db  
-from app.models import Recommendation 
-from app.utils.aws import generate_presigned_url, send_sqs_message
+"""추천 파이프라인 라우터 — Job 생성 / 상태 조회 / 2차 피드백"""
 import json
-import uuid
+import logging
+from uuid import UUID
 
-router = APIRouter(prefix="/api/v1/recommendations", tags=["recommendations"])
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-@router.post("/upload-url")
-async def get_upload_url(user_id: str):
-    """1단계: S3 업로드 URL 발급"""
-    # 파일명을 중복되지 않게 생성 (예: user1_uuid.wav)
-    file_name = f"voices/{user_id}_{uuid.uuid4()}.wav"
-    
-    url = generate_presigned_url(file_name)
-    if not url:
-        raise HTTPException(status_code=500, detail="URL 생성 실패")
-    
-    return {"upload_url": url, "s3_key": file_name}
+from app.database import get_db
+from app.dependencies.auth import get_current_user
+from app.models.user import User
+from app.models.recommendation import Recommendation
+from app.schemas.recommendation import (
+    RecommendationCreate,
+    RecommendationFeedback,
+    RecommendationStatusResponse,
+)
+from app.utils.aws import send_sqs_message
 
-@router.post("/start")
-async def start_recommendation(
-    user_id: str, 
-    s3_key: str, 
-    db: AsyncSession = Depends(get_db)
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/api/v1/recommendations", tags=["Recommendations"])
+
+
+@router.post("", response_model=RecommendationStatusResponse, status_code=status.HTTP_201_CREATED)
+async def create_recommendation(
+    body: RecommendationCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
     """
-    [1차 추천 프로세스 시작]
-    1. DB에 추천 작업 생성 (상태: QUEUED)
-    2. SQS에 메시지 발행 (AI Worker에게 알림)
-    3. job_id(DB ID) 즉시 반환
+    추천 Job 생성 + SQS 전송.
+    기본 경로: s3_key 없이 전송 → 워커가 user_vocal_profiles에서 프로필 로드.
+    폴백: s3_key 포함 → 워커의 FIRST_REC_FORCE_PIPELINE 로직.
     """
-    try:
-        # 1. DB에 작업 생성 (이력 관리 및 상태 저장용)
-        new_job = Recommendation(
-            user_id=user_id,
-            # base_report_id나 다른 필요한 값들 초기화
-            recommended_songs=None,  # 아직 결과 없음
-            # 만약 status 컬럼이 있다면 'QUEUED' 추가
-        )
-        db.add(new_job)
-        await db.commit()
-        await db.refresh(new_job)
+    job = Recommendation(
+        user_id=current_user.id,
+        status="QUEUED",
+        base_report_id=body.base_report_id,
+    )
+    db.add(job)
+    await db.flush()
+    await db.refresh(job)
 
-        # 2. SQS에 넣을 메시지 구성 (AI Worker가 필요한 모든 정보)
-        message_payload = {
-            "job_id": str(new_job.id),  # 생성된 DB PK
-            "user_id": str(user_id),
-            "s3_key": s3_key,      # S3에 올라간 목소리 파일 경로
-            "task_type": "FIRST_RECOMMENDATION",
-            "status": "QUEUED"
-        }
+    payload: dict = {"job_id": str(job.id), "user_id": str(current_user.id)}
+    if body.s3_key:
+        payload["s3_key"] = body.s3_key
 
-        # 3. SQS로 메시지 쏘기
-        sqs_res = send_sqs_message(json.dumps(message_payload))
-        
-        if not sqs_res:
-            # SQS 전송 실패 시 DB 상태도 바꿔주거나 예외 처리
-            raise Exception("SQS Message 전송 실패")
+    msg_id = send_sqs_message(json.dumps(payload))
+    if not msg_id:
+        logger.error("Recommendation SQS 전송 실패 — job_id=%s", job.id)
 
-        # 4. 프론트엔드에 job_id(신규 생성된 ID) 바로 응답
-        return {
-            "job_id": new_job.id,
-            "status": "QUEUED",
-            "message": "추천 분석이 시작되었습니다."
-        }
+    await db.commit()
+    await db.refresh(job)
+    return _to_response(job)
 
-    except Exception as e:
-        await db.rollback()
-        print(f"❌ 추천 시작 중 에러 발생: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-    
-    
-@router.get("/{job_id}")
-async def get_recommendation_status(
-    job_id: str, 
-    db: AsyncSession = Depends(get_db)
+
+@router.get("/{job_id}", response_model=RecommendationStatusResponse)
+async def get_recommendation(
+    job_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """추천 Job 상태 및 결과 조회. 프론트엔드 폴링용."""
+    job = await _get_job_or_404(job_id, current_user.id, db)
+    return _to_response(job)
+
+
+@router.post("/{job_id}/feedback", response_model=RecommendationStatusResponse)
+async def submit_feedback(
+    job_id: UUID,
+    body: RecommendationFeedback,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
     """
-    [추천 작업 상태 조회]
-    프론트엔드에서 결과가 나올 때까지 주기적으로 호출할 API
+    2차 추천 피드백 저장.
+    워커가 WAITING_FEEDBACK 상태에서 input_preferences.reranking_top3를 읽어 2차 추천 수행.
     """
-    try:
-        # DB에서 해당 job_id 찾기
-        job_uuid = uuid.UUID(job_id)
-        result = await db.execute(
-            select(Recommendation).where(Recommendation.id == job_uuid)
+    job = await _get_job_or_404(job_id, current_user.id, db)
+
+    if job.status not in ("WAITING_FEEDBACK", "RUNNING_STAGE1"):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "code": "INVALID_STATUS",
+                "message": f"피드백은 WAITING_FEEDBACK 상태일 때만 가능합니다. 현재: {job.status}",
+            },
         )
-        job = result.scalar_one_or_none()
 
-        if not job:
-            raise HTTPException(status_code=404, detail="해당 작업을 찾을 수 없습니다.")
+    job.input_preferences = {"reranking_top3": body.reranking_top3}
+    if body.selected_genre is not None:
+        job.selected_genre = body.selected_genre
+    if body.selected_keyword is not None:
+        job.selected_keyword = body.selected_keyword
 
-        # 상태와 결과를 함께 반환
-        return {
-            "job_id": str(job.id),
-            "status": job.status,
-            "result": job.recommended_songs, # AI가 채워넣기 전까진 None일 거예요
-            "created_at": job.created_at
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    await db.commit()
+    await db.refresh(job)
+    return _to_response(job)
+
+
+@router.get("/{job_id}/songs", response_model=RecommendationStatusResponse)
+async def get_recommendation_songs(
+    job_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """2차 추천 완료 결과(recommended_songs) 조회."""
+    job = await _get_job_or_404(job_id, current_user.id, db)
+
+    if job.status != "DONE":
+        raise HTTPException(
+            status_code=status.HTTP_202_ACCEPTED,
+            detail={"code": "NOT_READY", "message": f"추천이 아직 완료되지 않았습니다. 현재: {job.status}"},
+        )
+
+    return _to_response(job)
+
+
+# ── 헬퍼 ─────────────────────────────────────────────────
+
+async def _get_job_or_404(job_id: UUID, user_id, db: AsyncSession) -> Recommendation:
+    result = await db.execute(
+        select(Recommendation).where(
+            Recommendation.id == job_id,
+            Recommendation.user_id == user_id,
+        )
+    )
+    job = result.scalar_one_or_none()
+    if not job:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "JOB_NOT_FOUND", "message": "추천 작업을 찾을 수 없습니다."},
+        )
+    return job
+
+
+def _to_response(job: Recommendation) -> RecommendationStatusResponse:
+    return RecommendationStatusResponse(
+        job_id=job.id,
+        status=job.status,
+        first_recommended_songs=job.first_recommended_songs,
+        recommended_songs=job.recommended_songs,
+        created_at=job.created_at,
+        updated_at=job.updated_at,
+    )
