@@ -10,6 +10,7 @@ from uuid import UUID
 class SingerInfo(BaseModel):
     singer_id: int
     name: str
+    gender: Optional[str] = None
     photo_url: Optional[str] = None
 
     model_config = {"from_attributes": True}

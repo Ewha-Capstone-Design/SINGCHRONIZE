@@ -121,7 +121,7 @@ async def onboarding_step2(
 
     return FavoriteSingersSelectResponse(
         singers=[
-            SingerInfo(singer_id=s.singer_id, name=s.name, photo_url=s.photo_url)
+            SingerInfo(singer_id=s.singer_id, name=s.name, gender=s.gender, photo_url=s.photo_url)
             for s in singers
         ]
     )
