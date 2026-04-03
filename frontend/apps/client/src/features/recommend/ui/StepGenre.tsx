@@ -8,7 +8,7 @@ import { GENRE_KEYS, MAX_GENRE_SELECT } from '@/shared/constants/genre';
 import type { GenreKey } from '@/shared/types/category';
 
 type StepGenreProps = {
-  onNext: () => void;
+  onNext: (selectedKeys: GenreKey[]) => void;
 };
 
 const StepGenre = ({ onNext }: StepGenreProps) => {
@@ -51,7 +51,7 @@ const StepGenre = ({ onNext }: StepGenreProps) => {
           ))}
         </div>
 
-        <Button variant='normal' onClick={onNext}>
+        <Button variant='normal' onClick={() => onNext(selectedKeys)}>
           선택 완료하기
         </Button>
       </div>
