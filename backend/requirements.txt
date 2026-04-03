@@ -27,3 +27,5 @@ boto3
 openai>=1.0.0
 
 python-multipart
+# LiveKit
+livekit-api>=0.7.0
