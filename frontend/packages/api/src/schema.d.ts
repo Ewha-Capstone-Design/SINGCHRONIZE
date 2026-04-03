@@ -242,16 +242,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get Folders
-         * @description 사용자의 모든 폴더 조회 (아이템 개수 포함)
-         */
+        /** Get Folders */
         get: operations["get_folders_api_v1_library_folders_get"];
         put?: never;
-        /**
-         * Create Folder
-         * @description 새 폴더 생성
-         */
+        /** Create Folder */
         post: operations["create_folder_api_v1_library_folders_post"];
         delete?: never;
         options?: never;
@@ -269,10 +263,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /**
-         * Delete Folder
-         * @description 폴더 삭제 (시스템 폴더는 삭제 불가)
-         */
+        /** Delete Folder */
         delete: operations["delete_folder_api_v1_library_folders__folder_id__delete"];
         options?: never;
         head?: never;
@@ -286,15 +277,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get Wishlist
-         * @description 위시리스트 아이템 조회
-         */
+        /** Get Wishlist */
         get: operations["get_wishlist_api_v1_library_wishlist_get"];
         put?: never;
         /**
          * Add Wishlist Item
-         * @description 위시리스트에 곡 추가
+         * @description Spotify 검색 결과를 찜 목록에 추가. song_data = { name, artist, album_image, uri }
          */
         post: operations["add_wishlist_item_api_v1_library_wishlist_post"];
         delete?: never;
@@ -313,10 +301,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /**
-         * Delete Wishlist Item
-         * @description 위시리스트 아이템 삭제
-         */
+        /** Delete Wishlist Item */
         delete: operations["delete_wishlist_item_api_v1_library_wishlist__item_id__delete"];
         options?: never;
         head?: never;
@@ -330,15 +315,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get History
-         * @description 부른 노래 기록 조회
-         */
+        /** Get History */
         get: operations["get_history_api_v1_library_history_get"];
         put?: never;
         /**
          * Create History
-         * @description 부른 노래 기록 저장
+         * @description Spotify 검색 결과를 가창 기록에 저장. song_data = { name, artist, album_image, uri }
          */
         post: operations["create_history_api_v1_library_history_post"];
         delete?: never;
@@ -357,18 +339,32 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /**
-         * Delete History
-         * @description 부른 노래 기록 삭제
-         */
+        /** Delete History */
         delete: operations["delete_history_api_v1_library_history__archive_id__delete"];
         options?: never;
         head?: never;
-        /**
-         * Update History
-         * @description 부른 노래 기록 수정 (태그, 메모)
-         */
+        /** Update History */
         patch: operations["update_history_api_v1_library_history__archive_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/busking/thumbnail/presigned-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Thumbnail Presigned Url
+         * @description S3 썸네일 직접 업로드용 presigned PUT URL 반환. 클라이언트가 이 URL로 PUT 요청.
+         */
+        post: operations["get_thumbnail_presigned_url_api_v1_busking_thumbnail_presigned_url_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/busking/rooms": {
@@ -380,13 +376,13 @@ export interface paths {
         };
         /**
          * Get Rooms
-         * @description 현재 라이브 중이거나 준비 중인 방 목록 조회
+         * @description PREPARING / LIVE 방 목록.
          */
         get: operations["get_rooms_api_v1_busking_rooms_get"];
         put?: never;
         /**
          * Create Room
-         * @description 버스킹 방 생성 (로그인 필수)
+         * @description 버스킹 방 생성. 응답에 LiveKit 호스트 토큰 포함 — 클라이언트가 이 토큰으로 오디오 publish.
          */
         post: operations["create_room_api_v1_busking_rooms_post"];
         delete?: never;
@@ -395,27 +391,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/recommendations/upload-url": {
+    "/api/v1/busking/rooms/{room_id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
-        put?: never;
         /**
-         * Get Upload Url
-         * @description 1단계: S3 업로드 URL 발급
+         * Get Room
+         * @description 방 상세 정보 (셋리스트 포함, 실시간 뷰어 수 반영).
          */
-        post: operations["get_upload_url_api_v1_recommendations_upload_url_post"];
+        get: operations["get_room_api_v1_busking_rooms__room_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/recommendations/start": {
+    "/api/v1/busking/rooms/{room_id}/start": {
         parameters: {
             query?: never;
             header?: never;
@@ -425,13 +421,112 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Start Recommendation
-         * @description [1차 추천 프로세스 시작]
-         *     1. DB에 추천 작업 생성 (상태: QUEUED)
-         *     2. SQS에 메시지 발행 (AI Worker에게 알림)
-         *     3. job_id(DB ID) 즉시 반환
+         * Start Room
+         * @description PREPARING → LIVE. 호스트 전용.
          */
-        post: operations["start_recommendation_api_v1_recommendations_start_post"];
+        post: operations["start_room_api_v1_busking_rooms__room_id__start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/busking/rooms/{room_id}/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * End Room
+         * @description LIVE → ENDED + 결과 집계. 호스트 전용.
+         */
+        post: operations["end_room_api_v1_busking_rooms__room_id__end_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/busking/rooms/{room_id}/join": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Join Room
+         * @description 뷰어 입장용 LiveKit 토큰 발급. LIVE 상태인 방만 허용.
+         */
+        post: operations["join_room_api_v1_busking_rooms__room_id__join_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/busking/rooms/{room_id}/setlist/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Advance Setlist
+         * @description 다음 곡으로 이동 (호스트 전용). WebSocket state_update 자동 broadcast.
+         */
+        patch: operations["advance_setlist_api_v1_busking_rooms__room_id__setlist_current_patch"];
+        trace?: never;
+    };
+    "/api/v1/busking/rooms/{room_id}/result": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Result
+         * @description 라이브 종료 후 결과 조회.
+         */
+        get: operations["get_result_api_v1_busking_rooms__room_id__result_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/recommendations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Recommendation
+         * @description 추천 Job 생성 + SQS 전송.
+         *     기본 경로: s3_key 없이 전송 → 워커가 user_vocal_profiles에서 프로필 로드.
+         *     폴백: s3_key 포함 → 워커의 FIRST_REC_FORCE_PIPELINE 로직.
+         */
+        post: operations["create_recommendation_api_v1_recommendations_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -446,11 +541,51 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Recommendation Status
-         * @description [추천 작업 상태 조회]
-         *     프론트엔드에서 결과가 나올 때까지 주기적으로 호출할 API
+         * Get Recommendation
+         * @description 추천 Job 상태 및 결과 조회. 프론트엔드 폴링용.
          */
-        get: operations["get_recommendation_status_api_v1_recommendations__job_id__get"];
+        get: operations["get_recommendation_api_v1_recommendations__job_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/recommendations/{job_id}/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit Feedback
+         * @description 2차 추천 피드백 저장.
+         *     워커가 WAITING_FEEDBACK 상태에서 input_preferences.reranking_top3를 읽어 2차 추천 수행.
+         */
+        post: operations["submit_feedback_api_v1_recommendations__job_id__feedback_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/recommendations/{job_id}/songs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Recommendation Songs
+         * @description 2차 추천 완료 결과(recommended_songs) 조회.
+         */
+        get: operations["get_recommendation_songs_api_v1_recommendations__job_id__songs_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -488,7 +623,7 @@ export interface paths {
         };
         /**
          * Get Random Singers
-         * @description 성별 필터 후 차단 제외 랜덤 가수 목록 반환
+         * @description 성별 필터 후 차단 제외 랜덤 가수 목록 반환. gender 미입력 시 남자 6 + 여자 6
          */
         get: operations["get_random_singers_api_v1_singers_random_get"];
         put?: never;
@@ -546,10 +681,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Kakao Login
-         * @description 카카오 로그인 페이지로 리다이렉트
-         */
+        /** 카카오 로그인 (어드민) */
         get: operations["kakao_login_auth_test_kakao_login_get"];
         put?: never;
         post?: never;
@@ -566,11 +698,42 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Kakao Callback
-         * @description 카카오 콜백 → 인가코드로 토큰 교환 → JWT 발급 → 테스트 페이지로 리다이렉트
-         */
+        /** 카카오 콜백 (어드민) */
         get: operations["kakao_callback_auth_test_kakao_callback_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/test/naver/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 네이버 로그인 (어드민) */
+        get: operations["naver_login_auth_test_naver_login_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/test/naver/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 네이버 콜백 (어드민) */
+        get: operations["naver_callback_auth_test_naver_callback_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -602,11 +765,8 @@ export interface components {
     schemas: {
         /** ArchiveCreate */
         ArchiveCreate: {
-            /**
-             * Song Id
-             * Format: uuid
-             */
-            song_id: string;
+            /** Song Data */
+            song_data: Record<string, never>;
             /**
              * Tags
              * @default []
@@ -627,7 +787,8 @@ export interface components {
              * Format: uuid
              */
             user_id: string;
-            song?: components["schemas"]["ArchiveSongInfo"] | null;
+            /** Song Data */
+            song_data: Record<string, never>;
             /**
              * Tags
              * @default []
@@ -640,20 +801,6 @@ export interface components {
              * Format: date-time
              */
             recorded_date: string;
-        };
-        /** ArchiveSongInfo */
-        ArchiveSongInfo: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Title */
-            title: string;
-            /** Artist */
-            artist: string;
-            /** Album Cover */
-            album_cover?: string | null;
         };
         /** ArchiveUpdate */
         ArchiveUpdate: {
@@ -753,12 +900,115 @@ export interface components {
              */
             profile_image?: string | null;
         };
+        /** BuskingResultResponse */
+        BuskingResultResponse: {
+            /**
+             * Live Id
+             * Format: uuid
+             */
+            live_id: string;
+            /** Title */
+            title: string;
+            /** Duration Seconds */
+            duration_seconds: number | null;
+            /** Peak Viewer Count */
+            peak_viewer_count: number;
+            /** Total Unique Viewers */
+            total_unique_viewers: number;
+            /** Setlist */
+            setlist: components["schemas"]["SetlistItemResponse"][];
+            /** Reactions */
+            reactions: Record<string, never>;
+            /** Chat Count */
+            chat_count: number;
+            /** Started At */
+            started_at: string | null;
+            /** Ended At */
+            ended_at: string | null;
+        };
         /** BuskingRoomCreate */
         BuskingRoomCreate: {
             /** Title */
             title: string;
+            /** Thumbnail Url */
+            thumbnail_url?: string | null;
+            /** Setlist */
+            setlist: components["schemas"]["SetlistItemCreate"][];
+        };
+        /**
+         * BuskingRoomCreateResponse
+         * @description 방 생성 응답 — LiveKit 호스트 토큰 포함.
+         */
+        BuskingRoomCreateResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Host Id
+             * Format: uuid
+             */
+            host_id: string;
+            /** Title */
+            title: string;
             /** Thumbnail */
-            thumbnail?: string | null;
+            thumbnail: string | null;
+            /** Status */
+            status: string;
+            /** Current Song Index */
+            current_song_index: number;
+            /** Total Viewers */
+            total_viewers: number;
+            /** Peak Viewer Count */
+            peak_viewer_count: number;
+            /** Started At */
+            started_at: string | null;
+            /** Ended At */
+            ended_at: string | null;
+            /**
+             * Setlist
+             * @default []
+             */
+            setlist: components["schemas"]["SetlistItemResponse"][];
+            /** Livekit Token */
+            livekit_token: string;
+            /** Livekit Url */
+            livekit_url: string;
+        };
+        /** BuskingRoomDetailResponse */
+        BuskingRoomDetailResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Host Id
+             * Format: uuid
+             */
+            host_id: string;
+            /** Title */
+            title: string;
+            /** Thumbnail */
+            thumbnail: string | null;
+            /** Status */
+            status: string;
+            /** Current Song Index */
+            current_song_index: number;
+            /** Total Viewers */
+            total_viewers: number;
+            /** Peak Viewer Count */
+            peak_viewer_count: number;
+            /** Started At */
+            started_at: string | null;
+            /** Ended At */
+            ended_at: string | null;
+            /**
+             * Setlist
+             * @default []
+             */
+            setlist: components["schemas"]["SetlistItemResponse"][];
         };
         /** BuskingRoomResponse */
         BuskingRoomResponse: {
@@ -778,10 +1028,16 @@ export interface components {
             thumbnail: string | null;
             /** Status */
             status: string;
+            /** Current Song Index */
+            current_song_index: number;
             /** Total Viewers */
             total_viewers: number;
+            /** Peak Viewer Count */
+            peak_viewer_count: number;
             /** Started At */
             started_at: string | null;
+            /** Ended At */
+            ended_at: string | null;
         };
         /** FavoriteSingersSelectRequest */
         FavoriteSingersSelectRequest: {
@@ -831,6 +1087,21 @@ export interface components {
             detail?: components["schemas"]["ValidationError"][];
         };
         /**
+         * LiveKitJoinResponse
+         * @description 뷰어 입장 응답 — LiveKit 뷰어 토큰 포함.
+         */
+        LiveKitJoinResponse: {
+            /** Livekit Token */
+            livekit_token: string;
+            /** Livekit Url */
+            livekit_url: string;
+            /**
+             * Room Id
+             * Format: uuid
+             */
+            room_id: string;
+        };
+        /**
          * LoginResponse
          * @description POST /auth/login/{provider} 응답
          */
@@ -853,6 +1124,86 @@ export interface components {
             singers: components["schemas"]["SingerInfo"][];
         };
         /**
+         * RecommendationCreate
+         * @description 기본 (1차 DB 프로필 기반): job_id + user_id만 SQS에 전송.
+         *     s3_key는 FIRST_REC_FORCE_PIPELINE 환경변수가 있는 AI 워커 폴백용.
+         *     base_report_id는 연관된 analysis_jobs.id.
+         */
+        RecommendationCreate: {
+            /** S3 Key */
+            s3_key?: string | null;
+            /** Base Report Id */
+            base_report_id?: string | null;
+        };
+        /**
+         * RecommendationFeedback
+         * @description 유저가 1차 추천 중 선택한 곡 ID 목록 (최대 3개).
+         *     워커가 recommendation_logs.input_preferences.reranking_top3 를 읽어 2차 추천에 활용.
+         */
+        RecommendationFeedback: {
+            /** Reranking Top3 */
+            reranking_top3: string[];
+            /** Selected Genre */
+            selected_genre?: unknown | null;
+            /** Selected Keyword */
+            selected_keyword?: unknown | null;
+        };
+        /** RecommendationStatusResponse */
+        RecommendationStatusResponse: {
+            /**
+             * Job Id
+             * Format: uuid
+             */
+            job_id: string;
+            /** Status */
+            status?: string | null;
+            /** First Recommended Songs */
+            first_recommended_songs?: Record<string, never>[] | null;
+            /** Recommended Songs */
+            recommended_songs?: Record<string, never> | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** SetlistItemCreate */
+        SetlistItemCreate: {
+            /** Song Id */
+            song_id?: string | null;
+            /** Title */
+            title: string;
+            /** Artist */
+            artist: string;
+            /** Album Art Url */
+            album_art_url?: string | null;
+            /** Order Index */
+            order_index: number;
+        };
+        /** SetlistItemResponse */
+        SetlistItemResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Song Id */
+            song_id: string | null;
+            /** Title */
+            title: string;
+            /** Artist */
+            artist: string;
+            /** Album Art Url */
+            album_art_url: string | null;
+            /** Order Index */
+            order_index: number;
+        };
+        /**
          * SettingsUpdateRequest
          * @description PATCH /users/me/settings 요청 - JSONB 부분 업데이트
          */
@@ -868,6 +1219,8 @@ export interface components {
             singer_id: number;
             /** Name */
             name: string;
+            /** Gender */
+            gender?: string | null;
             /** Photo Url */
             photo_url?: string | null;
         };
@@ -891,6 +1244,15 @@ export interface components {
              * @description FCM 디바이스 토큰 (푸시알림)
              */
             fcm_token?: string | null;
+        };
+        /** ThumbnailPresignedResponse */
+        ThumbnailPresignedResponse: {
+            /** Upload Url */
+            upload_url: string;
+            /** S3 Url */
+            s3_url: string;
+            /** Key */
+            key: string;
         };
         /**
          * TokenResponse
@@ -1010,11 +1372,8 @@ export interface components {
         };
         /** WishlistItemCreate */
         WishlistItemCreate: {
-            /**
-             * Song Id
-             * Format: uuid
-             */
-            song_id: string;
+            /** Song Data */
+            song_data: Record<string, never>;
             /** Folder Id */
             folder_id?: string | null;
         };
@@ -1032,26 +1391,13 @@ export interface components {
             user_id: string;
             /** Folder Id */
             folder_id?: string | null;
-            song: components["schemas"]["WishlistSongInfo"];
+            /** Song Data */
+            song_data: Record<string, never>;
             /**
              * Created At
              * Format: date-time
              */
             created_at: string;
-        };
-        /** WishlistSongInfo */
-        WishlistSongInfo: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Title */
-            title: string;
-            /** Artist */
-            artist: string;
-            /** Album Cover */
-            album_cover?: string | null;
         };
         /**
          * WithdrawRequest
@@ -1587,9 +1933,7 @@ export interface operations {
     get_wishlist_api_v1_library_wishlist_get: {
         parameters: {
             query?: {
-                /** @description 폴더 ID (없으면 전체) */
                 folder_id?: string | null;
-                /** @description 정렬 기준 (LATEST) */
                 sort?: string;
             };
             header?: never;
@@ -1683,7 +2027,6 @@ export interface operations {
     get_history_api_v1_library_history_get: {
         parameters: {
             query?: {
-                /** @description 태그 필터 (예: AGAIN, HIGH_PITCH) */
                 tag?: string | null;
             };
             header?: never;
@@ -1809,6 +2152,26 @@ export interface operations {
             };
         };
     };
+    get_thumbnail_presigned_url_api_v1_busking_thumbnail_presigned_url_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThumbnailPresignedResponse"];
+                };
+            };
+        };
+    };
     get_rooms_api_v1_busking_rooms_get: {
         parameters: {
             query?: never;
@@ -1848,6 +2211,68 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    "application/json": components["schemas"]["BuskingRoomCreateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_room_api_v1_busking_rooms__room_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                room_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BuskingRoomDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_room_api_v1_busking_rooms__room_id__start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                room_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
                     "application/json": components["schemas"]["BuskingRoomResponse"];
                 };
             };
@@ -1862,13 +2287,13 @@ export interface operations {
             };
         };
     };
-    get_upload_url_api_v1_recommendations_upload_url_post: {
+    end_room_api_v1_busking_rooms__room_id__end_post: {
         parameters: {
-            query: {
-                user_id: string;
-            };
+            query?: never;
             header?: never;
-            path?: never;
+            path: {
+                room_id: string;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -1879,7 +2304,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["BuskingRoomResponse"];
                 };
             };
             /** @description Validation Error */
@@ -1893,14 +2318,13 @@ export interface operations {
             };
         };
     };
-    start_recommendation_api_v1_recommendations_start_post: {
+    join_room_api_v1_busking_rooms__room_id__join_post: {
         parameters: {
-            query: {
-                user_id: string;
-                s3_key: string;
-            };
+            query?: never;
             header?: never;
-            path?: never;
+            path: {
+                room_id: string;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -1911,7 +2335,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["LiveKitJoinResponse"];
                 };
             };
             /** @description Validation Error */
@@ -1925,7 +2349,102 @@ export interface operations {
             };
         };
     };
-    get_recommendation_status_api_v1_recommendations__job_id__get: {
+    advance_setlist_api_v1_busking_rooms__room_id__setlist_current_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                room_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BuskingRoomResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_result_api_v1_busking_rooms__room_id__result_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                room_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BuskingResultResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_recommendation_api_v1_recommendations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecommendationCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecommendationStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_recommendation_api_v1_recommendations__job_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -1942,7 +2461,73 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["RecommendationStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_feedback_api_v1_recommendations__job_id__feedback_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecommendationFeedback"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecommendationStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_recommendation_songs_api_v1_recommendations__job_id__songs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecommendationStatusResponse"];
                 };
             };
             /** @description Validation Error */
@@ -1991,10 +2576,10 @@ export interface operations {
     };
     get_random_singers_api_v1_singers_random_get: {
         parameters: {
-            query: {
-                /** @description 성별 필터 (male | female) */
-                gender: string;
-                /** @description 반환할 가수 수 */
+            query?: {
+                /** @description 성별 필터 (male | female). 미입력 시 남자 6명 + 여자 6명 */
+                gender?: string | null;
+                /** @description 성별 지정 시 반환할 가수 수 */
                 limit?: number;
             };
             header?: never;
@@ -2113,6 +2698,58 @@ export interface operations {
         parameters: {
             query: {
                 code: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    naver_login_auth_test_naver_login_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    naver_callback_auth_test_naver_callback_get: {
+        parameters: {
+            query: {
+                code: string;
+                state?: string;
             };
             header?: never;
             path?: never;

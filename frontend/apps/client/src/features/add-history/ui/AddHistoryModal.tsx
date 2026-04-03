@@ -79,7 +79,12 @@ const AddHistoryModal = ({ onClose, initialHistory }: AddHistoryModalProps) => {
     } else {
       createHistory(
         {
-          song_id: String(selectedSong.id),
+          song_data: {
+            name: selectedSong.title,
+            artist: selectedSong.artist,
+            album_image: selectedSong.thumbnail ?? null,
+            uri: String(selectedSong.id),
+          } as unknown as Record<string, never>,
           tags: Array.from(selectedTags),
           memo: memo || null,
         },

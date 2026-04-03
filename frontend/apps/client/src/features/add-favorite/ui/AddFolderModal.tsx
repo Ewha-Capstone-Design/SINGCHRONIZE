@@ -5,6 +5,7 @@ import { InputField, Button } from '@singchronize/ui';
 import { BaseModal } from '@/shared/components';
 import { IcCheck, IcPlus } from '@/shared/assets/icons';
 import { SongListItem } from '@/entities/song/ui';
+import type { SongUiType } from '@/entities/song/model/types';
 
 import { useSearchMusic } from '@/entities/song';
 import { useCreateFolder, useAddWishlistItem } from '@/entities/library';
@@ -16,16 +17,19 @@ type AddFolderModalProps = {
 const AddFolderModal = ({ onClose }: AddFolderModalProps) => {
   const [folderTitle, setFolderTitle] = useState('');
   const [query, setQuery] = useState('');
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedSongs, setSelectedSongs] = useState<SongUiType[]>([]);
 
   const { mutate: createFolder, isPending: isCreatingFolder } = useCreateFolder();
   const { mutate: addWishlistItem } = useAddWishlistItem();
 
   const { data: searchedItems = [] } = useSearchMusic(query);
 
-  const toggle = (id: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+  const toggle = (song: SongUiType) => {
+    const id = String(song.id);
+    setSelectedSongs((prev) =>
+      prev.some((s) => String(s.id) === id)
+        ? prev.filter((s) => String(s.id) !== id)
+        : [...prev, song],
     );
   };
 
@@ -37,9 +41,14 @@ const AddFolderModal = ({ onClose }: AddFolderModalProps) => {
       {
         onSuccess: (createdFolder) => {
           // 선택된 곡들을 폴더에 추가
-          selectedIds.forEach((songId) => {
+          selectedSongs.forEach((song) => {
             addWishlistItem({
-              song_id: songId,
+              song_data: {
+                name: song.title,
+                artist: song.artist,
+                album_image: song.thumbnail ?? null,
+                uri: String(song.id),
+              } as unknown as Record<string, never>,
               folder_id: createdFolder.id,
             });
           });
@@ -74,7 +83,9 @@ const AddFolderModal = ({ onClose }: AddFolderModalProps) => {
 
           <div className='flex flex-col gap-4'>
             {searchedItems.map((song) => {
-              const isSelected = selectedIds.includes(String(song.id));
+              const isSelected = selectedSongs.some(
+                (s) => String(s.id) === String(song.id),
+              );
               return (
                 <SongListItem
                   key={song.id}
@@ -86,7 +97,7 @@ const AddFolderModal = ({ onClose }: AddFolderModalProps) => {
                   rightSlot={
                     <button
                       type='button'
-                      onClick={() => toggle(String(song.id))}
+                      onClick={() => toggle(song)}
                       aria-label={isSelected ? '선택 해제' : '선택'}
                       className='flex items-center justify-center w-8 h-8'
                     >
