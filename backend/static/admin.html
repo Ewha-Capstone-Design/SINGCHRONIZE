@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SINGCHRONIZE Admin</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg2: #161b22;
+    --bg3: #21262d;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text2: #8b949e;
+    --purple: #7c3aed;
+    --purple-light: #a78bfa;
+    --green: #3fb950;
+    --red: #f85149;
+    --yellow: #d29922;
+    --blue: #58a6ff;
+    --orange: #f0883e;
+    --radius: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; display: flex; min-height: 100vh; }
+
+  /* Sidebar */
+  #sidebar {
+    width: 220px; min-height: 100vh; background: var(--bg2);
+    border-right: 1px solid var(--border); position: fixed; top: 0; left: 0;
+    display: flex; flex-direction: column; padding: 20px 0; z-index: 100;
+  }
+  #sidebar .logo { padding: 0 20px 20px; border-bottom: 1px solid var(--border); }
+  #sidebar .logo h1 { font-size: 14px; font-weight: 700; color: var(--purple-light); letter-spacing: 1px; }
+  #sidebar .logo p { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  #sidebar nav { padding: 12px 0; flex: 1; overflow-y: auto; }
+  #sidebar nav a {
+    display: block; padding: 8px 20px; font-size: 13px; color: var(--text2);
+    text-decoration: none; cursor: pointer; transition: background .15s, color .15s;
+    border-left: 2px solid transparent;
+  }
+  #sidebar nav a:hover { background: var(--bg3); color: var(--text); }
+  #sidebar nav a.active { color: var(--purple-light); border-left-color: var(--purple); background: rgba(124,58,237,.1); }
+  #sidebar nav .nav-group { padding: 10px 20px 4px; font-size: 10px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .8px; }
+  #sidebar .token-badge { margin: 12px 12px 0; padding: 8px 10px; background: var(--bg3); border-radius: var(--radius); border: 1px solid var(--border); }
+  #sidebar .token-badge .tl { font-size: 10px; color: var(--text2); }
+  #sidebar .token-badge .tv { font-size: 11px; color: var(--green); word-break: break-all; margin-top: 2px; max-height: 40px; overflow: hidden; text-overflow: ellipsis; }
+  #sidebar .token-badge .tv.none { color: var(--red); }
+
+  /* Main */
+  #main { margin-left: 220px; flex: 1; padding: 28px 32px; max-width: 1100px; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* Cards */
+  .card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius);
+    margin-bottom: 20px; overflow: hidden;
+  }
+  .card-header {
+    padding: 14px 18px; background: var(--bg3); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; cursor: pointer;
+    user-select: none;
+  }
+  .card-header h3 { font-size: 13px; font-weight: 600; }
+  .card-header .method {
+    font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; margin-right: 8px;
+  }
+  .method-get { background: rgba(88,166,255,.15); color: var(--blue); }
+  .method-post { background: rgba(63,185,80,.15); color: var(--green); }
+  .method-patch { background: rgba(210,153,34,.15); color: var(--yellow); }
+  .method-delete { background: rgba(248,81,73,.15); color: var(--red); }
+  .method-ws { background: rgba(124,58,237,.15); color: var(--purple-light); }
+  .card-body { padding: 18px; display: block; }
+  .card-body.collapsed { display: none; }
+
+  /* Form elements */
+  label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+  input[type=text], input[type=number], textarea, select {
+    width: 100%; padding: 8px 12px; background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); font-size: 13px; outline: none;
+    transition: border-color .15s;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--purple); }
+  textarea { resize: vertical; min-height: 80px; font-family: inherit; }
+  .form-row { margin-bottom: 12px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+  /* Buttons */
+  button {
+    padding: 8px 16px; border-radius: 6px; border: none; font-size: 13px;
+    font-weight: 500; cursor: pointer; transition: opacity .15s, transform .05s;
+  }
+  button:active { transform: scale(.97); }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  .btn-primary { background: var(--purple); color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: #6d28d9; }
+  .btn-green { background: var(--green); color: #000; }
+  .btn-green:hover:not(:disabled) { opacity: .85; }
+  .btn-red { background: var(--red); color: #fff; }
+  .btn-red:hover:not(:disabled) { opacity: .85; }
+  .btn-blue { background: var(--blue); color: #000; }
+  .btn-blue:hover:not(:disabled) { opacity: .85; }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text2); }
+  .btn-outline:hover { border-color: var(--purple-light); color: var(--purple-light); }
+  .btn-sm { padding: 5px 10px; font-size: 11px; }
+  .btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+
+  /* Response viewer */
+  .response-box {
+    margin-top: 14px; padding: 12px 14px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 6px; font-size: 12px;
+    font-family: 'Consolas', 'Fira Code', monospace; white-space: pre-wrap;
+    max-height: 300px; overflow-y: auto; color: var(--text2); position: relative;
+  }
+  .response-box.ok { border-color: var(--green); color: var(--green); }
+  .response-box.err { border-color: var(--red); color: var(--red); }
+  .response-box .copy-btn {
+    position: absolute; top: 8px; right: 8px; padding: 3px 8px;
+    font-size: 10px; background: var(--bg3); color: var(--text2);
+    border: 1px solid var(--border); border-radius: 4px; cursor: pointer;
+  }
+
+  /* OAuth buttons */
+  .oauth-btn {
+    display: flex; align-items: center; gap: 10px; padding: 12px 20px;
+    border-radius: 8px; border: none; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: opacity .15s; width: 100%; margin-bottom: 10px;
+  }
+  .oauth-btn:hover { opacity: .85; }
+  .kakao-btn { background: #FEE500; color: #3c1e1e; }
+  .naver-btn { background: #03C75A; color: #fff; }
+  .oauth-btn svg { width: 20px; height: 20px; flex-shrink: 0; }
+
+  /* Status badges */
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;
+  }
+  .badge-live { background: rgba(63,185,80,.15); color: var(--green); border: 1px solid var(--green); }
+  .badge-preparing { background: rgba(210,153,34,.15); color: var(--yellow); border: 1px solid var(--yellow); }
+  .badge-ended { background: rgba(139,148,158,.15); color: var(--text2); border: 1px solid var(--border); }
+
+  /* Room list */
+  .room-card {
+    padding: 12px 14px; border: 1px solid var(--border); border-radius: 6px;
+    background: var(--bg3); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .room-card .room-info h4 { font-size: 13px; margin-bottom: 4px; }
+  .room-card .room-info p { font-size: 11px; color: var(--text2); }
+  .room-card .room-actions { display: flex; gap: 6px; }
+
+  /* Setlist builder */
+  #setlist-items .setlist-item {
+    display: grid; grid-template-columns: 30px 1fr 1fr 1fr 28px; gap: 6px;
+    align-items: center; margin-bottom: 6px;
+  }
+  #setlist-items .setlist-item .idx { font-size: 11px; color: var(--text2); text-align: center; }
+  #setlist-items .setlist-item button { padding: 4px; background: transparent; color: var(--red); font-size: 16px; line-height: 1; }
+
+  /* WS chat */
+  #ws-messages {
+    height: 180px; overflow-y: auto; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 6px; padding: 10px; font-size: 12px; margin-bottom: 8px;
+  }
+  .ws-msg { margin-bottom: 4px; }
+  .ws-msg .ts { color: var(--text2); margin-right: 6px; }
+  .ws-msg.in { color: var(--blue); }
+  .ws-msg.out { color: var(--yellow); }
+  .ws-msg.sys { color: var(--purple-light); font-style: italic; }
+  .ws-msg.err-ws { color: var(--red); }
+
+  /* Page header */
+  .page-header { margin-bottom: 24px; }
+  .page-header h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  .page-header p { font-size: 13px; color: var(--text2); }
+
+  /* Tags display */
+  .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .tag { padding: 2px 8px; background: rgba(124,58,237,.2); color: var(--purple-light); border-radius: 12px; font-size: 11px; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text2); }
+
+  /* divider */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+  .text-sm { font-size: 12px; color: var(--text2); }
+  .flex-center { display: flex; align-items: center; gap: 8px; }
+  .profile-img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background: var(--bg3); }
+</style>
+</head>
+<body>
+
+<!-- ═══════ SIDEBAR ═══════ -->
+<nav id="sidebar">
+  <div class="logo">
+    <h1>SINGCHRONIZE</h1>
+    <p>Admin Panel</p>
+  </div>
+  <div class="token-badge">
+    <div class="tl">Access Token</div>
+    <div class="tv none" id="token-display">미로그인</div>
+  </div>
+  <nav>
+    <div class="nav-group">Auth</div>
+    <a onclick="showSection('auth', this)">로그인</a>
+    <div class="nav-group">User</div>
+    <a onclick="showSection('profile', this)">내 프로필</a>
+    <a onclick="showSection('blocked', this)">차단 관리</a>
+    <div class="nav-group">Discovery</div>
+    <a onclick="showSection('singers', this)">가수 검색</a>
+    <a onclick="showSection('songs', this)">곡 검색</a>
+    <div class="nav-group">Onboarding</div>
+    <a onclick="showSection('onboarding', this)">온보딩</a>
+    <div class="nav-group">Library</div>
+    <a onclick="showSection('folders', this)">폴더</a>
+    <a onclick="showSection('wishlist', this)">찜</a>
+    <a onclick="showSection('history', this)">가창 기록</a>
+    <div class="nav-group">Recommendation</div>
+    <a onclick="showSection('recommendation', this)">추천</a>
+    <div class="nav-group">Busking</div>
+    <a onclick="showSection('busking-rooms', this)">방 목록/생성</a>
+    <a onclick="showSection('busking-ctrl', this)">방 제어</a>
+    <a onclick="showSection('busking-ws', this)">WebSocket</a>
+  </nav>
+</nav>
+
+<!-- ═══════ MAIN ═══════ -->
+<div id="main">
+
+  <!-- ── AUTH ── -->
+  <div id="section-auth" class="section active">
+    <div class="page-header">
+      <h2>OAuth 로그인</h2>
+      <p>카카오 또는 네이버로 로그인해 JWT 토큰을 발급받습니다.</p>
+    </div>
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)"><h3>소셜 로그인</h3></div>
+      <div class="card-body">
+        <button class="oauth-btn kakao-btn" onclick="oauthLogin('kakao')">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C7.03 3 3 6.24 3 10.27c0 2.54 1.65 4.77 4.14 6.05L6.2 19.5a.25.25 0 00.36.28l3.93-2.6c.49.07.99.1 1.51.1 4.97 0 9-3.24 9-7.27C21 6.24 16.97 3 12 3z"/></svg>
+          카카오로 로그인
+        </button>
+        <button class="oauth-btn naver-btn" onclick="oauthLogin('naver')">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.27 12.43L7.5 3H3v18h7.73L19.5 11.57V21H24V3h-3.97z"/></svg>
+          네이버로 로그인
+        </button>
+        <hr class="divider">
+        <div class="form-row">
+          <label>토큰 직접 입력 (기존 JWT)</label>
+          <input type="text" id="manual-token" placeholder="Bearer eyJ...">
+        </div>
+        <div class="btn-group">
+          <button class="btn-primary" onclick="setManualToken()">토큰 적용</button>
+          <button class="btn-outline btn-sm" onclick="clearToken()" style="color:var(--red);border-color:var(--red)">로그아웃</button>
+        </div>
+        <div class="response-box" id="auth-response" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PROFILE ── -->
+  <div id="section-profile" class="section">
+    <div class="page-header"><h2>내 프로필</h2></div>
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3><span class="method method-get">GET</span>/api/v1/users/me</h3>
+      </div>
+      <div class="card-body">
+        <div class="btn-group"><button class="btn-primary" onclick="getMe()">조회</button></div>
+        <div id="me-display" style="display:none;margin-top:14px">
+          <div class="flex-center" style="margin-bottom:12px">
+            <img id="me-photo" class="profile-img" src="" alt="">
+            <div>
+              <div id="me-nickname" style="font-weight:600"></div>
+              <div id="me-email" style="font-size:12px;color:var(--text2)"></div>
+            </div>
+          </div>
+          <div id="me-bio" class="text-sm" style="margin-bottom:8px"></div>
+          <div id="me-providers" class="tag-list"></div>
+        </div>
+        <div class="response-box" id="me-response" style="display:none"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3><span class="method method-patch">PATCH</span>/api/v1/users/me/profile</h3>
+      </div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="form-row">
+            <label>닉네임 (1~20자)</label>
+            <input type="text" id="profile-nickname" placeholder="새 닉네임">
+          </div>
+          <div class="form-row">
+            <label>소개글 (최대 200자)</label>
+            <input type="text" id="profile-bio" placeholder="빈 값 = 삭제">
+          </div>
+        </div>
+        <div class="form-row">
+          <label>프로필 이미지 (jpeg/png/webp, 5MB 이하)</label>
+          <input type="file" id="profile-image" accept="image/jpeg,image/png,image/webp" style="color:var(--text2)">
+        </div>
+        <div class="btn-group"><button class="btn-primary" onclick="updateProfile()">수정</button></div>
+        <div class="response-box" id="profile-response" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BLOCKED ── -->
+  <div id="section-blocked" class="section">
+    <div class="page-header"><h2>차단 관리</h2></div>
+    <!-- 차단 가수 -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3>차단 가수</h3><span class="method method-get">GET</span>
+      </div>
+      <div class="card-body">
+        <div class="btn-group" style="margin-bottom:10px">
+          <button class="btn-blue" onclick="getBlockedSingers()">목록 조회</button>
+        </div>
+        <div id="blocked-singers-list"></div>
+        <hr class="divider">
+        <div class="form-grid">
+          <div class="form-row">
+            <label>가수 ID (UUID) 차단</label>
+            <input type="text" id="block-singer-id" placeholder="singer_id UUID">
+          </div>
+        </div>
+        <div class="btn-group">
+          <button class="btn-red" onclick="blockSinger()">차단 추가</button>
+        </div>
+        <div class="response-box" id="blocked-singer-response" style="display:none"></div>
+      </div>
+    </div>
+    <!-- 차단 곡 -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3>차단 곡</h3><span class="method method-get">GET</span>
+      </div>
+      <div class="card-body">
+        <div class="btn-group" style="margin-bottom:10px">
+          <button class="btn-blue" onclick="getBlockedSongs()">목록 조회</button>
+        </div>
+        <div id="blocked-songs-list"></div>
+        <hr class="divider">
+        <div class="form-grid">
+          <div class="form-row">
+            <label>곡 ID (UUID) 차단</label>
+            <input type="text" id="block-song-id" placeholder="song_id UUID">
+          </div>
+        </div>
+        <div class="btn-group">
+          <button class="btn-red" onclick="blockSong()">차단 추가</button>
+        </div>
+        <div class="response-box" id="blocked-song-response" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SINGERS ── -->
+  <div id="section-singers" class="section">
+    <div class="page-header"><h2>가수 검색</h2></div>
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3><span class="method method-get">GET</span>/api/v1/singers/search</h3>
+      </div>
+      <div class="card-body">
+        <div class="flex-center">
+          <input type="text" id="singer-query" placeholder="가수 이름 검색..." style="flex:1">
+          <button class="btn-primary" onclick="searchSingers()" style="flex-shrink:0">검색</button>
+        </div>
+        <div class="response-box" id="singer-response" style="display:none;margin-top:12px"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3><span class="method method-get">GET</span>/api/v1/singers/random</h3>
+      </div>
+      <div class="card-body">
+        <div class="btn-group"><button class="btn-primary" onclick="randomSingers()">랜덤 가수 조회</button></div>
+        <div class="response-box" id="random-singer-response" style="display:none;margin-top:12px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SONGS ── -->
+  <div id="section-songs" class="section">
+    <div class="page-header"><h2>곡 검색</h2></div>
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3><span class="method method-get">GET</span>/api/v1/music/search</h3>
+      </div>
+      <div class="card-body">
+        <div class="flex-center">
+          <input type="text" id="song-query" placeholder="곡 제목 또는 가수 검색..." style="flex:1">
+          <button class="btn-primary" onclick="searchSongs()" style="flex-shrink:0">검색</button>
+        </div>
+        <div id="song-results" style="margin-top:12px"></div>
+        <div class="response-box" id="song-action-response" style="display:none;margin-top:8px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BUSKING ROOMS ── -->
+  <div id="section-busking-rooms" class="section">
+    <div class="page-header"><h2>버스킹 방 목록 / 생성</h2></div>
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3><span class="method method-get">GET</span>/api/v1/busking/rooms</h3>
+      </div>
+      <div class="card-body">
+        <div class="btn-group" style="margin-bottom:12px">
+          <button class="btn-primary" onclick="getRooms()">새로고침</button>
+        </div>
+        <div id="rooms-list"><p class="text-sm">조회 버튼을 누르세요.</p></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3><span class="method method-post">POST</span>/api/v1/busking/rooms — 방 생성</h3>
+      </div>
+      <div class="card-body">
+        <div class="form-row">
+          <label>방 제목</label>
+          <input type="text" id="room-title" placeholder="오늘의 버스킹">
+        </div>
+        <div class="form-row">
+          <label>썸네일 URL (선택)</label>
+          <input type="text" id="room-thumbnail" placeholder="https://...">
+        </div>
+        <div class="form-row">
+          <label>셋리스트 (3~5곡) — Spotify에서 검색한 곡 정보 입력</label>
+          <div id="setlist-items"></div>
+          <button class="btn-outline btn-sm" onclick="addSetlistItem()" style="margin-top:6px">+ 곡 추가</button>
+        </div>
+        <div class="btn-group">
+          <button class="btn-green" onclick="createRoom()">방 생성</button>
+        </div>
+        <div class="response-box" id="create-room-response" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BUSKING CTRL ── -->
+  <div id="section-busking-ctrl" class="section">
+    <div class="page-header"><h2>방 제어</h2></div>
+    <div class="form-row" style="max-width:400px;margin-bottom:20px">
+      <label>Room ID (UUID)</label>
+      <input type="text" id="ctrl-room-id" placeholder="방 UUID를 입력하세요">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="card">
+        <div class="card-header" onclick="toggleCard(this)">
+          <h3><span class="method method-get">GET</span>방 상세</h3>
+        </div>
+        <div class="card-body">
+          <div class="btn-group"><button class="btn-primary" onclick="getRoom()">조회</button></div>
+          <div class="response-box" id="get-room-response" style="display:none"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header" onclick="toggleCard(this)">
+          <h3><span class="method method-post">POST</span>라이브 시작</h3>
+        </div>
+        <div class="card-body">
+          <div class="btn-group"><button class="btn-green" onclick="startRoom()">시작</button></div>
+          <div class="response-box" id="start-room-response" style="display:none"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header" onclick="toggleCard(this)">
+          <h3><span class="method method-post">POST</span>뷰어 입장 토큰</h3>
+        </div>
+        <div class="card-body">
+          <div class="btn-group"><button class="btn-blue" onclick="joinRoom()">토큰 발급</button></div>
+          <div class="response-box" id="join-room-response" style="display:none"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header" onclick="toggleCard(this)">
+          <h3><span class="method method-patch">PATCH</span>다음 곡</h3>
+        </div>
+        <div class="card-body">
+          <div class="btn-group"><button class="btn-primary" onclick="nextSong()">Next Song</button></div>
+          <div class="response-box" id="next-song-response" style="display:none"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header" onclick="toggleCard(this)">
+          <h3><span class="method method-post">POST</span>라이브 종료</h3>
+        </div>
+        <div class="card-body">
+          <div class="btn-group"><button class="btn-red" onclick="endRoom()">종료</button></div>
+          <div class="response-box" id="end-room-response" style="display:none"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header" onclick="toggleCard(this)">
+          <h3><span class="method method-get">GET</span>결과 조회</h3>
+        </div>
+        <div class="card-body">
+          <div class="btn-group"><button class="btn-primary" onclick="getResult()">결과</button></div>
+          <div class="response-box" id="result-response" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BUSKING WS ── -->
+  <div id="section-busking-ws" class="section">
+    <div class="page-header"><h2>WebSocket 테스트</h2></div>
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3><span class="method method-ws">WS</span>/api/v1/busking/ws/{room_id}</h3>
+      </div>
+      <div class="card-body">
+        <div class="form-row">
+          <label>Room ID (UUID)</label>
+          <input type="text" id="ws-room-id" placeholder="버스킹 방 UUID">
+        </div>
+        <div class="btn-group" style="margin-bottom:12px">
+          <button class="btn-green" id="ws-connect-btn" onclick="wsConnect()">연결</button>
+          <button class="btn-red" id="ws-disconnect-btn" onclick="wsDisconnect()" disabled>해제</button>
+        </div>
+        <div id="ws-messages"></div>
+        <div class="form-row">
+          <label>채팅 메시지</label>
+          <div class="flex-center">
+            <input type="text" id="ws-chat-input" placeholder="채팅 메시지" onkeydown="if(event.key==='Enter')wsSendChat()">
+            <button class="btn-primary btn-sm" onclick="wsSendChat()">전송</button>
+          </div>
+        </div>
+        <div class="btn-group">
+          <button class="btn-outline btn-sm" onclick="wsSendReaction('match')">👍 Match</button>
+          <button class="btn-outline btn-sm" onclick="wsSendReaction('mismatch')">👎 Mismatch</button>
+          <button class="btn-outline btn-sm" onclick="wsSendNextSong()">⏭ Next Song (호스트)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ONBOARDING ── -->
+  <div id="section-onboarding" class="section">
+    <div class="page-header"><h2>온보딩</h2></div>
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3><span class="method method-post">POST</span>/api/v1/users/me/onboarding/step1 — 닉네임·사진 설정</h3>
+      </div>
+      <div class="card-body">
+        <div class="form-row"><label>닉네임 *</label><input type="text" id="ob1-nickname" placeholder="닉네임 (1~20자)"></div>
+        <div class="form-row"><label>프로필 사진</label><input type="file" id="ob1-image" accept="image/jpeg,image/png,image/webp"></div>
+        <div class="btn-group"><button class="btn-primary" onclick="onboardingStep1()">저장</button></div>
+        <div class="response-box" id="ob1-response" style="display:none"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3><span class="method method-post">POST</span>/api/v1/users/me/onboarding/step2 — 즐겨부르는 가수 선택</h3>
+      </div>
+      <div class="card-body">
+        <div class="form-row"><label>Singer IDs</label><input type="text" id="ob2-singer-ids" placeholder="쉼표 구분 ex) 1,2,3"></div>
+        <div class="btn-group"><button class="btn-primary" onclick="onboardingStep2()">저장</button></div>
+        <div class="response-box" id="ob2-response" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── FOLDERS ── -->
+  <div id="section-folders" class="section">
+    <div class="page-header"><h2>폴더</h2></div>
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3><span class="method method-get">GET</span>/api/v1/library/folders</h3>
+      </div>
+      <div class="card-body">
+        <div class="btn-group"><button class="btn-primary" onclick="getFolders()">조회</button></div>
+        <div class="response-box" id="folders-list-response" style="display:none"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3><span class="method method-post">POST</span>/api/v1/library/folders — 폴더 생성</h3>
+      </div>
+      <div class="card-body">
+        <div class="form-row"><label>폴더명</label><input type="text" id="folder-name" placeholder="폴더 이름"></div>
+        <div class="btn-group"><button class="btn-primary" onclick="createFolder()">생성</button></div>
+        <div class="response-box" id="folder-create-response" style="display:none"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3><span class="method method-delete">DELETE</span>/api/v1/library/folders/{id}</h3>
+      </div>
+      <div class="card-body">
+        <div class="form-row"><label>폴더 ID</label><input type="text" id="folder-delete-id" placeholder="UUID"></div>
+        <div class="btn-group"><button class="btn-red" onclick="deleteFolder()">삭제</button></div>
+        <div class="response-box" id="folder-delete-response" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── WISHLIST ── -->
+  <div id="section-wishlist" class="section">
+    <div class="page-header"><h2>찜 (Wishlist)</h2></div>
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3><span class="method method-get">GET</span>/api/v1/library/wishlist</h3>
+      </div>
+      <div class="card-body">
+        <div class="form-row"><label>folder_id (선택)</label><input type="text" id="wishlist-folder-id" placeholder="UUID"></div>
+        <div class="btn-group"><button class="btn-primary" onclick="getWishlist()">조회</button></div>
+        <div class="response-box" id="wishlist-list-response" style="display:none"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3><span class="method method-post">POST</span>/api/v1/library/wishlist — 찜 추가</h3>
+      </div>
+      <div class="card-body">
+        <p style="font-size:12px;color:#888;margin-bottom:8px">곡 검색 탭에서 [찜] 버튼을 누르거나, 아래에 JSON 직접 입력</p>
+        <div class="form-row"><label>song_data (JSON)</label><textarea id="wishlist-song-data" rows="3" placeholder='{"name":"Palette","artist":"IU","album_image":"https://...","uri":"spotify:track:..."}'></textarea></div>
+        <div class="form-row"><label>folder_id (선택)</label><input type="text" id="wishlist-add-folder-id" placeholder="UUID"></div>
+        <div class="btn-group"><button class="btn-primary" onclick="addWishlist()">찜 추가</button></div>
+        <div class="response-box" id="wishlist-add-response" style="display:none"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3><span class="method method-delete">DELETE</span>/api/v1/library/wishlist/{item_id}</h3>
+      </div>
+      <div class="card-body">
+        <div class="form-row"><label>item_id</label><input type="text" id="wishlist-delete-id" placeholder="UUID"></div>
+        <div class="btn-group"><button class="btn-red" onclick="deleteWishlist()">찜 해제</button></div>
+        <div class="response-box" id="wishlist-delete-response" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── HISTORY ── -->
+  <div id="section-history" class="section">
+    <div class="page-header"><h2>가창 기록</h2></div>
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3><span class="method method-get">GET</span>/api/v1/library/history</h3>
+      </div>
+      <div class="card-body">
+        <div class="form-row"><label>tag 필터 (선택)</label><input type="text" id="history-tag" placeholder="ex) AGAIN"></div>
+        <div class="btn-group"><button class="btn-primary" onclick="getHistory()">조회</button></div>
+        <div class="response-box" id="history-list-response" style="display:none"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3><span class="method method-post">POST</span>/api/v1/library/history — 기록 저장</h3>
+      </div>
+      <div class="card-body">
+        <p style="font-size:12px;color:#888;margin-bottom:8px">곡 검색 탭에서 [기록] 버튼을 누르거나, 아래에 JSON 직접 입력</p>
+        <div class="form-row"><label>song_data (JSON)</label><textarea id="history-song-data" rows="3" placeholder='{"name":"Palette","artist":"IU","album_image":"https://...","uri":"spotify:track:..."}'></textarea></div>
+        <div class="form-row"><label>tags (쉼표 구분)</label><input type="text" id="history-tags" placeholder="AGAIN,COMFORTABLE"></div>
+        <div class="form-row"><label>memo</label><input type="text" id="history-memo" placeholder="메모 (선택)"></div>
+        <div class="btn-group"><button class="btn-primary" onclick="createHistory()">저장</button></div>
+        <div class="response-box" id="history-create-response" style="display:none"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3><span class="method method-patch">PATCH</span>/api/v1/library/history/{id} — 수정</h3>
+      </div>
+      <div class="card-body">
+        <div class="form-row"><label>archive_id *</label><input type="text" id="history-patch-id" placeholder="UUID"></div>
+        <div class="form-row"><label>tags</label><input type="text" id="history-patch-tags" placeholder="AGAIN,PRACTICE"></div>
+        <div class="form-row"><label>memo</label><input type="text" id="history-patch-memo" placeholder="수정된 메모"></div>
+        <div class="btn-group"><button class="btn-primary" onclick="updateHistory()">수정</button></div>
+        <div class="response-box" id="history-patch-response" style="display:none"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3><span class="method method-delete">DELETE</span>/api/v1/library/history/{id}</h3>
+      </div>
+      <div class="card-body">
+        <div class="form-row"><label>archive_id</label><input type="text" id="history-delete-id" placeholder="UUID"></div>
+        <div class="btn-group"><button class="btn-red" onclick="deleteHistory()">삭제</button></div>
+        <div class="response-box" id="history-delete-response" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RECOMMENDATION ── -->
+  <div id="section-recommendation" class="section">
+    <div class="page-header"><h2>추천 분석</h2></div>
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3><span class="method method-post">POST</span>/api/v1/recommendations/upload-url — [1] S3 업로드 URL</h3>
+      </div>
+      <div class="card-body">
+        <div class="btn-group"><button class="btn-primary" onclick="getUploadUrl()">URL 발급</button></div>
+        <div class="response-box" id="rec-upload-response" style="display:none"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3><span class="method method-post">POST</span>/api/v1/recommendations/start — [2] 분석 시작</h3>
+      </div>
+      <div class="card-body">
+        <div class="form-row"><label>s3_key</label><input type="text" id="rec-s3-key" placeholder="voices/uuid.wav"></div>
+        <div class="btn-group"><button class="btn-primary" onclick="startRec()">시작</button></div>
+        <div class="response-box" id="rec-start-response" style="display:none"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3><span class="method method-get">GET</span>/api/v1/recommendations/{job_id} — [3] 결과 조회</h3>
+      </div>
+      <div class="card-body">
+        <div class="form-row"><label>job_id</label><input type="text" id="rec-job-id" placeholder="UUID"></div>
+        <div class="btn-group"><button class="btn-primary" onclick="getRec()">조회</button></div>
+        <div class="response-box" id="rec-result-response" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+// ═══════════════════════════════════════
+// State
+// ═══════════════════════════════════════
+let ws = null;
+
+function getToken() {
+  return localStorage.getItem('singchronize_jwt') || '';
+}
+
+function setToken(t) {
+  if (!t) return;
+  localStorage.setItem('singchronize_jwt', t);
+  updateTokenDisplay();
+}
+
+function clearToken() {
+  localStorage.removeItem('singchronize_jwt');
+  updateTokenDisplay();
+  showResp('auth-response', { message: '로그아웃 완료' }, true);
+}
+
+function updateTokenDisplay() {
+  const el = document.getElementById('token-display');
+  const t = getToken();
+  if (t) {
+    el.textContent = t.slice(0, 60) + '...';
+    el.classList.remove('none');
+  } else {
+    el.textContent = '미로그인';
+    el.classList.add('none');
+  }
+}
+
+// ═══════════════════════════════════════
+// Navigation
+// ═══════════════════════════════════════
+function showSection(name, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  document.querySelectorAll('#sidebar nav a').forEach(a => a.classList.remove('active'));
+  if (el) el.classList.add('active');
+}
+
+function toggleCard(header) {
+  const body = header.nextElementSibling;
+  body.classList.toggle('collapsed');
+}
+
+// ═══════════════════════════════════════
+// API helpers
+// ═══════════════════════════════════════
+async function apiFetch(method, path, body, isFormData) {
+  const headers = {};
+  const token = getToken();
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  if (body && !isFormData) headers['Content-Type'] = 'application/json';
+
+  const opts = { method, headers };
+  if (body) opts.body = isFormData ? body : JSON.stringify(body);
+
+  const resp = await fetch(path, opts);
+  let data;
+  try { data = await resp.json(); } catch { data = { _raw: await resp.text() }; }
+  return { ok: resp.ok, status: resp.status, data };
+}
+
+function showResp(id, data, ok) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.display = 'block';
+  el.className = 'response-box ' + (ok ? 'ok' : 'err');
+  el.innerHTML = `<button class="copy-btn" onclick="copyResp(this)">복사</button>${JSON.stringify(data, null, 2)}`;
+}
+
+function copyResp(btn) {
+  const txt = btn.parentElement.textContent.replace('복사', '').trim();
+  navigator.clipboard.writeText(txt).then(() => { btn.textContent = '✓'; setTimeout(() => btn.textContent = '복사', 1500); });
+}
+
+// ═══════════════════════════════════════
+// Auth
+// ═══════════════════════════════════════
+function oauthLogin(provider) {
+  const popup = window.open(`/auth/test/${provider}/login`, `${provider}_login`,
+    'width=500,height=700,left=400,top=100');
+
+  if (!popup || popup.closed) {
+    // 팝업이 차단된 경우 → 현재 창에서 직접 OAuth 진행 (콜백 후 admin.html 복귀)
+    window.location.href = `/auth/test/${provider}/login`;
+    return;
+  }
+
+  // postMessage 수신 (팝업 → 부모창)
+  const handler = (e) => {
+    if (e.data?.type === `${provider.toUpperCase()}_LOGIN`) {
+      window.removeEventListener('message', handler);
+      const token = e.data.token;
+      setToken(token);
+      showResp('auth-response', { message: `${provider} 로그인 성공`, token_preview: token.slice(0, 40) + '...' }, true);
+      if (popup && !popup.closed) popup.close();
+    }
+  };
+  window.addEventListener('message', handler);
+}
+
+function setManualToken() {
+  const val = document.getElementById('manual-token').value.trim().replace(/^Bearer\s+/i, '');
+  if (!val) return alert('토큰을 입력하세요');
+  setToken(val);
+  showResp('auth-response', { message: '토큰이 적용되었습니다.' }, true);
+}
+
+// ═══════════════════════════════════════
+// Profile
+// ═══════════════════════════════════════
+async function getMe() {
+  const { ok, data } = await apiFetch('GET', '/api/v1/users/me');
+  showResp('me-response', data, ok);
+  if (ok) {
+    document.getElementById('me-display').style.display = 'block';
+    document.getElementById('me-photo').src = data.profile_image_url || '';
+    document.getElementById('me-nickname').textContent = data.nickname || '(닉네임 없음)';
+    document.getElementById('me-email').textContent = data.email || '';
+    document.getElementById('me-bio').textContent = data.bio || '소개글 없음';
+    const prov = document.getElementById('me-providers');
+    prov.innerHTML = (data.linked_providers || []).map(p => `<span class="tag">${p}</span>`).join('') || '<span class="text-sm">연동 계정 없음</span>';
+  }
+}
+
+async function updateProfile() {
+  const nickname = document.getElementById('profile-nickname').value.trim();
+  const bio = document.getElementById('profile-bio').value;
+  const file = document.getElementById('profile-image').files[0];
+  if (!nickname && bio === '' && !file) return alert('수정할 내용을 입력하세요');
+
+  const fd = new FormData();
+  if (nickname) fd.append('nickname', nickname);
+  if (bio !== undefined) fd.append('bio', bio);
+  if (file) fd.append('profile_image', file);
+
+  const { ok, data } = await apiFetch('PATCH', '/api/v1/users/me/profile', fd, true);
+  showResp('profile-response', data, ok);
+}
+
+// ═══════════════════════════════════════
+// Blocked singers
+// ═══════════════════════════════════════
+async function getBlockedSingers() {
+  const { ok, data } = await apiFetch('GET', '/api/v1/users/me/blocked-singers');
+  showResp('blocked-singer-response', data, ok);
+  const container = document.getElementById('blocked-singers-list');
+  if (ok && data.blocked_singers) {
+    container.innerHTML = data.blocked_singers.length === 0
+      ? '<p class="text-sm">차단된 가수 없음</p>'
+      : data.blocked_singers.map(s => `
+          <div class="room-card">
+            <div class="room-info">
+              <h4>${s.name}</h4>
+              <p>${s.singer_id}</p>
+            </div>
+            <button class="btn-red btn-sm" onclick="unblockSinger('${s.singer_id}')">해제</button>
+          </div>`).join('');
+  }
+}
+
+async function blockSinger() {
+  const id = document.getElementById('block-singer-id').value.trim();
+  if (!id) return alert('singer_id를 입력하세요');
+  const { ok, data } = await apiFetch('POST', '/api/v1/users/me/blocked-singers', { singer_id: id });
+  showResp('blocked-singer-response', data, ok);
+  if (ok) { document.getElementById('block-singer-id').value = ''; getBlockedSingers(); }
+}
+
+async function unblockSinger(id) {
+  const { ok, data } = await apiFetch('DELETE', `/api/v1/users/me/blocked-singers/${id}`);
+  showResp('blocked-singer-response', data, ok);
+  if (ok) getBlockedSingers();
+}
+
+// ═══════════════════════════════════════
+// Blocked songs
+// ═══════════════════════════════════════
+async function getBlockedSongs() {
+  const { ok, data } = await apiFetch('GET', '/api/v1/users/me/blocked-songs');
+  showResp('blocked-song-response', data, ok);
+  const container = document.getElementById('blocked-songs-list');
+  if (ok && data.blocked_songs) {
+    container.innerHTML = data.blocked_songs.length === 0
+      ? '<p class="text-sm">차단된 곡 없음</p>'
+      : data.blocked_songs.map(s => `
+          <div class="room-card">
+            <div class="room-info">
+              <h4>${s.title} — ${s.artist}</h4>
+              <p>${s.song_id}</p>
+            </div>
+            <button class="btn-red btn-sm" onclick="unblockSong('${s.song_id}')">해제</button>
+          </div>`).join('');
+  }
+}
+
+async function blockSong() {
+  const id = document.getElementById('block-song-id').value.trim();
+  if (!id) return alert('song_id를 입력하세요');
+  const { ok, data } = await apiFetch('POST', '/api/v1/users/me/blocked-songs', { song_id: id });
+  showResp('blocked-song-response', data, ok);
+  if (ok) { document.getElementById('block-song-id').value = ''; getBlockedSongs(); }
+}
+
+async function unblockSong(id) {
+  const { ok, data } = await apiFetch('DELETE', `/api/v1/users/me/blocked-songs/${id}`);
+  showResp('blocked-song-response', data, ok);
+  if (ok) getBlockedSongs();
+}
+
+// ═══════════════════════════════════════
+// Singers
+// ═══════════════════════════════════════
+async function searchSingers() {
+  const q = document.getElementById('singer-query').value.trim();
+  if (!q) return;
+  const { ok, data } = await apiFetch('GET', `/api/v1/singers/search?q=${encodeURIComponent(q)}`);
+  showResp('singer-response', data, ok);
+}
+
+async function randomSingers() {
+  const { ok, data } = await apiFetch('GET', '/api/v1/singers/random');
+  showResp('random-singer-response', data, ok);
+}
+
+// ═══════════════════════════════════════
+// Songs
+// ═══════════════════════════════════════
+async function searchSongs() {
+  const q = document.getElementById('song-query').value.trim();
+  if (!q) return;
+  const { ok, data } = await apiFetch('GET', `/api/v1/music/search?q=${encodeURIComponent(q)}`);
+  const container = document.getElementById('song-results');
+  if (!ok || !Array.isArray(data)) {
+    container.innerHTML = `<p style="color:var(--red);font-size:13px">${JSON.stringify(data)}</p>`;
+    return;
+  }
+  if (data.length === 0) { container.innerHTML = '<p style="font-size:13px;color:#888">결과 없음</p>'; return; }
+  container.innerHTML = data.map((s, i) => `
+    <div class="room-card" style="align-items:center;gap:10px">
+      <img src="${s.album_image || ''}" style="width:44px;height:44px;border-radius:6px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'">
+      <div class="room-info" style="flex:1;min-width:0">
+        <h4 style="font-size:13px;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.name}</h4>
+        <p style="font-size:11px;color:#888;margin:0">${s.artist}</p>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="btn-outline btn-sm" onclick="addToWishlist(${i})">찜</button>
+        <button class="btn-outline btn-sm" onclick="addToHistory(${i})">기록</button>
+      </div>
+    </div>`).join('');
+  // 전역에 결과 저장 (찜/기록 버튼에서 참조)
+  window._songResults = data;
+}
+
+async function addToWishlist(idx) {
+  const s = window._songResults?.[idx];
+  if (!s) return;
+  const { ok, data } = await apiFetch('POST', '/api/v1/library/wishlist', { song_data: s });
+  showResp('song-action-response', ok ? { message: `"${s.name}" 찜 완료` } : data, ok);
+}
+
+async function addToHistory(idx) {
+  const s = window._songResults?.[idx];
+  if (!s) return;
+  const { ok, data } = await apiFetch('POST', '/api/v1/library/history', { song_data: s });
+  showResp('song-action-response', ok ? { message: `"${s.name}" 기록 완료` } : data, ok);
+}
+
+// ═══════════════════════════════════════
+// Busking — Rooms
+// ═══════════════════════════════════════
+async function getRooms() {
+  const { ok, data } = await apiFetch('GET', '/api/v1/busking/rooms');
+  const container = document.getElementById('rooms-list');
+  if (!ok) { container.innerHTML = `<p class="text-sm" style="color:var(--red)">${JSON.stringify(data)}</p>`; return; }
+  const rooms = Array.isArray(data) ? data : [];
+  if (rooms.length === 0) { container.innerHTML = '<p class="text-sm">활성 방 없음</p>'; return; }
+  container.innerHTML = rooms.map(r => {
+    const badgeCls = r.status === 'LIVE' ? 'badge-live' : r.status === 'PREPARING' ? 'badge-preparing' : 'badge-ended';
+    return `
+      <div class="room-card">
+        <div class="room-info">
+          <h4>${r.title} <span class="badge ${badgeCls}">${r.status}</span></h4>
+          <p>ID: ${r.id} · 뷰어: ${r.total_viewers} · peak: ${r.peak_viewer_count}</p>
+        </div>
+        <div class="room-actions">
+          <button class="btn-outline btn-sm" onclick="copyToCtrl('${r.id}')">제어</button>
+          <button class="btn-outline btn-sm" onclick="copyToWs('${r.id}')">WS</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function copyToCtrl(id) {
+  document.getElementById('ctrl-room-id').value = id;
+  showSection('busking-ctrl');
+}
+
+function copyToWs(id) {
+  document.getElementById('ws-room-id').value = id;
+  showSection('busking-ws');
+}
+
+// Setlist builder
+let setlistCount = 0;
+function addSetlistItem() {
+  const container = document.getElementById('setlist-items');
+  const idx = setlistCount++;
+  const div = document.createElement('div');
+  div.className = 'setlist-item';
+  div.dataset.idx = idx;
+  div.innerHTML = `
+    <span class="idx">${container.children.length + 1}</span>
+    <input type="text" placeholder="곡 제목" class="sl-title">
+    <input type="text" placeholder="아티스트" class="sl-artist">
+    <input type="text" placeholder="앨범아트 URL (선택)" class="sl-art">
+    <button onclick="removeSetlistItem(this)">✕</button>`;
+  container.appendChild(div);
+  renumberSetlist();
+}
+
+function removeSetlistItem(btn) {
+  btn.closest('.setlist-item').remove();
+  renumberSetlist();
+}
+
+function renumberSetlist() {
+  document.querySelectorAll('#setlist-items .setlist-item').forEach((el, i) => {
+    el.querySelector('.idx').textContent = i + 1;
+  });
+}
+
+async function createRoom() {
+  const title = document.getElementById('room-title').value.trim();
+  const thumbnail_url = document.getElementById('room-thumbnail').value.trim() || null;
+  if (!title) return alert('방 제목을 입력하세요');
+
+  const items = document.querySelectorAll('#setlist-items .setlist-item');
+  if (items.length < 3 || items.length > 5) return alert('셋리스트는 3~5곡이어야 합니다');
+
+  const setlist = Array.from(items).map((el, i) => ({
+    title: el.querySelector('.sl-title').value.trim(),
+    artist: el.querySelector('.sl-artist').value.trim(),
+    album_art_url: el.querySelector('.sl-art').value.trim() || null,
+    order_index: i,
+  }));
+
+  if (setlist.some(s => !s.title || !s.artist)) return alert('모든 곡의 제목과 아티스트를 입력하세요');
+
+  const { ok, data } = await apiFetch('POST', '/api/v1/busking/rooms', { title, thumbnail_url, setlist });
+  showResp('create-room-response', data, ok);
+  if (ok) {
+    document.getElementById('ctrl-room-id').value = data.id;
+    document.getElementById('ws-room-id').value = data.id;
+    alert(`방 생성 완료!\nRoom ID: ${data.id}\nLiveKit Token이 응답에 포함되어 있습니다.`);
+  }
+}
+
+// ═══════════════════════════════════════
+// Busking — Control
+// ═══════════════════════════════════════
+function ctrlRoomId() {
+  const id = document.getElementById('ctrl-room-id').value.trim();
+  if (!id) { alert('Room ID를 입력하세요'); return null; }
+  return id;
+}
+
+async function getRoom() {
+  const id = ctrlRoomId(); if (!id) return;
+  const { ok, data } = await apiFetch('GET', `/api/v1/busking/rooms/${id}`);
+  showResp('get-room-response', data, ok);
+}
+
+async function startRoom() {
+  const id = ctrlRoomId(); if (!id) return;
+  const { ok, data } = await apiFetch('POST', `/api/v1/busking/rooms/${id}/start`);
+  showResp('start-room-response', data, ok);
+}
+
+async function joinRoom() {
+  const id = ctrlRoomId(); if (!id) return;
+  const { ok, data } = await apiFetch('POST', `/api/v1/busking/rooms/${id}/join`);
+  showResp('join-room-response', data, ok);
+}
+
+async function nextSong() {
+  const id = ctrlRoomId(); if (!id) return;
+  const { ok, data } = await apiFetch('PATCH', `/api/v1/busking/rooms/${id}/setlist/current`);
+  showResp('next-song-response', data, ok);
+}
+
+async function endRoom() {
+  if (!confirm('라이브를 종료하시겠습니까?')) return;
+  const id = ctrlRoomId(); if (!id) return;
+  const { ok, data } = await apiFetch('POST', `/api/v1/busking/rooms/${id}/end`);
+  showResp('end-room-response', data, ok);
+}
+
+async function getResult() {
+  const id = ctrlRoomId(); if (!id) return;
+  const { ok, data } = await apiFetch('GET', `/api/v1/busking/rooms/${id}/result`);
+  showResp('result-response', data, ok);
+}
+
+// ═══════════════════════════════════════
+// WebSocket
+// ═══════════════════════════════════════
+function wsLog(msg, cls) {
+  const box = document.getElementById('ws-messages');
+  const div = document.createElement('div');
+  const ts = new Date().toTimeString().slice(0, 8);
+  div.className = 'ws-msg ' + cls;
+  div.innerHTML = `<span class="ts">${ts}</span>${msg}`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function wsConnect() {
+  const roomId = document.getElementById('ws-room-id').value.trim();
+  const token = getToken();
+  if (!roomId) return alert('Room ID를 입력하세요');
+  if (!token) return alert('먼저 로그인하세요');
+
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const url = `${proto}://${location.host}/api/v1/busking/ws/${roomId}?token=${encodeURIComponent(token)}`;
+  wsLog(`연결 중... ${url}`, 'sys');
+
+  ws = new WebSocket(url);
+
+  ws.onopen = () => {
+    wsLog('✅ 연결됨', 'sys');
+    document.getElementById('ws-connect-btn').disabled = true;
+    document.getElementById('ws-disconnect-btn').disabled = false;
+  };
+  ws.onmessage = (e) => {
+    try { wsLog('← ' + JSON.stringify(JSON.parse(e.data), null, 0), 'in'); }
+    catch { wsLog('← ' + e.data, 'in'); }
+  };
+  ws.onclose = (e) => {
+    wsLog(`❌ 연결 해제 (code: ${e.code})`, 'sys');
+    document.getElementById('ws-connect-btn').disabled = false;
+    document.getElementById('ws-disconnect-btn').disabled = true;
+    ws = null;
+  };
+  ws.onerror = () => wsLog('오류 발생', 'err-ws');
+}
+
+function wsDisconnect() {
+  if (ws) ws.close();
+}
+
+function wsSend(obj) {
+  if (!ws || ws.readyState !== 1) { wsLog('WebSocket 연결 없음', 'err-ws'); return; }
+  ws.send(JSON.stringify(obj));
+  wsLog('→ ' + JSON.stringify(obj), 'out');
+}
+
+function wsSendChat() {
+  const msg = document.getElementById('ws-chat-input').value.trim();
+  if (!msg) return;
+  wsSend({ type: 'chat', message: msg });
+  document.getElementById('ws-chat-input').value = '';
+}
+
+function wsSendReaction(value) { wsSend({ type: 'reaction', value }); }
+function wsSendNextSong() { wsSend({ type: 'next_song' }); }
+
+// ═══════════════════════════════════════
+// Init
+// ═══════════════════════════════════════
+updateTokenDisplay();
+
+// Default 3 setlist items as placeholder
+for (let i = 0; i < 3; i++) addSetlistItem();
+
+// Highlight first nav item
+document.querySelector('#sidebar nav a').classList.add('active');
+
+// ═══════════════════════════════════════
+// Onboarding
+// ═══════════════════════════════════════
+async function onboardingStep1() {
+  const nickname = document.getElementById('ob1-nickname').value.trim();
+  if (!nickname) return alert('닉네임을 입력하세요');
+  const fd = new FormData();
+  fd.append('nickname', nickname);
+  const file = document.getElementById('ob1-image').files[0];
+  if (file) fd.append('profile_image', file);
+  const { ok, data } = await apiFetch('POST', '/api/v1/users/me/onboarding/step1', fd, true);
+  showResp('ob1-response', data, ok);
+}
+
+async function onboardingStep2() {
+  const raw = document.getElementById('ob2-singer-ids').value.trim();
+  if (!raw) return alert('Singer ID를 입력하세요');
+  const singer_ids = raw.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
+  const { ok, data } = await apiFetch('POST', '/api/v1/users/me/onboarding/step2', { singer_ids });
+  showResp('ob2-response', data, ok);
+}
+
+// ═══════════════════════════════════════
+// Library — Folders
+// ═══════════════════════════════════════
+async function getFolders() {
+  const { ok, data } = await apiFetch('GET', '/api/v1/library/folders');
+  showResp('folders-list-response', data, ok);
+}
+async function createFolder() {
+  const name = document.getElementById('folder-name').value.trim();
+  if (!name) return alert('폴더명을 입력하세요');
+  const { ok, data } = await apiFetch('POST', '/api/v1/library/folders', { name });
+  showResp('folder-create-response', data, ok);
+}
+async function deleteFolder() {
+  const id = document.getElementById('folder-delete-id').value.trim();
+  if (!id) return alert('폴더 ID를 입력하세요');
+  const { ok, data } = await apiFetch('DELETE', `/api/v1/library/folders/${id}`);
+  showResp('folder-delete-response', data, ok);
+}
+
+// ═══════════════════════════════════════
+// Library — Wishlist
+// ═══════════════════════════════════════
+async function getWishlist() {
+  const fid = document.getElementById('wishlist-folder-id').value.trim();
+  const q = fid ? `?folder_id=${fid}` : '';
+  const { ok, data } = await apiFetch('GET', `/api/v1/library/wishlist${q}`);
+  showResp('wishlist-list-response', data, ok);
+}
+async function addWishlist() {
+  const raw = document.getElementById('wishlist-song-data').value.trim();
+  if (!raw) return alert('song_data JSON을 입력하세요');
+  let song_data;
+  try { song_data = JSON.parse(raw); } catch { return alert('JSON 형식이 올바르지 않습니다'); }
+  const folder_id = document.getElementById('wishlist-add-folder-id').value.trim() || null;
+  const { ok, data } = await apiFetch('POST', '/api/v1/library/wishlist', { song_data, folder_id });
+  showResp('wishlist-add-response', data, ok);
+}
+async function deleteWishlist() {
+  const id = document.getElementById('wishlist-delete-id').value.trim();
+  if (!id) return alert('item_id를 입력하세요');
+  const { ok, data } = await apiFetch('DELETE', `/api/v1/library/wishlist/${id}`);
+  showResp('wishlist-delete-response', data, ok);
+}
+
+// ═══════════════════════════════════════
+// Library — History
+// ═══════════════════════════════════════
+async function getHistory() {
+  const tag = document.getElementById('history-tag').value.trim();
+  const q = tag ? `?tag=${encodeURIComponent(tag)}` : '';
+  const { ok, data } = await apiFetch('GET', `/api/v1/library/history${q}`);
+  showResp('history-list-response', data, ok);
+}
+async function createHistory() {
+  const raw = document.getElementById('history-song-data').value.trim();
+  if (!raw) return alert('song_data JSON을 입력하세요');
+  let song_data;
+  try { song_data = JSON.parse(raw); } catch { return alert('JSON 형식이 올바르지 않습니다'); }
+  const rawTags = document.getElementById('history-tags').value.trim();
+  const tags = rawTags ? rawTags.split(',').map(t => t.trim()) : [];
+  const memo = document.getElementById('history-memo').value.trim() || null;
+  const { ok, data } = await apiFetch('POST', '/api/v1/library/history', { song_data, tags, memo });
+  showResp('history-create-response', data, ok);
+}
+async function updateHistory() {
+  const id = document.getElementById('history-patch-id').value.trim();
+  if (!id) return alert('archive_id를 입력하세요');
+  const rawTags = document.getElementById('history-patch-tags').value.trim();
+  const memo = document.getElementById('history-patch-memo').value.trim();
+  const body = {};
+  if (rawTags) body.tags = rawTags.split(',').map(t => t.trim());
+  if (memo) body.memo = memo;
+  const { ok, data } = await apiFetch('PATCH', `/api/v1/library/history/${id}`, body);
+  showResp('history-patch-response', data, ok);
+}
+async function deleteHistory() {
+  const id = document.getElementById('history-delete-id').value.trim();
+  if (!id) return alert('archive_id를 입력하세요');
+  const { ok, data } = await apiFetch('DELETE', `/api/v1/library/history/${id}`);
+  showResp('history-delete-response', data, ok);
+}
+
+// ═══════════════════════════════════════
+// Recommendation
+// ═══════════════════════════════════════
+async function getUploadUrl() {
+  const { ok, data } = await apiFetch('POST', '/api/v1/recommendations/upload-url', {});
+  showResp('rec-upload-response', data, ok);
+  if (ok && data.s3_key) document.getElementById('rec-s3-key').value = data.s3_key;
+}
+async function startRec() {
+  const s3_key = document.getElementById('rec-s3-key').value.trim();
+  if (!s3_key) return alert('s3_key를 입력하세요');
+  const { ok, data } = await apiFetch('POST', '/api/v1/recommendations/start', { s3_key });
+  showResp('rec-start-response', data, ok);
+  if (ok && data.job_id) document.getElementById('rec-job-id').value = data.job_id;
+}
+async function getRec() {
+  const id = document.getElementById('rec-job-id').value.trim();
+  if (!id) return alert('job_id를 입력하세요');
+  const { ok, data } = await apiFetch('GET', `/api/v1/recommendations/${id}`);
+  showResp('rec-result-response', data, ok);
+}
+
+// ── storage 이벤트 리스너 (팝업 → 메인창 토큰 수신 fallback) ──
+// window.opener 가 null 이어서 postMessage 가 실패해도 이쪽으로 동작
+window.addEventListener('storage', (e) => {
+  if (e.key === 'singchronize_jwt' && e.newValue) {
+    setToken(e.newValue);
+    showResp('auth-response', { message: '로그인 성공!' }, true);
+  }
+});
+</script>
+</body>
+</html>
