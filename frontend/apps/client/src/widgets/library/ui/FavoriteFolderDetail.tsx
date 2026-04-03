@@ -33,33 +33,35 @@ const FavoriteFolderDetail = ({ folder, onBack }: FavoriteFolderDetailProps) => 
         <h2 className='typo-24b text-gray-100'>{folder.name}</h2>
       </div>
 
-      <ul
-        className={cn(
-          'mt-2 px-10 py-7 flex flex-col gap-4',
-          'rounded-10 border-2 border-gray-800 bg-gray-900',
-        )}
-      >
-        {songs.map((song) => (
-          <li key={song.itemId}>
-            <SongListItem
-              variant='list3'
-              thumbnail={song.thumbnail}
-              title={song.title}
-              artist={song.artist}
-              rightSlot={
-                <div className='flex items-center gap-4'>
-                  <SongLikeButton
-                    isLiked={song.isLiked}
-                    songId={song.songId}
-                    folderId={folder.id}
-                  />
-                  <SongBlockMenu songId={song.songId} />
-                </div>
-              }
-            />
-          </li>
-        ))}
-      </ul>
+      {songs.length > 0 && (
+        <ul
+          className={cn(
+            'mt-2 px-10 py-7 flex flex-col gap-4',
+            'rounded-10 border-2 border-gray-800 bg-gray-900',
+          )}
+        >
+          {songs.map((song) => (
+            <li key={song.itemId}>
+              <SongListItem
+                variant='list3'
+                thumbnail={song.thumbnail}
+                title={song.title}
+                artist={song.artist}
+                rightSlot={
+                  <div className='flex items-center gap-4'>
+                    <SongLikeButton
+                      isLiked={song.isLiked}
+                      songId={song.songId}
+                      folderId={folder.id}
+                    />
+                    <SongBlockMenu songId={song.songId} />
+                  </div>
+                }
+              />
+            </li>
+          ))}
+        </ul>
+      )}
 
       {isAddModalOpen && <AddFavoriteModal folderId={folder.id} onClose={closeModal} />}
     </section>
