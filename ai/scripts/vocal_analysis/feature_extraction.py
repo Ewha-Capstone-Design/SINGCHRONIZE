@@ -21,6 +21,11 @@ try:
 except ImportError:
     from advanced_vocal_analysis import AdvancedVocalAnalyzer
 
+try:
+    from .vocal_phase_timing import log_phase
+except ImportError:
+    from vocal_phase_timing import log_phase
+
 
 class FeatureExtractor:
     """
@@ -53,6 +58,51 @@ class FeatureExtractor:
         
         # 고급 보컬 분석기
         self.advanced_analyzer = AdvancedVocalAnalyzer(sr=sr)
+
+    def _pitch_stats_from_global_contour(
+        self,
+        time: np.ndarray,
+        f0: np.ndarray,
+        voiced_probs: np.ndarray,
+        seg_start: float,
+        seg_end: float,
+        prob_thresh: float = 0.1,
+    ) -> Dict:
+        """전역 pyin 결과에서 구간 통계만 계산 (세그먼트별 pyin 제거용)."""
+        mask_t = (time >= seg_start) & (time <= seg_end)
+        n_frames = int(np.sum(mask_t))
+        if n_frames == 0:
+            return {
+                "start_time": seg_start,
+                "end_time": seg_end,
+                "f0_mean": 0.0,
+                "f0_std": 0.0,
+                "f0_min": 0.0,
+                "f0_max": 0.0,
+                "voiced_ratio": 0.0,
+            }
+        voiced = mask_t & (~np.isnan(f0)) & (voiced_probs > prob_thresh)
+        seg_f0 = f0[voiced]
+        voiced_ratio = float(np.sum(voiced) / n_frames)
+        if len(seg_f0) > 0:
+            return {
+                "start_time": seg_start,
+                "end_time": seg_end,
+                "f0_mean": float(np.mean(seg_f0)),
+                "f0_std": float(np.std(seg_f0)),
+                "f0_min": float(np.min(seg_f0)),
+                "f0_max": float(np.max(seg_f0)),
+                "voiced_ratio": voiced_ratio,
+            }
+        return {
+            "start_time": seg_start,
+            "end_time": seg_end,
+            "f0_mean": 0.0,
+            "f0_std": 0.0,
+            "f0_min": 0.0,
+            "f0_max": 0.0,
+            "voiced_ratio": voiced_ratio,
+        }
     
     def extract_all_features(
         self,
@@ -83,44 +133,58 @@ class FeatureExtractor:
         
         features = {}
         
-        # 1. Pitch (F0)
-        print("\n[1/6] Pitch (F0) 추출 중...")
-        features['pitch'] = self.extract_pitch(audio, segments)
-        
-        # 2. Energy (RMS)
-        print("\n[2/6] Energy (RMS) 추출 중...")
-        features['energy'] = self.extract_energy(audio, segments)
-        
-        # 3. Onset
-        print("\n[3/6] Onset 추출 중...")
-        features['onset'] = self.extract_onset(audio)
-        
-        # 4. Timbre
-        print("\n[4/6] Timbre 추출 중...")
-        features['timbre'] = self.extract_timbre(audio, segments)
-        
-        # 5. ECAPA Embedding
-        print("\n[5/6] ECAPA 임베딩 추출 중...")
-        # 속도 최적화: 최대 5개 세그먼트 사용 (품질 상위 + 시간 분포 고려)
-        # 5개는 정확도와 속도의 좋은 균형점 (3개는 너무 적고, 7개 이상은 느림)
-        features['embedding'] = self.extract_ecapa_embedding(segments, max_segments=5)
-        
-        # 6. 음정 정확도 분석 (레이더 차트에 필요)
-        print("\n[6/6] 음정 정확도 분석 중...")
-        features['pitch_accuracy'] = self.advanced_analyzer.analyze_pitch_accuracy(
-            np.array(features['pitch']['f0_contour']),
-            np.array(features['pitch']['voiced_mask']),
-            features['pitch']['time']
+        log_phase("feature_extract_total", "START")
+        try:
+            log_phase("features_classic", "START", note="pitch_energy_onset_timbre")
+            try:
+                # 1. Pitch (F0)
+                print("\n[1/6] Pitch (F0) 추출 중...")
+                features['pitch'] = self.extract_pitch(audio, segments)
+                
+                # 2. Energy (RMS)
+                print("\n[2/6] Energy (RMS) 추출 중...")
+                features['energy'] = self.extract_energy(audio, segments)
+                
+                # 3. Onset
+                print("\n[3/6] Onset 추출 중...")
+                features['onset'] = self.extract_onset(audio)
+                
+                # 4. Timbre
+                print("\n[4/6] Timbre 추출 중...")
+                features['timbre'] = self.extract_timbre(
+            audio, segments, pitch_features=features["pitch"]
         )
-        
-        # 고급 음색 분석 (MFCC) - 음색 프로파일에 필요
-        features['advanced_timbre'] = self.advanced_analyzer.analyze_advanced_timbre(audio)
-        
-        print("\n" + "="*60)
-        print("✅ 특징 추출 완료!")
-        print("="*60 + "\n")
-        
-        return features
+            finally:
+                log_phase("features_classic", "END")
+            
+            # 5. ECAPA Embedding
+            print("\n[5/6] ECAPA 임베딩 추출 중...")
+            # 속도 최적화: 최대 5개 세그먼트 사용 (품질 상위 + 시간 분포 고려)
+            # 5개는 정확도와 속도의 좋은 균형점 (3개는 너무 적고, 7개 이상은 느림)
+            features['embedding'] = self.extract_ecapa_embedding(segments, max_segments=5)
+            
+            log_phase("features_advanced", "START", note="pitch_accuracy_advanced_timbre")
+            try:
+                # 6. 음정 정확도 분석 (레이더 차트에 필요)
+                print("\n[6/6] 음정 정확도 분석 중...")
+                features['pitch_accuracy'] = self.advanced_analyzer.analyze_pitch_accuracy(
+                    np.array(features['pitch']['f0_contour']),
+                    np.array(features['pitch']['voiced_mask']),
+                    features['pitch']['time']
+                )
+                
+                # 고급 음색 분석 (MFCC) - 음색 프로파일에 필요
+                features['advanced_timbre'] = self.advanced_analyzer.analyze_advanced_timbre(audio)
+            finally:
+                log_phase("features_advanced", "END")
+            
+            print("\n" + "="*60)
+            print("✅ 특징 추출 완료!")
+            print("="*60 + "\n")
+            
+            return features
+        finally:
+            log_phase("feature_extract_total", "END")
     
     # ========================================
     # 1. Pitch (F0) 추출
@@ -188,45 +252,19 @@ class FeatureExtractor:
             f0_min = f0_max = f0_mean = f0_std = 0.0
             tessitura_low = tessitura_high = 0.0
         
-        # 세그먼트별 통계
+        # 세그먼트별 통계 — 전역 pyin 컨투어 슬라이스 (세그먼트마다 pyin 반복 호출 제거)
+        time_np = np.asarray(time, dtype=np.float64)
         segment_stats = []
         for seg in segments:
-            seg_audio = seg['audio']
-            
-            # 세그먼트 F0 추출 (librosa pyin)
-            seg_f0, seg_voiced_flag, seg_voiced_probs = librosa.pyin(
-                seg_audio,
-                fmin=librosa.note_to_hz('C2'),
-                fmax=librosa.note_to_hz('C7'),
-                sr=self.sr,
-                frame_length=2048,
-                hop_length=160
+            segment_stats.append(
+                self._pitch_stats_from_global_contour(
+                    time_np,
+                    f0,
+                    voiced_probs,
+                    float(seg["start_time"]),
+                    float(seg["end_time"]),
+                )
             )
-            
-            # threshold 낮춤: 0.5 → 0.1
-            seg_voiced = ~np.isnan(seg_f0) & (seg_voiced_probs > 0.1)
-            seg_f0 = seg_f0[seg_voiced]
-            
-            if len(seg_f0) > 0:
-                segment_stats.append({
-                    'start_time': seg['start_time'],
-                    'end_time': seg['end_time'],
-                    'f0_mean': float(np.mean(seg_f0)),
-                    'f0_std': float(np.std(seg_f0)),
-                    'f0_min': float(np.min(seg_f0)),
-                    'f0_max': float(np.max(seg_f0)),
-                    'voiced_ratio': float(np.sum(seg_voiced) / len(seg_voiced))
-                })
-            else:
-                segment_stats.append({
-                    'start_time': seg['start_time'],
-                    'end_time': seg['end_time'],
-                    'f0_mean': 0.0,
-                    'f0_std': 0.0,
-                    'f0_min': 0.0,
-                    'f0_max': 0.0,
-                    'voiced_ratio': 0.0
-                })
         
         print(f"✓ F0 추출 완료")
         print(f"  - 음역대: {f0_min:.1f}Hz ~ {f0_max:.1f}Hz")
@@ -386,7 +424,8 @@ class FeatureExtractor:
     def extract_timbre(
         self,
         audio: np.ndarray,
-        segments: List[Dict]
+        segments: List[Dict],
+        pitch_features: Optional[Dict] = None,
     ) -> Dict:
         """
         Timbre (음색) 특징 추출
@@ -401,17 +440,30 @@ class FeatureExtractor:
         Args:
             audio: 전체 오디오
             segments: 세그먼트 리스트
+            pitch_features: extract_pitch 결과가 있으면 F0 힌트로 세그먼트별 pyin 생략
         
         Returns:
             timbre_features: Dict
         """
+        pf = pitch_features or {}
+        g_f0 = pf.get("f0_mean")
+        global_hint = float(g_f0) if g_f0 is not None and float(g_f0) > 30.0 else None
+
         # 전체 오디오 Timbre
-        timbre_global = self._extract_timbre_single(audio)
+        timbre_global = self._extract_timbre_single(audio, f0_mean_hint=global_hint)
         
         # 세그먼트별 Timbre
+        seg_pitch = pf.get("segment_stats") or []
         segment_stats = []
-        for seg in segments:
-            seg_timbre = self._extract_timbre_single(seg['audio'])
+        for i, seg in enumerate(segments):
+            hint = None
+            if i < len(seg_pitch):
+                m = seg_pitch[i].get("f0_mean")
+                if m is not None and float(m) > 30.0:
+                    hint = float(m)
+            if hint is None:
+                hint = global_hint
+            seg_timbre = self._extract_timbre_single(seg["audio"], f0_mean_hint=hint)
             seg_timbre['start_time'] = seg['start_time']
             seg_timbre['end_time'] = seg['end_time']
             segment_stats.append(seg_timbre)
@@ -441,7 +493,11 @@ class FeatureExtractor:
             'gender': gender
         }
     
-    def _extract_timbre_single(self, audio: np.ndarray) -> Dict:
+    def _extract_timbre_single(
+        self,
+        audio: np.ndarray,
+        f0_mean_hint: Optional[float] = None,
+    ) -> Dict:
         """단일 오디오 세그먼트에서 Timbre 추출 (개선 버전)"""
         # STFT
         n_fft = 2048
@@ -449,14 +505,17 @@ class FeatureExtractor:
         S = np.abs(librosa.stft(audio, n_fft=n_fft, hop_length=hop_length))
         freqs = librosa.fft_frequencies(sr=self.sr, n_fft=n_fft)
         
-        # F0 추출 (상대적 분석에 사용)
-        f0, voiced_flag, _ = librosa.pyin(
-            audio,
-            fmin=librosa.note_to_hz('C2'),
-            fmax=librosa.note_to_hz('C7'),
-            sr=self.sr
-        )
-        f0_mean = np.nanmedian(f0[voiced_flag]) if np.any(voiced_flag) else 200.0
+        # F0: pitch 단계에서 이미 계산했으면 pyin 생략 (features_classic 대부분 시간 절감)
+        if f0_mean_hint is not None and np.isfinite(f0_mean_hint) and f0_mean_hint > 30.0:
+            f0_mean = float(f0_mean_hint)
+        else:
+            f0, voiced_flag, _ = librosa.pyin(
+                audio,
+                fmin=librosa.note_to_hz('C2'),
+                fmax=librosa.note_to_hz('C7'),
+                sr=self.sr
+            )
+            f0_mean = float(np.nanmedian(f0[voiced_flag]) if np.any(voiced_flag) else 200.0)
         
         # 1. Brightness - Spectral Centroid (개선: 상대적 위치)
         centroid = librosa.feature.spectral_centroid(S=S, sr=self.sr, hop_length=hop_length)[0]
@@ -688,17 +747,25 @@ class FeatureExtractor:
         segment_embeddings = []
         qualities = []
         
-        for seg in selected_segments:
-            # 오디오 → 텐서
-            audio_tensor = torch.FloatTensor(seg['audio']).unsqueeze(0)
-            
-            # 임베딩 추출
-            with torch.no_grad():
-                embedding = FeatureExtractor._ecapa_classifier.encode_batch(audio_tensor)
-                embedding = embedding.squeeze().cpu().numpy()
-            
-            segment_embeddings.append(embedding)
-            qualities.append(seg['quality_score'])
+        log_phase(
+            "ecapa_inference",
+            "START",
+            note=f"segments={len(selected_segments)}",
+        )
+        try:
+            for seg in selected_segments:
+                # 오디오 → 텐서
+                audio_tensor = torch.FloatTensor(seg['audio']).unsqueeze(0)
+                
+                # 임베딩 추출
+                with torch.no_grad():
+                    embedding = FeatureExtractor._ecapa_classifier.encode_batch(audio_tensor)
+                    embedding = embedding.squeeze().cpu().numpy()
+                
+                segment_embeddings.append(embedding)
+                qualities.append(seg['quality_score'])
+        finally:
+            log_phase("ecapa_inference", "END")
         
         # 품질 가중 평균
         qualities = np.array(qualities)
@@ -811,11 +878,15 @@ class FeatureExtractor:
             from speechbrain.pretrained import EncoderClassifier
             
             print("⏳ ECAPA-TDNN 모델 로딩 중...")
-            cls._ecapa_classifier = EncoderClassifier.from_hparams(
-                source="speechbrain/spkrec-ecapa-voxceleb",
-                savedir="pretrained_models/spkrec-ecapa-voxceleb"
-            )
-            cls._ecapa_model_loaded = True
+            log_phase("ecapa_model_load", "START", note="speechbrain_EncoderClassifier")
+            try:
+                cls._ecapa_classifier = EncoderClassifier.from_hparams(
+                    source="speechbrain/spkrec-ecapa-voxceleb",
+                    savedir="pretrained_models/spkrec-ecapa-voxceleb"
+                )
+                cls._ecapa_model_loaded = True
+            finally:
+                log_phase("ecapa_model_load", "END")
             print("✓ ECAPA-TDNN 모델 로드 완료")
         except ImportError:
             print("⚠️  SpeechBrain이 설치되지 않았습니다.")

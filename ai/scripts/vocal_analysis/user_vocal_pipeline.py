@@ -14,11 +14,20 @@ from typing import Dict, Optional
 import warnings
 warnings.filterwarnings('ignore')
 
-from audio_preprocessing import AudioPreprocessor
-from feature_extraction import FeatureExtractor
-from report_generator_v2 import ReportGeneratorV2
-from radar_chart_descriptions import RADAR_CHART_DESCRIPTIONS, get_score_interpretation
-from genre_profiles import build_and_override_global_genre_profiles_from_db
+try:
+    from .audio_preprocessing import AudioPreprocessor
+    from .feature_extraction import FeatureExtractor
+    from .report_generator_v2 import ReportGeneratorV2
+    from .radar_chart_descriptions import RADAR_CHART_DESCRIPTIONS, get_score_interpretation
+    from .genre_profiles import build_and_override_global_genre_profiles_from_db
+    from .vocal_phase_timing import log_phase
+except ImportError:
+    from audio_preprocessing import AudioPreprocessor
+    from feature_extraction import FeatureExtractor
+    from report_generator_v2 import ReportGeneratorV2
+    from radar_chart_descriptions import RADAR_CHART_DESCRIPTIONS, get_score_interpretation
+    from genre_profiles import build_and_override_global_genre_profiles_from_db
+    from vocal_phase_timing import log_phase
 
 
 class UserVocalPipeline:
@@ -121,12 +130,14 @@ class UserVocalPipeline:
         output_path = Path(output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
         
-        # Step 1: 전처리
+        # Step 1: 전처리 (librosa 로드·리샘플·무음트림·세그먼트 — ffmpeg는 코덱에 따라 간접 사용)
         print("\n[Step 1] 오디오 전처리")
+        log_phase("audio_preprocess", "START", note="load_resample_trim_segments")
         audio, segments = self.preprocessor.preprocess(
             audio_path=audio_path,
             output_dir=str(output_path)
         )
+        log_phase("audio_preprocess", "END")
         
         # Step 2: 특징 추출
         print("\n[Step 2] 특징 추출")
@@ -134,7 +145,9 @@ class UserVocalPipeline:
         
         # Step 3: 리포트 생성
         print("\n[Step 3] 보컬 분석 리포트 생성")
+        log_phase("report_generate", "START")
         report = self.generator.generate_report(features)
+        log_phase("report_generate", "END")
         
         # Step 4: 추천용 임베딩 준비
         print("\n[Step 4] 추천용 데이터 준비")
@@ -169,7 +182,9 @@ class UserVocalPipeline:
         
         # JSON 저장
         output_file = output_path / f"{Path(audio_path).stem}_result.json"
+        log_phase("pipeline_artifact_save", "START", note=str(output_file))
         self._save_result(result, output_file)
+        log_phase("pipeline_artifact_save", "END")
         
         print("\n" + "="*70)
         print("✅ 전체 파이프라인 완료!")
@@ -259,11 +274,11 @@ class UserVocalPipeline:
                 'texture': '🌈'
             }.get(key, '•')
             
-            # interpretation 키가 있으면 표시, 없으면 생략
+            axis = value.get('axis_label', key)
             if 'interpretation' in value:
-                print(f"  {emoji} {key} ({value['interpretation']})")
+                print(f"  {emoji} {axis} ({value['interpretation']})")
             else:
-                print(f"  {emoji} {key}")
+                print(f"  {emoji} {axis}")
             print(f"     → {value['description']}")
         
         # 장르별 적합도

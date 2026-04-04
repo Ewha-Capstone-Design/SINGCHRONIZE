@@ -12,7 +12,40 @@ from typing import Dict, List, Optional
 import warnings
 warnings.filterwarnings('ignore')
 
-from radar_chart_descriptions import RADAR_CHART_DESCRIPTIONS, get_score_interpretation
+try:
+    from .radar_chart_descriptions import RADAR_CHART_DESCRIPTIONS, get_score_interpretation
+except ImportError:
+    from radar_chart_descriptions import RADAR_CHART_DESCRIPTIONS, get_score_interpretation
+
+
+# 음색 5축 raw(value) → UI용 display_score (해석·구간 로직은 기존 value 그대로 유지)
+TIMBRE_DISPLAY_SCORE_RANGES = {
+    "brightness": {"low": 0.08, "high": 0.30},
+    "roughness": {"low": 0.02, "high": 0.18},
+    "body": {"low": 0.20, "high": 0.70},
+    "clarity": {"low": 0.20, "high": 0.75},
+    "warmth": {"low": 0.10, "high": 0.50},
+}
+
+
+def normalize_timbre_raw_to_0_100(value: float, low: float, high: float) -> float:
+    if high <= low:
+        return 50.0
+    score = (value - low) / (high - low) * 100.0
+    return float(max(0.0, min(100.0, score)))
+
+
+def timbre_display_score_from_raw(axis_key: str, raw_value: float) -> int:
+    """
+    1) 축별 [low, high]로 0~100 정규화
+    2) UI용 상향: display = 20 + 0.8 * normalized → 정수 반올림
+    """
+    spec = TIMBRE_DISPLAY_SCORE_RANGES.get(axis_key)
+    if not spec:
+        return int(round(max(0.0, min(100.0, raw_value * 100.0))))
+    n = normalize_timbre_raw_to_0_100(raw_value, spec["low"], spec["high"])
+    display = 20.0 + 0.8 * n
+    return int(round(max(0.0, min(100.0, display))))
 
 
 class ReportGeneratorV2:
@@ -29,6 +62,9 @@ class ReportGeneratorV2:
     
     def __init__(self):
         pass
+
+    # 음색 프로필 interpretation용 5단계 (중간 구간을 넓게 쓰기 위한 공통 라벨)
+    _TIER_5 = ("매우 낮음", "낮은 편", "중간", "높은 편", "매우 높음")
     
     def generate_report(self, features: Dict) -> Dict:
         """
@@ -578,51 +614,64 @@ class ReportGeneratorV2:
             features: 전체 특징
         
         Returns:
-            timbre_profile: Dict
+            timbre_profile: Dict (brightness~warmth 각 항목에 raw `value` 유지 + `display_score` UI 보정 점수)
         """
         timbre = features['timbre']['weighted']
         advanced_timbre = features['advanced_timbre']
         
-        # 기본 5축
+        # 기본 5축 (사용자용 axis_label + 5단계 interpretation + 청감 중심 description)
         profile = {
             'brightness': {
                 'value': float(timbre['brightness']),
+                'axis_label': '화사함·고역 존재감',
                 'description': self._describe_brightness(timbre['brightness']),
                 'interpretation': self._interpret_brightness(timbre['brightness'])
             },
             'roughness': {
                 'value': float(timbre['roughness']),
+                'axis_label': '거친 결·허스키 결',
                 'description': self._describe_roughness(timbre['roughness']),
                 'interpretation': self._interpret_roughness(timbre['roughness'])
             },
             'body': {
                 'value': float(timbre['body']),
+                'axis_label': '두께감·중심감',
                 'description': self._describe_body(timbre['body']),
                 'interpretation': self._interpret_body(timbre['body'])
             },
             'clarity': {
                 'value': float(timbre['clarity']),
+                'axis_label': '맑음·또렷함',
                 'description': self._describe_clarity(timbre['clarity']),
                 'interpretation': self._interpret_clarity(timbre['clarity'])
             },
             'warmth': {
                 'value': float(timbre['warmth']),
+                'axis_label': '온기·포근함',
                 'description': self._describe_warmth(timbre['warmth']),
                 'interpretation': self._interpret_warmth(timbre['warmth'])
             }
         }
+
+        for axis_key in TIMBRE_DISPLAY_SCORE_RANGES:
+            if axis_key in profile and isinstance(profile[axis_key], dict):
+                profile[axis_key]["display_score"] = timbre_display_score_from_raw(
+                    axis_key, profile[axis_key]["value"]
+                )
         
-        # MFCC 기반 추가 특징
+        # MFCC 기반 보조 지표
         profile['richness'] = {
             'value': float(advanced_timbre['richness_mfcc']),
+            'axis_label': '풍부함 (보조)',
             'description': self._describe_richness(advanced_timbre['richness_mfcc']),
-            'interpretation': '음색의 풍부함'
+            'interpretation': self._interpret_richness(advanced_timbre['richness_mfcc'])
         }
         
         profile['texture'] = {
             'value': float(advanced_timbre['texture_mfcc']),
+            'axis_label': '질감 (보조)',
             'description': self._describe_texture(advanced_timbre['texture_mfcc']),
-            'interpretation': '음색의 질감'
+            'interpretation': self._interpret_texture(advanced_timbre['texture_mfcc'])
         }
         
         # Formant 정보
@@ -641,192 +690,242 @@ class ReportGeneratorV2:
         print(f"  {summary}")
         
         return profile
-    
+
     def _describe_brightness(self, value: float) -> str:
-        if value < 0.2:
-            return "어둡고 무거운 음색"
-        elif value < 0.35:
-            return "중저역과 고역이 균형잡힌 편"
-        elif value < 0.5:
-            return "고역이 적당히 살아있어 밝은 편"
-        else:
-            return "매우 밝고 화사한 음색"
-    
+        """고역 존재감·화사함 (한 축만으로 전체 음색을 단정하지 않음)."""
+        if value < 0.16:
+            return "고역이 많이 도드라지지 않아 차분하고 무게감 있게 들립니다."
+        if value < 0.28:
+            return "화사하게 뜨는 톤보다는 안정적이고 중심감 있는 인상이 있습니다."
+        if value < 0.40:
+            return "고역과 중역이 비교적 균형을 이루어 지나치게 밝거나 어둡지 않습니다."
+        if value < 0.55:
+            return "고역이 적절히 살아 있어 화사하고 청량한 인상을 줍니다."
+        return "고역 존재감이 강해 매우 밝고 반짝이는 톤으로 들립니다."
+
     def _interpret_brightness(self, value: float) -> str:
-        if value < 0.2:
-            return "어두움"
-        elif value < 0.35:
-            return "중간"
-        elif value < 0.5:
-            return "밝은 편"
-        else:
-            return "매우 밝음"
-    
+        if value < 0.16:
+            return self._TIER_5[0]
+        if value < 0.28:
+            return self._TIER_5[1]
+        if value < 0.40:
+            return self._TIER_5[2]
+        if value < 0.55:
+            return self._TIER_5[3]
+        return self._TIER_5[4]
+
     def _describe_roughness(self, value: float) -> str:
+        """거친 결·허스키 결 (값이 클수록 거침이 큼)."""
         if value < 0.05:
-            return "매우 깨끗하고 부드러운 질감"
-        elif value < 0.1:
-            return "부드럽고 깔끔한 질감"
-        elif value < 0.2:
-            return "적당한 거칠기로 개성있는 음색"
-        else:
-            return "거칠고 날것의 느낌"
-    
+            return "잡음이 적고 매끈한 질감으로, 깨끗하고 부드럽게 들립니다."
+        if value < 0.095:
+            return "전반적으로 깔끔한 질감이며 거친 결은 크지 않습니다."
+        if value < 0.16:
+            return "약간의 질감 변화가 있어 개성이 느껴지지만 과하게 거칠지는 않습니다."
+        if value < 0.24:
+            return "소리에 거친 결이 느껴져 허스키하거나 날것의 인상이 일부 있습니다."
+        return "거친 질감과 마찰감이 강하게 느껴지는 허스키한 톤입니다."
+
     def _interpret_roughness(self, value: float) -> str:
         if value < 0.05:
-            return "매우 부드러움"
-        elif value < 0.1:
-            return "부드러움"
-        elif value < 0.2:
-            return "적당한 거칠기"
-        else:
-            return "거침"
-    
+            return self._TIER_5[0]
+        if value < 0.095:
+            return self._TIER_5[1]
+        if value < 0.16:
+            return self._TIER_5[2]
+        if value < 0.24:
+            return self._TIER_5[3]
+        return self._TIER_5[4]
+
     def _describe_body(self, value: float) -> str:
-        if value < 0.3:
-            return "저중역이 얇아 가볍고 경쾌한 느낌"
-        elif value < 0.5:
-            return "저중역이 적당히 받쳐주는 편"
-        elif value < 0.7:
-            return "저중역이 풍부하여 묵직한 느낌"
-        else:
-            return "저중역이 매우 두터워 강력한 느낌"
-    
+        """두께감·중심감."""
+        if value < 0.22:
+            return "소리가 가볍고 얇게 느껴지며 중심감은 비교적 적은 편입니다."
+        if value < 0.38:
+            return "무겁게 실리는 타입보다는 가볍고 경쾌한 인상이 있습니다."
+        if value < 0.52:
+            return "너무 얇지도 두껍지도 않아 균형 잡힌 중심감을 보입니다."
+        if value < 0.68:
+            return "중저역이 적절히 받쳐줘 소리에 두께감과 안정감이 느껴집니다."
+        return "중심감이 강하고 소리의 두께가 뚜렷해 존재감 있게 들립니다."
+
     def _interpret_body(self, value: float) -> str:
-        if value < 0.3:
-            return "매우 가벼움"
-        elif value < 0.5:
-            return "적당함"
-        elif value < 0.7:
-            return "두터움"
-        else:
-            return "매우 두터움"
-    
+        if value < 0.22:
+            return self._TIER_5[0]
+        if value < 0.38:
+            return self._TIER_5[1]
+        if value < 0.52:
+            return self._TIER_5[2]
+        if value < 0.68:
+            return self._TIER_5[3]
+        return self._TIER_5[4]
+
     def _describe_clarity(self, value: float) -> str:
-        if value < 0.3:
-            return "흐릿하고 뭉개진 느낌"
-        elif value < 0.5:
-            return "적당히 선명한 편"
-        elif value < 0.7:
-            return "선명한 편으로 또렷하게 들림"
-        else:
-            return "매우 선명하고 투명한 음색"
-    
+        """맑음·또렷함 (밝음과는 별개로 설명)."""
+        if value < 0.20:
+            return "소리가 퍼지거나 흐릿하게 들려 선명도가 낮은 편입니다."
+        if value < 0.38:
+            return "또렷함보다는 부드럽고 퍼지는 인상이 조금 더 느껴집니다."
+        if value < 0.52:
+            return "전반적으로 무난한 선명도를 보이며 과하게 흐리거나 날카롭지 않습니다."
+        if value < 0.68:
+            return "소리가 비교적 또렷하고 맑게 들려 전달력이 좋습니다."
+        return "매우 선명하고 투명한 톤으로, 소리의 윤곽이 뚜렷하게 들립니다."
+
     def _interpret_clarity(self, value: float) -> str:
-        if value < 0.3:
-            return "흐림"
-        elif value < 0.5:
-            return "보통"
-        elif value < 0.7:
-            return "선명함"
-        else:
-            return "매우 선명함"
-    
+        if value < 0.20:
+            return self._TIER_5[0]
+        if value < 0.38:
+            return self._TIER_5[1]
+        if value < 0.52:
+            return self._TIER_5[2]
+        if value < 0.68:
+            return self._TIER_5[3]
+        return self._TIER_5[4]
+
     def _describe_warmth(self, value: float) -> str:
-        if value < 0.25:
-            return "중저역이 적어 차갑고 날카로운 느낌"
-        elif value < 0.4:
-            return "중립적인 온도감"
-        elif value < 0.55:
-            return "중저역이 적당히 있어 따뜻한 편"
-        else:
-            return "중저역이 풍부하여 매우 따뜻한 느낌"
-    
+        """온기·포근함."""
+        if value < 0.22:
+            return "온기보다는 차갑고 또렷한 인상이 상대적으로 강합니다."
+        if value < 0.36:
+            return "따뜻함보다는 비교적 담백하고 시원한 인상에 가깝습니다."
+        if value < 0.5:
+            return "차갑거나 과하게 따뜻하지 않은 중립적인 온도감입니다."
+        if value < 0.64:
+            return "중저역의 온기가 느껴져 부드럽고 편안한 인상을 줍니다."
+        return "포근하고 따뜻한 울림이 뚜렷한 톤입니다."
+
     def _interpret_warmth(self, value: float) -> str:
-        if value < 0.25:
-            return "차가운 편"
-        elif value < 0.4:
-            return "중립"
-        elif value < 0.55:
-            return "따뜻한 편"
-        else:
-            return "매우 따뜻함"
-    
+        if value < 0.22:
+            return self._TIER_5[0]
+        if value < 0.36:
+            return self._TIER_5[1]
+        if value < 0.5:
+            return self._TIER_5[2]
+        if value < 0.64:
+            return self._TIER_5[3]
+        return self._TIER_5[4]
+
     def _describe_richness(self, value: float) -> str:
+        """보조: 음색 겹겹이 쌓인 느낌."""
         if value < 0.3:
             return "단순하고 깔끔한 음색"
-        elif value < 0.6:
+        if value < 0.6:
             return "적당히 풍부한 음색"
-        else:
-            return "매우 풍부하고 복잡한 음색"
-    
-    def _describe_texture(self, value: float) -> str:
+        return "여러 결이 겹쳐 느껴지는 풍부한 음색"
+
+    def _interpret_richness(self, value: float) -> str:
         if value < 0.3:
-            return "매끄럽고 일관된 질감"
-        elif value < 0.6:
-            return "적당한 변화가 있는 질감"
-        else:
-            return "다채롭고 변화무쌍한 질감"
+            return "낮음"
+        if value < 0.6:
+            return "중간"
+        return "높음"
+
+    def _describe_texture(self, value: float) -> str:
+        """보조: 질감 변화."""
+        if value < 0.3:
+            return "매끈하고 일관된 질감"
+        if value < 0.6:
+            return "약간의 변화가 느껴지는 질감"
+        return "결의 변화가 비교적 뚜렷하고 질감이 입체적으로 느껴집니다."
+
+    def _interpret_texture(self, value: float) -> str:
+        if value < 0.3:
+            return "낮음"
+        if value < 0.6:
+            return "중간"
+        return "높음"
     
     def _describe_formants(self, f1: float, f2: float) -> str:
-        """Formant 기반 음색 설명"""
-        # F1: 혀의 높이 (낮을수록 밝음)
-        # F2: 혀의 앞뒤 위치 (높을수록 전방)
-        
+        """Formant 기반 공명 경향 (한 축으로 전체 톤을 단정하지 않음)."""
         if f1 < 500:
-            f1_desc = "밝고 개방적인"
+            f1_desc = "고역 쪽 공명이 비교적 살아 있는"
         elif f1 < 650:
-            f1_desc = "중간 개방도의"
+            f1_desc = "개방감이 중간 정도인"
         else:
-            f1_desc = "어둡고 깊은"
+            f1_desc = "깊게 잡히는 저·중공명이 느껴지는"
         
         if f2 < 1400:
-            f2_desc = "후방 공명"
+            f2_desc = "후방 쪽 울림"
         elif f2 < 1800:
-            f2_desc = "중앙 공명"
+            f2_desc = "중앙 쪽 울림"
         else:
-            f2_desc = "전방 공명"
+            f2_desc = "전방 쪽 울림"
         
         return f"{f1_desc}, {f2_desc}"
     
     def _generate_timbre_summary_v2(self, profile: Dict) -> str:
-        """음색 전체 요약 (개선)"""
-        descriptors = []
-        
-        # 밝기
-        brightness = profile['brightness']['value']
-        if brightness > 0.5:
-            descriptors.append("밝고 화사한")
-        elif brightness < 0.25:
-            descriptors.append("어둡고 무거운")
-        
-        # 따뜻함
-        warmth = profile['warmth']['value']
-        if warmth > 0.55:
-            descriptors.append("따뜻한")
-        elif warmth < 0.25:
-            descriptors.append("차가운")
-        
-        # 바디
-        body = profile['body']['value']
-        if body > 0.6:
-            descriptors.append("두터운")
-        elif body < 0.35:
-            descriptors.append("가벼운")
-        
-        # 거칠기
-        roughness = profile['roughness']['value']
-        if roughness < 0.05:
-            descriptors.append("깨끗한")
-        elif roughness > 0.15:
-            descriptors.append("거친")
-        
-        # 선명도
-        clarity = profile['clarity']['value']
-        if clarity > 0.7:
-            descriptors.append("선명한")
-        elif clarity < 0.4:
-            descriptors.append("흐린")
-        
-        # 풍부함
-        richness = profile['richness']['value']
-        if richness > 0.6:
-            descriptors.append("풍부한")
-        
-        if not descriptors:
-            descriptors.append("중립적인")
-        
-        return ", ".join(descriptors) + " 음색"
+        """축 이름 나열 대신 청감 중심 문장 1~2개로 요약 (한 축만으로 단정하지 않음)."""
+
+        def intr(key: str) -> str:
+            return (profile.get(key) or {}).get('interpretation', '중간')
+
+        r_rough = intr('roughness')
+        r_bright = intr('brightness')
+        r_body = intr('body')
+        r_clarity = intr('clarity')
+        r_warmth = intr('warmth')
+
+        # --- 첫 문장: 거침 + 화사함/중심감(톤) ---
+        if r_rough in ('매우 낮음', '낮은 편'):
+            head = "전반적으로 거친 결이 적고, "
+        elif r_rough in ('높은 편', '매우 높음'):
+            head = "거친 결이나 허스키한 질감이 비교적 뚜렷하게 느껴지며, "
+        else:
+            head = ""
+
+        if r_bright in ('매우 낮음', '낮은 편'):
+            tail = "화사하게 뜨기보다는 차분하고 중심감 있는 톤으로 들립니다."
+        elif r_bright == '중간':
+            if r_body in ('높은 편', '매우 높음'):
+                tail = "두께감과 중심감이 함께 받쳐 주는 듯한 톤이 느껴집니다."
+            elif r_body in ('매우 낮음', '낮은 편'):
+                tail = "가볍고 경쾌한 쪽에 가까운 톤으로 들립니다."
+            else:
+                tail = "고역과 무게감의 균형이 무난한 톤으로 들립니다."
+        elif r_bright in ('높은 편', '매우 높음'):
+            tail = "고역이 살아 있어 화사하고 청량한 인상의 톤입니다."
+        else:
+            tail = "여러 요소가 한쪽으로 치우치지 않은 편으로 들립니다."
+
+        if not head and tail.startswith("여러 요소"):
+            sentence1 = tail
+        elif not head:
+            sentence1 = tail
+        else:
+            sentence1 = head + tail
+
+        # --- 둘째 문장: 선명도 + 온기 (~이며, ~입니다.) ---
+        if r_clarity in ('높은 편', '매우 높음'):
+            c_part = "맑고 또렷한 인상이 비교적 강하"
+        elif r_clarity in ('매우 낮음', '낮은 편'):
+            c_part = "소리가 다소 퍼지거나 부드럽게 들리는 편이"
+        else:
+            c_part = "선명도는 무난한 편이"
+
+        if r_warmth == '중간':
+            w_part = "온기는 과하지 않은 중립적인 편입니다"
+        elif r_warmth in ('매우 낮음', '낮은 편'):
+            w_part = "온기보다는 담백하고 시원한 인상에 가깝습니다"
+        elif r_warmth in ('높은 편', '매우 높음'):
+            w_part = "중저역의 온기나 포근함이 함께 느껴집니다"
+        else:
+            w_part = "온도감은 무난한 편입니다"
+
+        sentence2 = f"{c_part}며, {w_part}."
+
+        summary = sentence1 + " " + sentence2
+
+        # 보조: 짧게 덧붙임 (나열·비문 피함)
+        aux_tail = []
+        if profile.get('richness', {}).get('interpretation') == '높음':
+            aux_tail.append("겹겹이 쌓인 듯한 풍부함이 살짝 느껴집니다")
+        if profile.get('texture', {}).get('interpretation') == '높음':
+            aux_tail.append("결의 변화가 비교적 뚜렷하게 느껴집니다")
+        if aux_tail:
+            summary += " " + ". ".join(aux_tail) + "."
+
+        return summary
     
     # ========================================
     # 4. 장르별 적합도

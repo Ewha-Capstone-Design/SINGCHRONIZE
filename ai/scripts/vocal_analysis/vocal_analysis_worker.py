@@ -4,7 +4,7 @@
 흐름:
 1. 입력: analysis_jobs.id (UUID) + (로컬) audio_path 또는 (AWS) s3_key
 2. AWS: 행 상태 ANALYZING → S3 다운로드 → UserVocalPipeline.process() → DONE + result_data
-   (result_data: 화면용 result + scoring_song_aligned → 이후 sync 로 user_vocal_profiles 에 1차 추천 컬럼 반영)
+   (기본: 화면용 result만 저장, 필요 시 env로 scoring_song_aligned 포함 가능)
 3. 결과: 로컬은 output/<uuid>/result.json, AWS는 analysis_jobs DONE 저장 후 user_vocal_profiles UPSERT
 
 Supabase analysis_jobs 스키마 (기본값):
@@ -16,7 +16,8 @@ Supabase analysis_jobs 스키마 (기본값):
 
   로컬 파일:  python vocal_analysis_worker.py <job_uuid> -a /path/to.wav
   S3+DB:      python vocal_analysis_worker.py <job_uuid> --aws --s3-key path/in/bucket.m4a
-  SQS 큐:     python vocal_analysis_worker.py --queue
+  ECS(RunTask): 환경변수 JOB_ID 만 설정 가능 — s3_key는 analysis_jobs 컬럼 또는 recording_id→recordings.s3_key 조회
+  SQS 폴링:   python vocal_analysis_worker.py --queue (로컬·레거시 검증용)
 
   (venv는 ai 디렉터리에서 생성 후)
   cd ../.. && python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
@@ -25,16 +26,53 @@ Supabase analysis_jobs 스키마 (기본값):
   Docker (ai 루트):
   docker compose -f docker-compose.vocal_analysis_worker.yml up --build
 
-  SQS 메시지 Body JSON 예: {"job_id":"<uuid>","s3_key":"recordings/xxx.m4a"}
+  SQS 메시지 Body JSON 예(기본): {"job_id":"<uuid>"} — s3_key 생략 시 DB에서 조회(analysis_jobs 또는 recording_id→recordings)
 
 .env (ai/.env, 다른 테이블/컬럼명일 때만 추가):
   ANALYSIS_JOBS_TABLE=analysis_jobs
   ANALYSIS_JOBS_ID_COLUMN=id
   ANALYSIS_JOBS_TIMESTAMP_COLUMN=updated_at
   ANALYSIS_JOBS_RESULT_COLUMN=result_data
+  VOCAL_ANALYSIS_INCLUDE_SCORING_SONG_ALIGNED=1  # 기본 1: user_vocal_profiles 임베딩·f0·timbre 컬럼 채움. 0이면 result_data 용량만 축소
+  VOCAL_ANALYSIS_SQS_VISIBILITY_TIMEOUT=1800   # SQS 수신 시 메시지 숨김(초), 0이면 큐 기본값
+  VOCAL_ANALYSIS_SQS_WAIT_TIME_SECONDS=20     # long polling (최대 20)
+  VOCAL_ANALYSIS_TIMING_LOG=1                 # 0이면 [VOCAL_TIMING] 단계 로그 비활성화
+
+ECS 기동 측정 (Fargate):
+  - [ECS_BOOT] APP_BOOT_START: 파이썬이 본 스크립트의 첫 stdout (DescribeTasks startedAt 과 비교)
+  - [ECS_BOOT] APP_MODULE_LOADED: 무거운 import·dotenv 이후
+  - [ECS_BOOT] PIPELINE_HANDLER_START / WORKER_CONSTRUCT_END: run_aws_job_from_env 진입·VocalAnalysisWorker 생성 직후
+  - [VOCAL_TIMING] job_total: 실제 1건 분석 구간
+  Lambda 디스패처는 [ECS_DISPATCH] RunTask_submitted 로 T0 를 CloudWatch 에 남김 (ecs_run_task.py).
 """
+from __future__ import annotations
+
+
+def _ecs_boot_ts() -> str:
+    from datetime import datetime, timezone
+
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+
+
+def _log_ecs_boot(event: str, **extra: str) -> None:
+    """stdlib만 사용 — import 되기 전에도 호출 가능."""
+    import os
+
+    jid = (os.environ.get("JOB_ID") or "").strip() or "-"
+    parts = [f"[ECS_BOOT] event={event}", f"job_id={jid}", f"ts={_ecs_boot_ts()}"]
+    for k, v in extra.items():
+        parts.append(f"{k}={v}")
+    print(" ".join(parts), flush=True)
+
+
+_log_ecs_boot(
+    "APP_BOOT_START",
+    note="before_heavy_imports;delta_from_container_StartedAt_in_DescribeTasks",
+)
+
 import json
 import os
+import shutil
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -50,6 +88,7 @@ from report_for_db import build_failure_result_data, build_result_data_payload
 from user_song_aligned_features import build_scoring_song_aligned_from_pipeline_result
 from user_vocal_pipeline import UserVocalPipeline
 from user_vocal_profile_sync import sync_user_vocal_profile_after_job
+from vocal_phase_timing import log_phase, timing_job_reset, timing_job_token
 
 
 # ============================================================================
@@ -69,9 +108,59 @@ else:
     load_dotenv()
     print("⚠️  .env 파일을 찾지 못했습니다. 기본 위치에서 시도합니다.")
 
+_log_ecs_boot(
+    "APP_MODULE_LOADED",
+    note="after_imports_and_dotenv;before_VocalAnalysisWorker_instantiation",
+)
 
 # 보컬 분석용 SQS Queue URL (추천과 분리)
 VOCAL_ANALYSIS_SQS_QUEUE_URL = os.getenv("VOCAL_ANALYSIS_SQS_QUEUE_URL")
+
+# SQS ReceiveMessage 전용 (메시지별). CPU·ECAPA 분석이 5분을 넘기 쉬워 기본 30분.
+# 큐 기본값만 쓰려면 0 → receive_message 에서 생략.
+def _sqs_visibility_timeout_for_receive() -> Optional[int]:
+    raw = (os.getenv("VOCAL_ANALYSIS_SQS_VISIBILITY_TIMEOUT") or "1800").strip()
+    try:
+        v = int(raw)
+    except ValueError:
+        v = 1800
+    if v <= 0:
+        return None
+    return max(60, min(v, 43200))
+
+
+def _sqs_wait_time_seconds() -> int:
+    raw = (os.getenv("VOCAL_ANALYSIS_SQS_WAIT_TIME_SECONDS") or "20").strip()
+    try:
+        v = int(raw)
+    except ValueError:
+        v = 20
+    return max(0, min(v, 20))
+
+
+def _env_bool(name: str, default: bool = False) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
+def _output_base_dir() -> str:
+    """
+    파이프라인 임시·중간 산출물 루트.
+    Lambda 는 /var/task 가 읽기 전용이므로 AWS_LAMBDA_FUNCTION_NAME 이 있으면 기본 /tmp 사용.
+    """
+    explicit = (os.getenv("VOCAL_ANALYSIS_OUTPUT_ROOT") or "").strip()
+    if explicit:
+        return explicit
+    if (os.getenv("AWS_LAMBDA_FUNCTION_NAME") or "").strip():
+        return "/tmp/vocal_worker_output"
+    return "output"
+
+
+def _job_output_dir(job_id: str) -> str:
+    return str(Path(_output_base_dir()) / job_id)
+
 
 # 유저 음성 업로드 버킷 (공통 env 사용)
 S3_BUCKET = os.getenv("S3_BUCKET_NAME")
@@ -83,11 +172,64 @@ ANALYSIS_JOBS_TABLE = (os.getenv("ANALYSIS_JOBS_TABLE") or "analysis_jobs").stri
 ANALYSIS_JOBS_ID_COLUMN = (os.getenv("ANALYSIS_JOBS_ID_COLUMN") or "id").strip()
 ANALYSIS_JOBS_TIMESTAMP_COLUMN = (os.getenv("ANALYSIS_JOBS_TIMESTAMP_COLUMN") or "updated_at").strip()
 ANALYSIS_JOBS_RESULT_COLUMN = (os.getenv("ANALYSIS_JOBS_RESULT_COLUMN") or "result_data").strip()
+# analysis_jobs.recording_id → recordings.s3_key (큐에 s3_key 없을 때)
+ANALYSIS_JOBS_RECORDING_ID_COLUMN = (
+    os.getenv("ANALYSIS_JOBS_RECORDING_ID_COLUMN") or "recording_id"
+).strip()
+RECORDINGS_TABLE = (os.getenv("RECORDINGS_TABLE") or "recordings").strip()
+RECORDINGS_ID_COLUMN = (os.getenv("RECORDINGS_ID_COLUMN") or "id").strip()
+RECORDINGS_S3_KEY_COLUMN = (os.getenv("RECORDINGS_S3_KEY_COLUMN") or "s3_key").strip()
+INCLUDE_SCORING_SONG_ALIGNED = _env_bool("VOCAL_ANALYSIS_INCLUDE_SCORING_SONG_ALIGNED", default=True)
 
 # vocal_analysis_status enum (DB 와 동일하게 대문자)
 STATUS_ANALYZING = "ANALYZING"
 STATUS_DONE = "DONE"
 STATUS_FAILED = "FAILED"
+
+
+def resolve_s3_key_from_analysis_row(row: Dict) -> Optional[str]:
+    """analysis_jobs 한 행에서 오디오 S3 객체 키 후보 컬럼을 순서대로 탐색."""
+    for k in (
+        "s3_key",
+        "audio_s3_key",
+        "object_key",
+        "storage_path",
+        "audio_path",
+    ):
+        v = row.get(k)
+        if v is not None and str(v).strip():
+            return str(v).strip()
+    return None
+
+
+def fetch_s3_key_from_recordings(supabase, recording_id: str) -> Optional[str]:
+    """
+    recordings 테이블에서 오디오 S3 키 조회.
+    analysis_jobs의 recording_id(UUID)가 recordings.id와 매칭된다고 가정.
+    """
+    if not supabase or not recording_id:
+        return None
+    try:
+        res = (
+            supabase.table(RECORDINGS_TABLE)
+            .select(RECORDINGS_S3_KEY_COLUMN)
+            .eq(RECORDINGS_ID_COLUMN, recording_id)
+            .limit(1)
+            .execute()
+        )
+        rows = res.data or []
+        if not rows:
+            print(
+                f"⚠️  {RECORDINGS_TABLE} 행 없음: "
+                f"{RECORDINGS_ID_COLUMN}={recording_id}"
+            )
+            return None
+        v = rows[0].get(RECORDINGS_S3_KEY_COLUMN)
+        if v is not None and str(v).strip():
+            return str(v).strip()
+    except Exception as e:
+        print(f"⚠️  {RECORDINGS_TABLE} 조회 실패 (recording_id={recording_id}): {e}")
+    return None
 
 
 def _analysis_jobs_timestamp_fields() -> Dict[str, str]:
@@ -121,6 +263,7 @@ class VocalAnalysisWorker:
         self.s3_bucket = s3_bucket or S3_BUCKET
         self.db_config = db_config
         self.supabase = None
+        self.include_scoring_song_aligned = INCLUDE_SCORING_SONG_ALIGNED
         
         # 보컬 분석 파이프라인 초기화
         self.pipeline = UserVocalPipeline()
@@ -128,6 +271,11 @@ class VocalAnalysisWorker:
         print("🎤 보컬 분석 워커 초기화 완료")
         if use_aws:
             print("  - AWS 모드: S3 + DB 연동")
+            print(
+                "  - result_data.scoring_song_aligned 포함: "
+                f"{'ON' if self.include_scoring_song_aligned else 'OFF'} "
+                "(env VOCAL_ANALYSIS_INCLUDE_SCORING_SONG_ALIGNED)"
+            )
             if not self.s3_bucket:
                 raise RuntimeError("AWS 모드에서는 S3_BUCKET_NAME이 .env에 필요합니다.")
             # Supabase 클라이언트 초기화
@@ -159,19 +307,53 @@ class VocalAnalysisWorker:
         print("\n" + "="*70)
         print(f"📋 작업 처리 시작: job_id={job_id}")
         print("="*70)
-        
+
+        _tj = timing_job_token(job_id)
         temp_download_path: Optional[Path] = None
+        _job_total_started = False
         try:
+            if self.use_aws:
+                row0 = self._fetch_analysis_job_row(job_id)
+                if row0:
+                    st = (row0.get("status") or "").strip().upper()
+                    if st == STATUS_DONE:
+                        print(f"⏭️  이미 DONE — 중복 실행 스킵: job_id={job_id}")
+                        return {
+                            "status": "skipped",
+                            "job_id": job_id,
+                            "reason": "already DONE",
+                        }
+                    if not (s3_key or "").strip():
+                        s3_key = resolve_s3_key_from_analysis_row(row0) or s3_key
+                    if (
+                        not (s3_key or "").strip()
+                        and row0
+                        and ANALYSIS_JOBS_RECORDING_ID_COLUMN
+                    ):
+                        rid = row0.get(ANALYSIS_JOBS_RECORDING_ID_COLUMN)
+                        if rid is not None and str(rid).strip():
+                            s3_key = fetch_s3_key_from_recordings(
+                                self.supabase, str(rid).strip()
+                            ) or s3_key
+
             if self.use_aws:
                 try:
                     self._patch_analysis_job(job_id, {"status": STATUS_ANALYZING})
                 except Exception as db_err:
                     print(f"⚠️  DB 상태 ANALYZING 반영 실패 (행 없음·RLS 등): {db_err}")
 
+            log_phase("job_total", "START")
+            _job_total_started = True
+
             # Step 1: 오디오 파일 가져오기
             if self.use_aws:
                 if not s3_key:
-                    raise ValueError("AWS 모드에서는 s3_key가 필요합니다")
+                    raise ValueError(
+                        "AWS 모드에서는 s3_key가 필요합니다 "
+                        "(메시지/인자, analysis_jobs의 s3_key 계열 컬럼, "
+                        f"{ANALYSIS_JOBS_RECORDING_ID_COLUMN}→{RECORDINGS_TABLE}.{RECORDINGS_S3_KEY_COLUMN}, "
+                        "또는 S3_KEY 환경변수)"
+                    )
                 temp_download_path = self._download_from_s3(s3_key=s3_key, job_id=job_id)
                 audio_file = str(temp_download_path)
             else:
@@ -183,24 +365,36 @@ class VocalAnalysisWorker:
             
             # Step 2: 보컬 분석 실행
             print(f"\n[Step 2] 보컬 분석 실행")
+            out_base = _job_output_dir(job_id)
+            Path(out_base).mkdir(parents=True, exist_ok=True)
             analysis_result = self.pipeline.process(
                 audio_path=audio_file,
-                output_dir=f"output/{job_id}",
-                save_features=True
+                output_dir=out_base,
+                save_features=True,
             )
             
             # Step 3: 결과 저장 — 로컬만 JSON 파일, AWS는 DB만
             if self.use_aws:
+                log_phase("db_save", "START", note="analysis_jobs+profile_sync")
                 self._save_to_db(job_id, analysis_result)
+                log_phase("db_save", "END")
+                # Fargate/도커/Lambda 디스크 누적 방지: 파이프라인이 쓴 작업 디렉터리 제거
+                out_dir = Path(out_base)
+                if out_dir.is_dir():
+                    shutil.rmtree(out_dir, ignore_errors=True)
             else:
-                output_file = f"output/{job_id}/result.json"
+                output_file = str(Path(out_base) / "result.json")
+                log_phase("result_save", "START", note="local_json")
                 self._save_to_json(analysis_result, output_file)
+                log_phase("result_save", "END")
                 print(f"\n[Step 3] 결과 저장: {output_file}")
             
             print("\n" + "="*70)
             print(f"✅ 작업 완료: job_id={job_id}")
             print("="*70)
 
+            if _job_total_started:
+                log_phase("job_total", "END", note="status=success")
             return {
                 'status': 'success',
                 'job_id': job_id,
@@ -211,6 +405,8 @@ class VocalAnalysisWorker:
             print(f"\n❌ 작업 실패: {e}")
             import traceback
             traceback.print_exc()
+            if _job_total_started:
+                log_phase("job_total", "END", note="status=failed")
 
             # 실패 상태를 DB에 기록 (AWS 모드)
             if self.use_aws:
@@ -230,6 +426,10 @@ class VocalAnalysisWorker:
                     temp_download_path.unlink(missing_ok=True)
                 except Exception:
                     pass
+            try:
+                timing_job_reset(_tj)
+            except Exception:
+                pass
     
     def _download_from_s3(self, *, s3_key: str, job_id: str) -> Path:
         """
@@ -246,7 +446,11 @@ class VocalAnalysisWorker:
 
         s3 = boto3.client("s3")
         try:
-            s3.download_file(self.s3_bucket, s3_key, str(tmp_path))
+            log_phase("s3_download", "START", job_id=job_id)
+            try:
+                s3.download_file(self.s3_bucket, s3_key, str(tmp_path))
+            finally:
+                log_phase("s3_download", "END", job_id=job_id)
             print(f"✓ 다운로드 완료: {tmp_path}")
             return tmp_path
         except ClientError as e:
@@ -273,21 +477,29 @@ class VocalAnalysisWorker:
 
     def _fetch_job_context(self, job_id: str) -> Dict:
         """analysis_jobs 한 행에서 user_id 조회 (프로필 UPSERT용). 메타는 result_data에 넣지 않음."""
-        if not self.supabase:
+        row = self._fetch_analysis_job_row(job_id)
+        if not row:
             return {}
+        uid = row.get("user_id")
+        return {"user_id": uid} if uid is not None else {}
+
+    def _fetch_analysis_job_row(self, job_id: str) -> Optional[Dict]:
+        """analysis_jobs 전체 컬럼 조회 (상태·s3_key 후보 확인용)."""
+        if not self.supabase:
+            return None
         try:
             res = (
                 self.supabase.table(ANALYSIS_JOBS_TABLE)
-                .select("user_id")
+                .select("*")
                 .eq(ANALYSIS_JOBS_ID_COLUMN, job_id)
                 .limit(1)
                 .execute()
             )
             rows = res.data or []
-            return rows[0] if rows else {}
+            return rows[0] if rows else None
         except Exception as e:
-            print(f"⚠️  job 컨텍스트 조회 실패: {e}")
-            return {}
+            print(f"⚠️  analysis_jobs 행 조회 실패: {e}")
+            return None
 
     def _save_to_db(self, job_id: str, result: Dict):
         """
@@ -297,9 +509,10 @@ class VocalAnalysisWorker:
         print(f"  - {ANALYSIS_JOBS_ID_COLUMN}: {job_id}")
 
         result_data = build_result_data_payload(result)
-        aligned = build_scoring_song_aligned_from_pipeline_result(result)
-        if aligned:
-            result_data["scoring_song_aligned"] = aligned
+        if self.include_scoring_song_aligned:
+            aligned = build_scoring_song_aligned_from_pipeline_result(result)
+            if aligned:
+                result_data["scoring_song_aligned"] = aligned
 
         self._patch_analysis_job(
             job_id,
@@ -412,10 +625,41 @@ def test_batch_jobs(jobs: list):
 
 
 # ============================================================================
+# ECS RunTask / Lambda 디스패처용 (SQS 폴링 없이 1건 실행)
+# ============================================================================
+
+
+def run_aws_job_from_env() -> Dict:
+    """
+    환경변수 JOB_ID 필수. S3_KEY 또는 AUDIO_S3_KEY 가 있으면 우선 사용, 없으면 analysis_jobs 행에서 키 조회.
+    """
+    job_id = (os.getenv("JOB_ID") or "").strip()
+    if not job_id:
+        raise RuntimeError("JOB_ID 환경변수가 필요합니다.")
+    sk = (os.getenv("S3_KEY") or os.getenv("AUDIO_S3_KEY") or "").strip() or None
+    _log_ecs_boot(
+        "PIPELINE_HANDLER_START",
+        note="before_VocalAnalysisWorker_ctor",
+    )
+    worker = VocalAnalysisWorker(use_aws=True)
+    _log_ecs_boot(
+        "WORKER_CONSTRUCT_END",
+        note="before_process_job;includes_UserVocalPipeline_init",
+    )
+    return worker.process_job(job_id, s3_key=sk)
+
+
+# ============================================================================
 # SQS 연동 (추천 워커와 유사한 비동기 파이프라인)
 # ============================================================================
 
-def receive_message_from_queue(sqs_client, queue_url: str) -> Optional[Dict]:
+def receive_message_from_queue(
+    sqs_client,
+    queue_url: str,
+    *,
+    visibility_timeout: Optional[int],
+    wait_time_seconds: int = 20,
+) -> Optional[Dict]:
     """
     SQS Queue에서 보컬 분석 작업 메시지 수신
 
@@ -423,17 +667,19 @@ def receive_message_from_queue(sqs_client, queue_url: str) -> Optional[Dict]:
     {
         "job_id": "...",        # 필수 (analysis_jobs.id 와 동일 UUID)
         "id": "...",            # 위와 동일 (대체 필드)
-        "s3_key": "...",        # 필수 (또는 audio_s3_key)
+        "s3_key": "...",        # 선택 — 없으면 analysis_jobs 또는 recordings 에서 조회
     }
     실패 시 메시지는 삭제하지 않음 → 재시도. 반복 실패는 SQS DLQ 설정 권장.
     """
     try:
-        response = sqs_client.receive_message(
-            QueueUrl=queue_url,
-            MaxNumberOfMessages=1,
-            WaitTimeSeconds=20,      # long polling
-            VisibilityTimeout=300,   # 5분
-        )
+        recv_kw: Dict = {
+            "QueueUrl": queue_url,
+            "MaxNumberOfMessages": 1,
+            "WaitTimeSeconds": wait_time_seconds,
+        }
+        if visibility_timeout is not None:
+            recv_kw["VisibilityTimeout"] = visibility_timeout
+        response = sqs_client.receive_message(**recv_kw)
 
         messages = response.get("Messages", [])
         if not messages:
@@ -486,18 +732,30 @@ def run_worker_loop():
 
     sqs_client = boto3.client("sqs")
     worker = VocalAnalysisWorker(use_aws=True)
+    vis = _sqs_visibility_timeout_for_receive()
+    wait_s = _sqs_wait_time_seconds()
 
     print("\n" + "=" * 70)
     print("🚀 보컬 분석 SQS 워커 시작")
     print("=" * 70)
     print(f"  - Queue URL: {VOCAL_ANALYSIS_SQS_QUEUE_URL}")
+    if vis is not None:
+        print(f"  - SQS VisibilityTimeout (per message): {vis}s (env VOCAL_ANALYSIS_SQS_VISIBILITY_TIMEOUT)")
+    else:
+        print("  - SQS VisibilityTimeout: (queue default; VOCAL_ANALYSIS_SQS_VISIBILITY_TIMEOUT<=0)")
+    print(f"  - Long polling WaitTimeSeconds: {wait_s}")
     print("=" * 70 + "\n")
 
     import time
 
     while True:
         try:
-            message = receive_message_from_queue(sqs_client, VOCAL_ANALYSIS_SQS_QUEUE_URL)
+            message = receive_message_from_queue(
+                sqs_client,
+                VOCAL_ANALYSIS_SQS_QUEUE_URL,
+                visibility_timeout=vis,
+                wait_time_seconds=wait_s,
+            )
 
             if not message:
                 print("대기 중... (메시지 없음)")
@@ -505,10 +763,15 @@ def run_worker_loop():
                 continue
 
             job_id = message.get("job_id")
-            s3_key = message.get("s3_key")
+            sk_raw = message.get("s3_key")
+            s3_key = (
+                str(sk_raw).strip()
+                if sk_raw is not None and str(sk_raw).strip()
+                else None
+            )
 
-            if not job_id or not s3_key:
-                print(f"⚠️  필수 필드 누락: job_id={job_id}, s3_key={s3_key}")
+            if not job_id:
+                print("⚠️  필수 필드 누락: job_id — 메시지 삭제(재시도 무의미)")
                 delete_message_from_queue(
                     sqs_client,
                     VOCAL_ANALYSIS_SQS_QUEUE_URL,
@@ -516,14 +779,19 @@ def run_worker_loop():
                 )
                 continue
 
-            print(f"\n📨 메시지 수신: job_id={job_id}")
+            print(
+                f"\n📨 메시지 수신: job_id={job_id}"
+                + (f", s3_key={s3_key}" if s3_key else " (s3_key는 DB 조회)")
+            )
 
-            # 실제 보컬 분석 처리
-            result = worker.process_job(job_id=job_id, s3_key=s3_key)
+            # 실제 보컬 분석 처리 — s3_key 없으면 process_job 내에서 DB 조회
+            result = worker.process_job(
+                job_id=str(job_id).strip(), s3_key=s3_key
+            )
 
-            if result.get("status") == "success":
-                print(f"✅ 작업 완료: {job_id}")
-                # 성공 시에만 삭제 (실패 시 visibility timeout 후 재시도 / DLQ 정책에 맡김)
+            if result.get("status") in ("success", "skipped"):
+                print(f"✅ 작업 완료: {job_id}" + (" (skipped)" if result.get("status") == "skipped" else ""))
+                # 성공·이미 처리됨 시 삭제 (실패 시 visibility timeout 후 재시도 / DLQ 정책에 맡김)
                 delete_message_from_queue(
                     sqs_client,
                     VOCAL_ANALYSIS_SQS_QUEUE_URL,
@@ -582,42 +850,53 @@ if __name__ == "__main__":
     parser.add_argument(
         "--queue",
         action="store_true",
-        help="SQS Queue 모드 (VOCAL_ANALYSIS_SQS_QUEUE_URL에서 메시지 소비)",
+        help="(레거시) SQS 폴링 — 프로덕션은 Lambda + RunTask 및 환경변수 JOB_ID",
     )
 
     args = parser.parse_args()
 
     # 워커 실행
     try:
+        job_id_env = (os.getenv("JOB_ID") or "").strip()
+
         if args.queue:
-            # SQS 모드
             run_worker_loop()
-        else:
-            # 직접 실행 모드
-            if not args.job_id:
-                print("❌ 직접 실행 모드에서는 job_id가 필요합니다.")
-                sys.exit(1)
+        elif args.job_id:
             if args.aws:
                 if not args.s3_key:
-                    print("❌ AWS 직접 실행 모드에서는 --s3-key 가 필요합니다.")
-                    sys.exit(1)
+                    print(
+                        "ℹ️  --s3-key 생략: analysis_jobs 행에서 오디오 키 컬럼 조회를 시도합니다."
+                    )
             else:
                 if not args.audio:
-                    print("❌ 로컬 직접 실행 모드에서는 --audio 가 필요합니다.")
+                    print("❌ 로컬 모드에서는 --audio 가 필요합니다.")
                     sys.exit(1)
 
             worker = VocalAnalysisWorker(use_aws=args.aws)
             if args.aws:
-                result = worker.process_job(args.job_id, s3_key=args.s3_key)
+                sk = args.s3_key.strip() if args.s3_key else None
+                result = worker.process_job(args.job_id, s3_key=sk)
             else:
                 result = worker.process_job(args.job_id, audio_path=args.audio)
 
-            if result["status"] == "success":
+            if result["status"] in ("success", "skipped"):
                 print("\n✅ 처리 완료!")
                 sys.exit(0)
-            else:
-                print(f"\n❌ 처리 실패: {result['error']}")
-                sys.exit(1)
+            print(f"\n❌ 처리 실패: {result.get('error', 'unknown')}")
+            sys.exit(1)
+        elif job_id_env:
+            print(f"📌 ECS/JOB_ID 모드: job_id={job_id_env}")
+            result = run_aws_job_from_env()
+            if result["status"] in ("success", "skipped"):
+                print("\n✅ 처리 완료!")
+                sys.exit(0)
+            print(f"\n❌ 처리 실패: {result.get('error', 'unknown')}")
+            sys.exit(1)
+        else:
+            print(
+                "❌ Positional job_id, 또는 환경변수 JOB_ID, 또는 --queue 가 필요합니다."
+            )
+            sys.exit(1)
 
     except Exception as e:
         print(f"\n❌ 에러 발생: {e}")
