@@ -1,6 +1,6 @@
 """추천 파이프라인 스키마"""
-from pydantic import BaseModel, Field
-from typing import Any, Dict, List, Literal, Optional
+from pydantic import BaseModel
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 from datetime import datetime
 
@@ -34,23 +34,3 @@ class RecommendationFeedback(BaseModel):
     reranking_top3: List[str]
     selected_genre: Optional[Any] = None    # JSONB — 문자열 또는 객체
     selected_keyword: Optional[Any] = None  # JSONB — 문자열 또는 객체
-
-
-class Stage3SimilarPicksRequest(BaseModel):
-    period: Literal["today", "week", "month"] = "week"
-    limit: int = Field(default=10, ge=1, le=100)
-    interaction_since: Optional[datetime] = None
-    interaction_until: Optional[datetime] = None
-
-
-class Stage3PickItem(BaseModel):
-    song_id: str
-    score: float
-
-
-class Stage3SimilarPicksResponse(BaseModel):
-    """source: stage3 성공 / fallback_stage2 는 최근 DONE job 의 2차 결과 / unconfigured 는 URL 미설정."""
-
-    source: Literal["stage3", "fallback_stage2", "unconfigured"]
-    results: List[Stage3PickItem]
-    detail: Optional[str] = None

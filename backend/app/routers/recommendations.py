@@ -7,7 +7,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import settings
 from app.database import get_db
 from app.dependencies.auth import get_current_user
 from app.models.user import User
@@ -16,79 +15,12 @@ from app.schemas.recommendation import (
     RecommendationCreate,
     RecommendationFeedback,
     RecommendationStatusResponse,
-    Stage3PickItem,
-    Stage3SimilarPicksRequest,
-    Stage3SimilarPicksResponse,
-)
-from app.services.stage3_client import (
-    fetch_stage3_similar_voice_picks,
-    flatten_stage2_recommended_songs,
 )
 from app.utils.aws import send_sqs_message
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/recommendations", tags=["Recommendations"])
-
-
-@router.post(
-    "/stage3/similar-voice-picks",
-    response_model=Stage3SimilarPicksResponse,
-)
-async def stage3_similar_voice_picks(
-    body: Stage3SimilarPicksRequest,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """
-    ECS stage3-api(협업 필터링) 호출. 실패·미설정 시 최근 DONE 인 2차 추천(`recommended_songs`)을 폴백.
-    `STAGE3_API_BASE_URL` 비어 있으면 stage3 호출 없이 폴백만 시도.
-    """
-    uid = str(current_user.id)
-    picks = await fetch_stage3_similar_voice_picks(
-        user_id=uid,
-        period=body.period,
-        limit=body.limit,
-        interaction_since=body.interaction_since,
-        interaction_until=body.interaction_until,
-    )
-    if picks is not None:
-        return Stage3SimilarPicksResponse(
-            source="stage3",
-            results=[Stage3PickItem(**x) for x in picks],
-        )
-
-    result = await db.execute(
-        select(Recommendation)
-        .where(
-            Recommendation.user_id == current_user.id,
-            Recommendation.status == "DONE",
-            Recommendation.recommended_songs.is_not(None),
-        )
-        .order_by(Recommendation.updated_at.desc())
-        .limit(1)
-    )
-    job = result.scalar_one_or_none()
-    if job and job.recommended_songs:
-        flat = flatten_stage2_recommended_songs(job.recommended_songs, body.limit)
-        if flat:
-            return Stage3SimilarPicksResponse(
-                source="fallback_stage2",
-                results=[Stage3PickItem(song_id=sid, score=sc) for sid, sc in flat],
-                detail="stage3_unavailable_or_timeout",
-            )
-
-    if not (settings.STAGE3_API_BASE_URL or "").strip():
-        return Stage3SimilarPicksResponse(
-            source="unconfigured",
-            results=[],
-            detail="STAGE3_API_BASE_URL not set",
-        )
-    return Stage3SimilarPicksResponse(
-        source="fallback_stage2",
-        results=[],
-        detail="stage3_failed_no_stage2_cache",
-    )
 
 
 @router.post("", response_model=RecommendationStatusResponse, status_code=status.HTTP_201_CREATED)
