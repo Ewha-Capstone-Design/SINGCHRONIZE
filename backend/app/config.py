@@ -68,6 +68,10 @@ class Settings(BaseSettings):
     # SQS — 보컬 분석 전용 큐 (AI 워커: vocal_analysis_worker)
     VOCAL_ANALYSIS_SQS_QUEUE_URL: str = ""
 
+    # 3차 협업 필터링 (ECS stage3-api, ALB URL 등 — 비우면 API에서 unconfigured)
+    STAGE3_API_BASE_URL: str = ""
+    STAGE3_API_TIMEOUT_SECONDS: float = 2.0
+
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=True,
