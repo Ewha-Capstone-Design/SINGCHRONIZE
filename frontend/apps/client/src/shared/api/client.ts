@@ -26,6 +26,20 @@ export const publicClient = createClient<paths>({ baseUrl: BASE_URL });
 
 export const privateClient = createClient<paths>({ baseUrl: BASE_URL });
 
+let refreshPromise: Promise<{
+  access_token: string;
+  refresh_token: string;
+} | null> | null = null;
+
+const redirectToLogin = () => {
+  if (typeof window !== 'undefined') {
+    const next = encodeURIComponent(
+      `${window.location.pathname}${window.location.search}`,
+    );
+    window.location.replace(`/login?next=${next}`);
+  }
+};
+
 privateClient.use({
   onRequest({ request }) {
     const token = tokenStore.getAccess();
@@ -36,13 +50,6 @@ privateClient.use({
   async onResponse({ response, request }) {
     if (response.status !== 401) return response;
 
-    const redirectToLogin = () => {
-      if (typeof window !== 'undefined') {
-        const next = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
-        window.location.replace(`/login?next=${next}`);
-      }
-    };
-
     const refreshToken = tokenStore.getRefresh();
     if (!refreshToken) {
       tokenStore.clear();
@@ -50,21 +57,31 @@ privateClient.use({
       return response;
     }
 
-    const { data, error } = await publicClient.POST('/api/v1/auth/refresh', {
-      headers: { Authorization: `Bearer ${refreshToken}` },
-    });
-
-    if (error) {
-      tokenStore.clear();
-      redirectToLogin();
-      return response;
+    if (!refreshPromise) {
+      refreshPromise = publicClient
+        .POST('/api/v1/auth/refresh', {
+          headers: { Authorization: `Bearer ${refreshToken}` },
+        })
+        .then(({ data, error }) => {
+          if (error || !data) {
+            tokenStore.clear();
+            redirectToLogin();
+            return null;
+          }
+          tokenStore.setAccess(data.access_token);
+          tokenStore.setRefresh(data.refresh_token);
+          return data;
+        })
+        .finally(() => {
+          refreshPromise = null;
+        });
     }
 
-    tokenStore.setAccess(data.access_token);
-    tokenStore.setRefresh(data.refresh_token);
+    const tokens = await refreshPromise;
+    if (!tokens) return response;
 
     const retryHeaders = new Headers(request.headers);
-    retryHeaders.set('Authorization', `Bearer ${data.access_token}`);
+    retryHeaders.set('Authorization', `Bearer ${tokens.access_token}`);
     return fetch(new Request(request, { headers: retryHeaders }));
   },
 });
