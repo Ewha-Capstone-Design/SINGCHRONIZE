@@ -8,7 +8,7 @@ import SnsAccountItem from './SnsAccountItem';
 
 import { useWithdraw } from '@/entities/auth';
 import { useMe } from '@/entities/user';
-import { toUserUiType, toSnsAccountsUiType } from '@/entities/user/model/types';
+import { toSnsAccountsUiType } from '@/entities/user/model/types';
 
 const ProfileMain = () => {
   const { go, ROUTES } = useNavigate();
@@ -23,8 +23,7 @@ const ProfileMain = () => {
     return <div className='min-h-screen text-white flex items-center justify-center' />;
   }
 
-  const profile = toUserUiType(userData);
-  const snsAccounts = toSnsAccountsUiType(profile.linkedProviders);
+  const snsAccounts = toSnsAccountsUiType(userData.linkedProviders);
 
   const handleWithdraw = () => {
     // TODO: 탈퇴 확인 커스텀 팝업 추가
@@ -57,7 +56,7 @@ const ProfileMain = () => {
   return (
     <div className='min-h-screen text-white'>
       <div className='px-8 flex items-center h-101.5 bg-linear-to-b from-yellow-900/40 to-bg'>
-        <ProfileCard profile={profile} />
+        <ProfileCard profile={userData} />
       </div>
 
       <div className='px-8 pb-8 grid grid-cols-1 lg:grid-cols-3 gap-8'>

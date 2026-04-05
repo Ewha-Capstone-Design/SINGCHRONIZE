@@ -11,7 +11,7 @@ export const MOCK_BUSKING_LIST: BuskingUiType[] = [
     status: 'live',
     thumbnail: '',
     nickname: '루드',
-    listenerCount: 98,
+    totalViewers: 98,
     profileImage: '',
   },
   {
@@ -19,7 +19,7 @@ export const MOCK_BUSKING_LIST: BuskingUiType[] = [
     status: 'record',
     thumbnail: '',
     nickname: '루드',
-    listenerCount: 54,
+    totalViewers: 54,
     profileImage: '',
   },
   {
@@ -28,7 +28,7 @@ export const MOCK_BUSKING_LIST: BuskingUiType[] = [
     thumbnail: '',
     profileImage: '',
     nickname: '유지니',
-    listenerCount: 31,
+    totalViewers: 31,
   },
   {
     id: '4',
@@ -36,7 +36,7 @@ export const MOCK_BUSKING_LIST: BuskingUiType[] = [
     thumbnail: '',
     profileImage: '',
     nickname: 'quuury28',
-    listenerCount: 65,
+    totalViewers: 65,
   },
   {
     id: '5',
@@ -44,7 +44,7 @@ export const MOCK_BUSKING_LIST: BuskingUiType[] = [
     thumbnail: '',
     profileImage: '',
     nickname: '김보라',
-    listenerCount: 27,
+    totalViewers: 27,
   },
   {
     id: '6',
@@ -52,7 +52,7 @@ export const MOCK_BUSKING_LIST: BuskingUiType[] = [
     thumbnail: '',
     profileImage: '',
     nickname: '소라',
-    listenerCount: 98,
+    totalViewers: 98,
   },
   {
     id: '7',
@@ -60,7 +60,7 @@ export const MOCK_BUSKING_LIST: BuskingUiType[] = [
     thumbnail: '',
     profileImage: '',
     nickname: '별사탕',
-    listenerCount: 77,
+    totalViewers: 77,
   },
   {
     id: '8',
@@ -68,7 +68,7 @@ export const MOCK_BUSKING_LIST: BuskingUiType[] = [
     thumbnail: '',
     profileImage: '',
     nickname: '김태진',
-    listenerCount: 19,
+    totalViewers: 19,
   },
 ];
 
@@ -102,9 +102,9 @@ export const MOCK_CHAT: ChatMessageType[] = [
 ];
 
 export const MOCK_BUSKING_RESULT: BuskingResultItemType[] = [
-  { id: 1, rank: 1, title: '이상비행', artist: '한로로', thumbnail: '', votePercent: 86 },
+  { id: '1', rank: 1, title: '이상비행', artist: '한로로', thumbnail: '', votePercent: 86 },
   {
-    id: 2,
+    id: '2',
     rank: 2,
     title: '주저하는 연인..',
     artist: '잔나비',
@@ -112,7 +112,7 @@ export const MOCK_BUSKING_RESULT: BuskingResultItemType[] = [
     votePercent: 60,
   },
   {
-    id: 3,
+    id: '3',
     rank: 3,
     title: '자몽살구클럽',
     artist: '한로로',
@@ -120,12 +120,12 @@ export const MOCK_BUSKING_RESULT: BuskingResultItemType[] = [
     votePercent: 92,
   },
   {
-    id: 4,
+    id: '4',
     rank: 4,
     title: '바이, 썸머',
     artist: '아이유',
     thumbnail: '',
     votePercent: 32,
   },
-  { id: 5, rank: 5, title: '파도', artist: '새소년', thumbnail: '', votePercent: 12 },
+  { id: '5', rank: 5, title: '파도', artist: '새소년', thumbnail: '', votePercent: 12 },
 ];

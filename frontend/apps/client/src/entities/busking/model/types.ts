@@ -1,12 +1,25 @@
+import type { components } from '@singchronize/api';
+
+export type BuskingRoomApiType = components['schemas']['BuskingRoomResponse'];
+export type BuskingRoomDetailApiType = components['schemas']['BuskingRoomDetailResponse'];
+export type BuskingRoomCreateApiType = components['schemas']['BuskingRoomCreateResponse'];
+export type BuskingRoomCreateBody = components['schemas']['BuskingRoomCreate'];
+export type BuskingResultApiType = components['schemas']['BuskingResultResponse'];
+export type ThumbnailPresignedApiType =
+  components['schemas']['ThumbnailPresignedResponse'];
+export type LiveKitJoinApiType = components['schemas']['LiveKitJoinResponse'];
+export type SetlistItemApiType = components['schemas']['SetlistItemResponse'];
+export type SetlistItemCreateBody = components['schemas']['SetlistItemCreate'];
+
 export type BuskingType = 'live' | 'record';
 
 export type BuskingUiType = {
   id: string;
   status: BuskingType;
-  thumbnail: string;
+  thumbnail: string | null;
   nickname: string;
   profileImage: string;
-  listenerCount: number;
+  totalViewers: number;
 };
 
 export type SetlistType = {
@@ -25,10 +38,10 @@ export type ChatMessageType = {
 };
 
 export type BuskingResultItemType = {
-  id: string | number;
+  id: string;
   rank: number;
   title: string;
   artist: string;
-  thumbnail?: string;
+  thumbnail?: string | null;
   votePercent: number;
 };

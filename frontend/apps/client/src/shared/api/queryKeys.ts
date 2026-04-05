@@ -8,4 +8,7 @@ export const queryKeys = {
   folders: ['library', 'folders'] as const,
   wishlist: (folderId?: string) => ['library', 'wishlist', folderId ?? 'all'] as const,
   history: ['library', 'history'] as const,
+  buskingRooms: ['busking', 'rooms'] as const,
+  buskingRoom: (roomId: string) => ['busking', 'rooms', roomId] as const,
+  buskingResult: (roomId: string) => ['busking', 'rooms', roomId, 'result'] as const,
 };

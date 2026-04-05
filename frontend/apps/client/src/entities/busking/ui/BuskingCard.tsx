@@ -65,7 +65,7 @@ const bottomAreaClassMap: Record<BuskingCardVariant, string> = {
 };
 
 const BuskingCard = ({ variant = 'md', item, onClick }: BuskingCardProps) => {
-  const { status, thumbnail, profileImage, nickname, listenerCount } = item;
+  const { status, thumbnail, profileImage, nickname, totalViewers } = item;
 
   return (
     <button
@@ -137,7 +137,7 @@ const BuskingCard = ({ variant = 'md', item, onClick }: BuskingCardProps) => {
               {nickname}
             </p>
             <p className={cn('truncate', listenerTypoMap[variant])}>
-              {listenerCount}명이 같이 듣는 중
+              {totalViewers}명이 같이 듣는 중
             </p>
           </div>
         </div>

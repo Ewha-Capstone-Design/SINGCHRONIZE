@@ -4,13 +4,27 @@ import { useState, useRef, useEffect } from 'react';
 import type { ChatMessageType } from '@/entities/busking/model/types';
 import { InputField } from '@singchronize/ui';
 
-const LiveChat = ({ messages }: { messages: ChatMessageType[] }) => {
+type LiveChatProps = {
+  messages: ChatMessageType[];
+  onSend?: (message: string) => void;
+};
+
+const LiveChat = ({ messages, onSend }: LiveChatProps) => {
   const [input, setInput] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== 'Enter') return;
+    if (e.nativeEvent.isComposing) return; // 한글 조합 중 엔터 방지
+    const trimmed = input.trim();
+    if (!trimmed) return;
+    onSend?.(trimmed);
+    setInput('');
+  };
 
   return (
     <div className='p-6 pt-8 flex flex-col gap-8 h-full bg-gray-900'>
@@ -42,6 +56,7 @@ const LiveChat = ({ messages }: { messages: ChatMessageType[] }) => {
       <InputField
         value={input}
         onChange={(e) => setInput(e.target.value)}
+        onKeyDown={handleKeyDown}
         placeholder='채팅을 입력하세요'
       />
     </div>

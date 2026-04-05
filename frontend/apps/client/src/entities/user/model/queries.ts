@@ -1,12 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userApi } from '../api/userApi';
 import { queryKeys } from '@/shared/api/queryKeys';
+import { toUserUiType } from './types';
 
 // GET: 사용자 정보
 export const useMe = () =>
   useQuery({
     queryKey: queryKeys.me,
     queryFn: userApi.getMe,
+    select: toUserUiType,
   });
 
 // PATCH: 닉네임 수정
