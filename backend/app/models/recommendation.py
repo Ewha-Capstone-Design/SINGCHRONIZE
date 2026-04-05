@@ -1,7 +1,7 @@
 """Recommendation 모델 — 추천 파이프라인 로그"""
 import uuid
 from sqlalchemy import Column, String, Text, DateTime, ForeignKey, Uuid
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, ENUM
 from sqlalchemy.sql import func
 
 from app.database import Base
@@ -15,7 +15,8 @@ class Recommendation(Base):
     base_report_id = Column(Uuid, nullable=True)   # analysis_jobs 참조 (선택)
 
     # QUEUED | RUNNING_STAGE1 | WAITING_FEEDBACK | RUNNING_STAGE2 | DONE | FAILED
-    status = Column(String(30), nullable=True)
+    status = Column(ENUM('QUEUED', 'RUNNING_STAGE1', 'WAITING_FEEDBACK', 'RUNNING_STAGE2', 'DONE', 'FAILED',
+                         name='recommendation_status', create_type=False), nullable=True)
 
     # 워커가 채우는 추천 결과 (DB 컬럼명과 일치)
     first_recommended_songs = Column(JSONB, nullable=True)   # 1차 상위 3곡

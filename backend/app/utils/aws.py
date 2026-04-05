@@ -70,6 +70,7 @@ def send_vocal_sqs_message(message_body: str) -> str | None:
             MessageBody=message_body,
         )
     except ClientError as e:
+        print(e.response)
         print(f"❌ 보컬 SQS 메시지 전송 실패: {e}")
         return None
     return response["MessageId"]
