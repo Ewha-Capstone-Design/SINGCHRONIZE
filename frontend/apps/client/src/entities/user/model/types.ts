@@ -7,6 +7,12 @@ export type BlockSongRequest = components['schemas']['BlockSongRequest'];
 export type UserMeResponse = components['schemas']['UserMeResponse'];
 export type UserResponse = components['schemas']['UserResponse'];
 
+export interface FavoriteArtistUiType {
+  id: number;
+  name: string;
+  imageUrl: string | null;
+}
+
 export interface UserUiType {
   id: string;
   nickname: string;
@@ -15,6 +21,7 @@ export interface UserUiType {
   bio: string;
   provider: string;
   linkedProviders: string[];
+  favoriteArtists: FavoriteArtistUiType[];
 }
 
 export interface SnsAccountUiType {
@@ -31,6 +38,11 @@ export const toUserUiType = (api: UserMeResponse): UserUiType => ({
   bio: api.bio ?? '',
   provider: api.provider,
   linkedProviders: api.linked_providers,
+  favoriteArtists: (api.favorite_singers ?? []).map((singer) => ({
+    id: singer.singer_id,
+    name: singer.name,
+    imageUrl: singer.photo_url ?? null,
+  })),
 });
 
 export const toSnsAccountsUiType = (linkedProviders: string[]): SnsAccountUiType[] =>

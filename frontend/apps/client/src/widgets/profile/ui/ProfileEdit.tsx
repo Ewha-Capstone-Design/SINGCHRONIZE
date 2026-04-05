@@ -47,20 +47,16 @@ const ProfileEdit = () => {
 
     setForm({
       nickname: userData.nickname,
-      bio: userData.bio ?? '',
-      favoriteArtists: userData.favorite_singers.map((singer) => ({
-        id: singer.singer_id,
-        name: singer.name,
-        imageUrl: singer.photo_url ?? null,
-      })),
+      bio: userData.bio,
+      favoriteArtists: userData.favoriteArtists,
     });
 
     clearThumbnail();
   }, [userData, clearThumbnail]);
 
   const snsAccounts = useMemo(() => {
-    return toSnsAccountsUiType(userData?.linked_providers ?? []);
-  }, [userData?.linked_providers]);
+    return toSnsAccountsUiType(userData?.linkedProviders ?? []);
+  }, [userData?.linkedProviders]);
 
   const handleNicknameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -113,10 +109,10 @@ const ProfileEdit = () => {
     const trimmedBio = form.bio.trim();
 
     const isNicknameChanged = trimmedNickname !== userData.nickname;
-    const isBioChanged = trimmedBio !== (userData.bio ?? '');
+    const isBioChanged = trimmedBio !== userData.bio;
     const isImageChanged = !!thumbnail?.file;
 
-    const originalArtistIds = userData.favorite_singers.map((artist) => artist.singer_id);
+    const originalArtistIds = userData.favoriteArtists.map((artist) => artist.id);
     const selectedArtistIds = form.favoriteArtists.map((artist) => artist.id);
     const isFavoriteArtistsChanged = !isSameArtistIds(
       originalArtistIds,
@@ -160,7 +156,7 @@ const ProfileEdit = () => {
     );
   }
 
-  const profileImageSrc = preview ?? userData.profile_img ?? null;
+  const profileImageSrc = preview ?? userData.profileImage ?? null;
 
   return (
     <div className='min-h-screen text-white'>
