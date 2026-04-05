@@ -7,7 +7,8 @@ import { LikeIconButton, SongListItem } from '@/entities/song/ui';
 import type { SongUiType } from '@/entities/song/model/types';
 
 import { useSearchMusic } from '@/entities/song';
-import { useAddWishlistItem } from '@/entities/library';
+import { useAddWishlistItem, useDeleteWishlistItem, useWishlist } from '@/entities/library';
+import useDebounce from '@/shared/hooks/useDebounce';
 
 type AddFavoriteModalProps = {
   folderId?: string;
@@ -16,31 +17,42 @@ type AddFavoriteModalProps = {
 
 const AddFavoriteModal = ({ folderId, onClose }: AddFavoriteModalProps) => {
   const [query, setQuery] = useState('');
-  const [likedIds, setLikedIds] = useState<Set<string>>(() => new Set());
+  const debouncedQuery = useDebounce(query);
+  const [addingIds, setAddingIds] = useState<Set<string>>(() => new Set());
 
-  const { mutate: addWishlistItem, isPending: isAdding } = useAddWishlistItem();
-  const { data: searchedItems = [] } = useSearchMusic(query);
+  const { mutate: addWishlistItem } = useAddWishlistItem();
+  const { mutate: deleteWishlistItem } = useDeleteWishlistItem();
+  const { data: searchedItems = [] } = useSearchMusic(debouncedQuery);
+  const { data: wishlistItems = [] } = useWishlist(folderId);
 
   const toggleLike = (song: SongUiType) => {
     const id = String(song.id);
-    setLikedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-        addWishlistItem({
-          song_data: {
-            name: song.title,
-            artist: song.artist,
-            album_image: song.thumbnail ?? null,
-            uri: id,
-          } as unknown as Record<string, never>,
-          folder_id: folderId,
-        });
-      }
-      return next;
-    });
+    if (addingIds.has(id)) return;
+
+    const existing = wishlistItems.find((item) => item.songId === id);
+    if (existing) {
+      deleteWishlistItem(existing.itemId);
+      return;
+    }
+
+    setAddingIds((prev) => new Set(prev).add(id));
+
+    addWishlistItem(
+      {
+        song_data: {
+          name: song.title,
+          artist: song.artist,
+          album_image: song.thumbnail ?? null,
+          uri: id,
+        } as unknown as Record<string, never>,
+        folder_id: folderId,
+      },
+      {
+        onSettled: () => {
+          setAddingIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
+        },
+      },
+    );
   };
 
   return (
@@ -74,9 +86,9 @@ const AddFavoriteModal = ({ folderId, onClose }: AddFavoriteModalProps) => {
                 thumbnail={song.thumbnail ?? ''}
                 rightSlot={
                   <LikeIconButton
-                    isLiked={likedIds.has(String(song.id))}
+                    isLiked={wishlistItems.some((item) => item.songId === String(song.id))}
                     onClick={() => toggleLike(song)}
-                    disabled={isAdding}
+                    disabled={addingIds.has(String(song.id))}
                   />
                 }
               />

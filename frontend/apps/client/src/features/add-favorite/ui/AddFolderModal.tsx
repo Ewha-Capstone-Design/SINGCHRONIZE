@@ -9,6 +9,7 @@ import type { SongUiType } from '@/entities/song/model/types';
 
 import { useSearchMusic } from '@/entities/song';
 import { useCreateFolder, useAddWishlistItem } from '@/entities/library';
+import useDebounce from '@/shared/hooks/useDebounce';
 
 type AddFolderModalProps = {
   onClose: () => void;
@@ -22,7 +23,8 @@ const AddFolderModal = ({ onClose }: AddFolderModalProps) => {
   const { mutate: createFolder, isPending: isCreatingFolder } = useCreateFolder();
   const { mutate: addWishlistItem } = useAddWishlistItem();
 
-  const { data: searchedItems = [] } = useSearchMusic(query);
+  const debouncedQuery = useDebounce(query);
+  const { data: searchedItems = [] } = useSearchMusic(debouncedQuery);
 
   const toggle = (song: SongUiType) => {
     const id = String(song.id);
