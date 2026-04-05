@@ -4,12 +4,12 @@ import { useState } from 'react';
 import { InputField, Button } from '@singchronize/ui';
 import { BaseModal } from '@/shared/components';
 import { IcCheck, IcPlus } from '@/shared/assets/icons';
+import useDebounce from '@/shared/hooks/useDebounce';
 import { SongListItem } from '@/entities/song/ui';
 import type { SongUiType } from '@/entities/song/model/types';
 
 import { useSearchMusic } from '@/entities/song';
 import { useCreateFolder, useAddWishlistItem } from '@/entities/library';
-import useDebounce from '@/shared/hooks/useDebounce';
 
 type AddFolderModalProps = {
   onClose: () => void;

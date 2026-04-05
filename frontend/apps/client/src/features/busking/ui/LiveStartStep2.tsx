@@ -4,12 +4,12 @@ import { useMemo } from 'react';
 import { Button, InputField } from '@singchronize/ui';
 import { cn } from '@/shared/lib/cn';
 import { IcCheck, IcPlus } from '@/shared/assets/icons';
+import useDebounce from '@/shared/hooks/useDebounce';
 import { SortableSongList } from '@/features/ranking';
 import { SongListItem } from '@/entities/song/ui';
 import type { SongUiType } from '@/entities/song/model/types';
 
 import { useSearchMusic } from '@/entities/song';
-import useDebounce from '@/shared/hooks/useDebounce';
 
 const MIN_SETLIST = 3;
 const MAX_SETLIST = 5;

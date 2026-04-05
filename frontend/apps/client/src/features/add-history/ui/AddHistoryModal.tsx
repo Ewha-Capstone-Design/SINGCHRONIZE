@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { InputField, Button, TextAreaField } from '@singchronize/ui';
 import { BackButton, BaseModal, SelectChip } from '@/shared/components';
 import { IcPlus } from '@/shared/assets/icons';
+import useDebounce from '@/shared/hooks/useDebounce';
 import { SongListItem } from '@/entities/song/ui';
 import type { SongUiType } from '@/entities/song/model/types';
 import { HISTORY_TAG_OPTIONS, HistoryTagKeyType } from '@/entities/library/model/tags';
@@ -11,7 +12,6 @@ import type { HistoryItemUiType } from '@/entities/library';
 
 import { useSearchMusic } from '@/entities/song';
 import { useCreateHistory, useUpdateHistory } from '@/entities/library';
-import useDebounce from '@/shared/hooks/useDebounce';
 
 type AddHistoryModalProps = {
   onClose: () => void;
@@ -74,7 +74,7 @@ const AddHistoryModal = ({ onClose, initialHistory }: AddHistoryModalProps) => {
       updateHistory(
         {
           archiveId: initialHistory.historyId,
-          body: { tags: Array.from(selectedTags), memo: memo || null },
+          body: { tags: Array.from(selectedTags), memo },
         },
         { onSuccess: onClose },
       );

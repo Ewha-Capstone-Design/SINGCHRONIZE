@@ -5,12 +5,12 @@ import { Button, InputField } from '@singchronize/ui';
 import { cn } from '@/shared/lib/cn';
 import { useModal, useClickOutside } from '@/shared/hooks';
 import { IcCheck, IcPlus } from '@/shared/assets/icons';
+import useDebounce from '@/shared/hooks/useDebounce';
 import { DateSelectButton, DateSelectModal } from '@/features/date-select';
 import { SongListItem } from '@/entities/song/ui';
 import type { SongUiType } from '@/entities/song/model/types';
 
 import { useSearchMusic } from '@/entities/song';
-import useDebounce from '@/shared/hooks/useDebounce';
 
 const MAX_SETLIST = 1;
 
