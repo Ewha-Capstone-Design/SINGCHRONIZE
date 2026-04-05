@@ -10,6 +10,7 @@ import { SongListItem } from '@/entities/song/ui';
 import type { SongUiType } from '@/entities/song/model/types';
 
 import { useSearchMusic } from '@/entities/song';
+import useDebounce from '@/shared/hooks/useDebounce';
 
 const MAX_SETLIST = 1;
 
@@ -43,7 +44,8 @@ export const RecordUploadStep2 = ({
   const dateWrapperRef = useRef<HTMLDivElement>(null);
   useClickOutside(dateWrapperRef, closeDate);
 
-  const { data: searchedSongs = [] } = useSearchMusic(keyword);
+  const debouncedKeyword = useDebounce(keyword);
+  const { data: searchedSongs = [] } = useSearchMusic(debouncedKeyword);
 
   const canSubmit = selectedSongs.length >= 1;
 

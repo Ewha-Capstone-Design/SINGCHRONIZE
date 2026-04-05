@@ -11,6 +11,7 @@ import type { HistoryItemUiType } from '@/entities/library';
 
 import { useSearchMusic } from '@/entities/song';
 import { useCreateHistory, useUpdateHistory } from '@/entities/library';
+import useDebounce from '@/shared/hooks/useDebounce';
 
 type AddHistoryModalProps = {
   onClose: () => void;
@@ -44,7 +45,8 @@ const AddHistoryModal = ({ onClose, initialHistory }: AddHistoryModalProps) => {
   const { mutate: updateHistory, isPending: isUpdating } = useUpdateHistory();
   const isPending = isCreating || isUpdating;
 
-  const { data: searchedItems = [] } = useSearchMusic(query);
+  const debouncedQuery = useDebounce(query);
+  const { data: searchedItems = [] } = useSearchMusic(debouncedQuery);
 
   const toggleTag = (key: HistoryTagKeyType) => {
     setSelectedTags((prev) => {

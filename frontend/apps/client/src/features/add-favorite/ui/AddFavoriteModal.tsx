@@ -8,6 +8,7 @@ import type { SongUiType } from '@/entities/song/model/types';
 
 import { useSearchMusic } from '@/entities/song';
 import { useAddWishlistItem, useDeleteWishlistItem, useWishlist } from '@/entities/library';
+import useDebounce from '@/shared/hooks/useDebounce';
 
 type AddFavoriteModalProps = {
   folderId?: string;
@@ -16,11 +17,12 @@ type AddFavoriteModalProps = {
 
 const AddFavoriteModal = ({ folderId, onClose }: AddFavoriteModalProps) => {
   const [query, setQuery] = useState('');
+  const debouncedQuery = useDebounce(query);
   const [addingIds, setAddingIds] = useState<Set<string>>(() => new Set());
 
   const { mutate: addWishlistItem } = useAddWishlistItem();
   const { mutate: deleteWishlistItem } = useDeleteWishlistItem();
-  const { data: searchedItems = [] } = useSearchMusic(query);
+  const { data: searchedItems = [] } = useSearchMusic(debouncedQuery);
   const { data: wishlistItems = [] } = useWishlist(folderId);
 
   const toggleLike = (song: SongUiType) => {

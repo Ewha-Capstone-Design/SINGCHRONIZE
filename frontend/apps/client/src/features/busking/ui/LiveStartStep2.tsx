@@ -9,6 +9,7 @@ import { SongListItem } from '@/entities/song/ui';
 import type { SongUiType } from '@/entities/song/model/types';
 
 import { useSearchMusic } from '@/entities/song';
+import useDebounce from '@/shared/hooks/useDebounce';
 
 const MIN_SETLIST = 3;
 const MAX_SETLIST = 5;
@@ -37,7 +38,8 @@ export const LiveStartStep2 = ({
     [selectedSongs]
   );
 
-  const { data: searchedSongs = [] } = useSearchMusic(keyword);
+  const debouncedKeyword = useDebounce(keyword);
+  const { data: searchedSongs = [] } = useSearchMusic(debouncedKeyword);
 
   const canStart = selectedSongs.length >= MIN_SETLIST;
 
