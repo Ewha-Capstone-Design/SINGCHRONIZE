@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Button } from '@singchronize/ui';
 import { useModal } from '@/shared/hooks';
@@ -13,36 +13,64 @@ import { useBuskingSocket } from '@/features/busking/hooks/useBuskingSocket';
 import { BuskingBadge } from '@/entities/busking/ui';
 
 import {
-  MOCK_SETLIST,
-  MOCK_CHAT,
-  MOCK_BUSKING_LIST,
-} from '@/entities/busking/model/mock';
-import { MOCK_PROFILE } from '@/entities/user/model/mock';
-
-const MOCK_ROLE = 'viewer' as 'viewer' | 'streamer';
+  useBuskingRoom,
+  useBuskingRooms,
+  useEndBuskingRoom,
+  useJoinBuskingRoom,
+  useAdvanceSetlist,
+} from '@/entities/busking';
+import type { ChatMessageType } from '@/entities/busking';
+import { useMe } from '@/entities/user';
 
 const BuskingViewerPage = () => {
   const { go, ROUTES, dynamic } = useNavigate();
   const params = useParams();
   const searchParams = useSearchParams();
 
-  const roomId = params.roomId as string;
+  const roomId = params.id as string;
   const isRecord = searchParams.get('type') === 'record';
 
-  const [showVote, setShowVote] = useState(true);
+  const [messages, setMessages] = useState<ChatMessageType[]>([]);
+  const [showVote] = useState(true);
 
   const endModal = useModal();
   const viewerEndModal = useModal();
 
-  const user = MOCK_PROFILE;
-  const isStreamer = !isRecord && MOCK_ROLE === 'streamer';
+  const { data: me } = useMe();
+  const { data: room } = useBuskingRoom(roomId);
+  const { data: rooms = [] } = useBuskingRooms();
+  const { mutate: endRoom } = useEndBuskingRoom();
+  const { mutate: joinRoom } = useJoinBuskingRoom();
+  const { mutate: advanceSetlist } = useAdvanceSetlist();
 
-  useBuskingSocket({
+  const isStreamer = !isRecord && !!me && !!room && me.id === room.host_id;
+
+  // 시청자 입장 시 LiveKit 토큰 발급
+  useEffect(() => {
+    if (!isRecord && !isStreamer && roomId) joinRoom(roomId);
+  }, [isRecord, isStreamer, roomId, joinRoom]);
+
+  const handleMessage = useCallback(
+    (payload: { userId: string; nickname: string; message: string }) => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `${Date.now()}-${payload.userId}`,
+          username: payload.nickname,
+          message: payload.message,
+        },
+      ]);
+    },
+    [],
+  );
+
+  const { endLive, sendMessage } = useBuskingSocket({
     roomId,
     enabled: !isRecord,
     onLiveEnd: () => {
       if (!isStreamer) viewerEndModal.openModal();
     },
+    onMessage: handleMessage,
   });
 
   // 스트리머: 종료 버튼 → LiveEndModal 오픈
@@ -52,8 +80,10 @@ const BuskingViewerPage = () => {
 
   // 스트리머: 모달에서 확인 → 소켓 종료 후 결과 페이지
   const handleConfirmEndLive = () => {
-    // endLive(); // TODO: 웹소켓 기능 구현 시 주석 해제
-    go(dynamic.liveRoomEnd(roomId, 'live'));
+    endLive();
+    endRoom(roomId, {
+      onSuccess: () => go(dynamic.liveRoomEnd(roomId, 'live')),
+    });
   };
 
   // 시청자: 방송 종료 알림 모달에서 확인
@@ -68,7 +98,7 @@ const BuskingViewerPage = () => {
         'flex h-screen',
         'bg-bg bg-no-repeat',
         'bg-[radial-gradient(50%_50%_at_50%_50%,rgba(200,255,0,0.20)_0%,rgba(22,22,22,0.20)_100%)]',
-        'bg-size-[120%_180%] bg-position-[50%_50%]'
+        'bg-size-[120%_180%] bg-position-[50%_50%]',
       )}
     >
       {/* 메인 영역 */}
@@ -79,17 +109,19 @@ const BuskingViewerPage = () => {
 
           <div className='ml-5 flex gap-2'>
             <div className='size-12 rounded-full bg-gray-600 border border-accent-600 shrink-0 overflow-hidden'>
-              {user.profileImage && (
+              {me?.profileImage && (
                 <img
-                  src={user.profileImage}
-                  alt={user.nickname}
+                  src={me.profileImage}
+                  alt={me.nickname}
                   className='size-full object-cover'
                 />
               )}
             </div>
             <div className='flex flex-col'>
-              <span className='typo-16m text-white'>{user.nickname}</span>
-              <span className='typo-14r text-gray-300'>30명이 같이 듣는 중</span>
+              <span className='typo-16m text-white'>{me?.nickname}</span>
+              <span className='typo-14r text-gray-300'>
+                {room?.total_viewers ?? 0}명이 같이 듣는 중
+              </span>
             </div>
           </div>
 
@@ -113,8 +145,8 @@ const BuskingViewerPage = () => {
           {/* 셋리스트 오버레이 */}
           <div className='absolute top-3 left-3'>
             <SetlistPanel
-              title='버스킹 첫 도전!'
-              items={MOCK_SETLIST}
+              title={room?.title ?? ''}
+              items={room?.setlist ?? []}
               isRecord={isRecord}
             />
           </div>
@@ -129,7 +161,11 @@ const BuskingViewerPage = () => {
 
         {/* 다른 버스킹 */}
         {isStreamer ? (
-          <div className='h-62'></div> // 셋리스트 넘기기 버튼
+          <div className='h-62 flex items-center justify-center'>
+            <Button variant='normal' onClick={() => advanceSetlist(roomId)}>
+              다음 곡으로
+            </Button>
+          </div>
         ) : (
           <div className='pt-5 pb-7 bg-gray-950'>
             <BuskingSection
@@ -137,7 +173,7 @@ const BuskingViewerPage = () => {
               titleTypo='typo-20sb'
               listClassName='px-9 gap-2'
               cardVariant='sm'
-              items={MOCK_BUSKING_LIST}
+              items={rooms}
             />
           </div>
         )}
@@ -145,7 +181,7 @@ const BuskingViewerPage = () => {
 
       {/* 채팅 사이드바 */}
       <div className='w-96 shrink-0'>
-        <LiveChat messages={MOCK_CHAT} />
+        <LiveChat messages={messages} onSend={sendMessage} />
       </div>
 
       {/* 스트리머: 종료 확인 모달 */}

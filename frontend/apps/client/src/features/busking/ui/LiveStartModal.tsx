@@ -1,13 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { BaseModal } from '@/shared/components';
 import { useNavigate } from '@/shared/lib/navigation';
 import { useThumbnail } from '@/shared/hooks';
 import { LiveStartStep1 } from './LiveStartStep1';
 import { LiveStartStep2 } from './LiveStartStep2';
+
 import type { SongUiType } from '@/entities/song/model/types';
+import {
+  useCreateBuskingRoom,
+  useGetThumbnailPresignedUrl,
+  useStartBuskingRoom,
+} from '@/entities/busking';
 
 type LiveStartModalProps = {
   open: boolean;
@@ -25,8 +31,12 @@ const LiveStartModal = ({ open, onClose }: LiveStartModalProps) => {
   const [title, setTitle] = useState('');
   const [keyword, setKeyword] = useState('');
   const [selectedSongs, setSelectedSongs] = useState<SongUiType[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { preview, thumbnail, handleThumbnailChange, clearThumbnail } = useThumbnail();
+  const { mutateAsync: getPresignedUrl } = useGetThumbnailPresignedUrl();
+  const { mutateAsync: createRoom } = useCreateBuskingRoom();
+  const { mutateAsync: startRoom } = useStartBuskingRoom();
 
   const handleToggleSong = (song: SongUiType) => {
     const isSelected = selectedSongs.some((s) => s.id === song.id);
@@ -37,14 +47,38 @@ const LiveStartModal = ({ open, onClose }: LiveStartModalProps) => {
     }
   };
 
-  const handleStart = () => {
-    console.log({
-      title: title.trim(),
-      thumbnail: thumbnail?.file ?? null,
-      setlist: selectedSongs,
-    });
-    // TODO: API 연결 후 roomId 받아서 dynamic.liveRoom(roomId)로 교체
-    go(dynamic.liveRoom('1', 'live'));
+  const handleStart = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    try {
+      let thumbnailUrl: string | null = null;
+
+      // 썸네일이 있으면 presigned URL로 S3 업로드
+      if (thumbnail?.file) {
+        const { upload_url, s3_url } = await getPresignedUrl();
+        await fetch(upload_url, { method: 'PUT', body: thumbnail.file });
+        thumbnailUrl = s3_url;
+      }
+
+      const room = await createRoom({
+        title: title.trim(),
+        thumbnail_url: thumbnailUrl,
+        setlist: selectedSongs.map((song, index) => ({
+          song_id: String(song.id),
+          title: song.title,
+          artist: song.artist,
+          album_art_url: song.thumbnail ?? null,
+          order_index: index,
+        })),
+      });
+
+      await startRoom(room.id);
+
+      go(dynamic.liveRoom(room.id, 'live'));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = () => {
@@ -66,7 +100,7 @@ const LiveStartModal = ({ open, onClose }: LiveStartModalProps) => {
         'overflow-y-auto scrollbar-hide',
         step === 1
           ? 'px-25 pt-14.5 pb-12.5 max-w-198 max-h-178 h-[70vh]'
-          : 'px-17 py-12 pb-0 max-w-310 max-h-198 h-[80vh]'
+          : 'px-17 py-12 pb-0 max-w-310 max-h-198 h-[80vh]',
       )}
     >
       {step === 1 ? (
@@ -85,6 +119,7 @@ const LiveStartModal = ({ open, onClose }: LiveStartModalProps) => {
           onToggleSong={handleToggleSong}
           onSetlistChange={setSelectedSongs}
           onStart={handleStart}
+          isSubmitting={isSubmitting}
         />
       )}
     </BaseModal>

@@ -19,7 +19,8 @@ type LiveStartStep2Props = {
   onKeywordChange: (value: string) => void;
   onToggleSong: (song: SongUiType) => void;
   onSetlistChange: (songs: SongUiType[]) => void;
-  onStart: () => void;
+  onStart: () => void | Promise<void>;
+  isSubmitting?: boolean;
 };
 
 export const LiveStartStep2 = ({
@@ -29,6 +30,7 @@ export const LiveStartStep2 = ({
   onToggleSong,
   onSetlistChange,
   onStart,
+  isSubmitting = false,
 }: LiveStartStep2Props) => {
   const selectedIds = useMemo(
     () => new Set(selectedSongs.map((s) => s.id)),
@@ -116,7 +118,7 @@ export const LiveStartStep2 = ({
       </div>
 
       <div className='py-7 flex justify-center shrink-0'>
-        <Button variant={'accent'} onClick={onStart} disabled={!canStart}>
+        <Button variant={'accent'} onClick={onStart} disabled={!canStart || isSubmitting}>
           라이브 버스킹 시작하기
         </Button>
       </div>
