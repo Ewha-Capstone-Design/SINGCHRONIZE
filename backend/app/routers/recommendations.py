@@ -80,7 +80,7 @@ async def submit_feedback(
     """
     job = await _get_job_or_404(job_id, current_user.id, db)
 
-    if job.status not in ("WAITING_FEEDBACK", "RUNNING_STAGE1"):
+    if job.status != "WAITING_FEEDBACK":
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail={

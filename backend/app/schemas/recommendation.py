@@ -32,5 +32,5 @@ class RecommendationFeedback(BaseModel):
     워커가 recommendation_logs.input_preferences.reranking_top3 를 읽어 2차 추천에 활용.
     """
     reranking_top3: List[str]
-    selected_genre: Optional[Any] = None    # JSONB — 문자열 또는 객체
-    selected_keyword: Optional[Any] = None  # JSONB — 문자열 또는 객체
+    selected_genre: Optional[List[str]] = None
+    selected_keyword: Optional[List[str]] = None
