@@ -1,13 +1,16 @@
 """유저 라우터"""
 import time
 import uuid
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from pydantic import BaseModel
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.dependencies.auth import get_current_user
+from app.models.busking import BuskingRoom, BuskingSetlistItem, BuskingResult
 from app.models.user import User
 from app.schemas.singer import (
     BlockSingerRequest, BlockedSingerItem, BlockedSingersListResponse,
@@ -339,4 +342,79 @@ async def update_settings(
     return await service.update_settings(
         user_id=current_user.id,
         update_data=update_data,
+    )
+
+
+# ─────────────────────────────────────
+# GET /api/v1/users/me/busking-history
+# ─────────────────────────────────────
+class _SetlistItem(BaseModel):
+    title: str
+    artist: str
+    album_art_url: Optional[str] = None
+    order_index: int
+
+class _BuskingHistoryItem(BaseModel):
+    room_id: str
+    title: str
+    thumbnail: Optional[str] = None
+    status: str
+    started_at: Optional[str] = None
+    ended_at: Optional[str] = None
+    peak_viewer_count: int
+    total_unique_viewers: int
+    setlist: List[_SetlistItem]
+
+class _BuskingHistoryResponse(BaseModel):
+    stats: dict
+    history: List[_BuskingHistoryItem]
+
+@router.get(
+    "/me/busking-history",
+    response_model=_BuskingHistoryResponse,
+    summary="내 버스킹 목록 조회",
+)
+async def get_my_busking_history(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    rooms_result = await db.execute(
+        select(BuskingRoom)
+        .where(BuskingRoom.host_id == current_user.id)
+        .order_by(BuskingRoom.created_at.desc())
+    )
+    rooms = rooms_result.scalars().all()
+
+    history = []
+    for room in rooms:
+        setlist_result = await db.execute(
+            select(BuskingSetlistItem)
+            .where(BuskingSetlistItem.room_id == room.id)
+            .order_by(BuskingSetlistItem.order_index)
+        )
+        setlist = setlist_result.scalars().all()
+
+        history.append(_BuskingHistoryItem(
+            room_id=str(room.id),
+            title=room.title,
+            thumbnail=room.thumbnail,
+            status=room.status,
+            started_at=room.started_at.isoformat() if room.started_at else None,
+            ended_at=room.ended_at.isoformat() if room.ended_at else None,
+            peak_viewer_count=room.peak_viewer_count or 0,
+            total_unique_viewers=room.total_unique_viewers or 0,
+            setlist=[
+                _SetlistItem(
+                    title=s.title,
+                    artist=s.artist,
+                    album_art_url=s.album_art_url,
+                    order_index=s.order_index,
+                )
+                for s in setlist
+            ],
+        ))
+
+    return _BuskingHistoryResponse(
+        stats={"total_lives": len(rooms)},
+        history=history,
     )
