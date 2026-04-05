@@ -6,7 +6,7 @@ import { ProfileCard } from '@/entities/user/ui';
 import { BlockedModal } from '@/features/block';
 import SnsAccountItem from './SnsAccountItem';
 
-import { useWithdraw } from '@/entities/auth';
+import { useLogout, useWithdraw } from '@/entities/auth';
 import { useMe } from '@/entities/user';
 import { toSnsAccountsUiType } from '@/entities/user/model/types';
 
@@ -16,6 +16,7 @@ const ProfileMain = () => {
   const blockedArtistModal = useModal();
 
   const { data: userData, isLoading, error } = useMe();
+  const logout = useLogout();
   const { mutate: withdraw } = useWithdraw();
 
   // TODO: 추후 예외 처리 필요
@@ -49,7 +50,7 @@ const ProfileMain = () => {
   const accountSettings = [
     { label: '차단한 곡 관리하기', action: blockedSongModal.openModal },
     { label: '차단한 가수 관리하기', action: blockedArtistModal.openModal },
-    { label: '로그아웃 하기', action: null },
+    { label: '로그아웃 하기', action: logout },
     { label: '탈퇴하기', action: handleWithdraw },
   ];
 

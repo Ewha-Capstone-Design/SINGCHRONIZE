@@ -1,4 +1,6 @@
+import { useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from '@/shared/lib/navigation';
 import { authApi } from '../api/authApi';
 import { tokenStore } from '@/shared/api/tokenStore';
 import { queryKeys } from '@/shared/api/queryKeys';
@@ -46,6 +48,17 @@ export const useRefresh = () => {
       tokenStore.clear();
     },
   });
+};
+
+export const useLogout = () => {
+  const queryClient = useQueryClient();
+  const { go, ROUTES } = useNavigate();
+
+  return useCallback(() => {
+    tokenStore.clear();
+    queryClient.clear();
+    go(ROUTES.login.root, { replace: true });
+  }, [queryClient, go, ROUTES]);
 };
 
 export const useWithdraw = () => {
