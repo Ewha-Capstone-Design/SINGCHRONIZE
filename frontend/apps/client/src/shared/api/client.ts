@@ -36,8 +36,19 @@ privateClient.use({
   async onResponse({ response, request }) {
     if (response.status !== 401) return response;
 
+    const redirectToLogin = () => {
+      if (typeof window !== 'undefined') {
+        const next = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
+        window.location.replace(`/login?next=${next}`);
+      }
+    };
+
     const refreshToken = tokenStore.getRefresh();
-    if (!refreshToken) return response;
+    if (!refreshToken) {
+      tokenStore.clear();
+      redirectToLogin();
+      return response;
+    }
 
     const { data, error } = await publicClient.POST('/api/v1/auth/refresh', {
       headers: { Authorization: `Bearer ${refreshToken}` },
@@ -45,6 +56,7 @@ privateClient.use({
 
     if (error) {
       tokenStore.clear();
+      redirectToLogin();
       return response;
     }
 
