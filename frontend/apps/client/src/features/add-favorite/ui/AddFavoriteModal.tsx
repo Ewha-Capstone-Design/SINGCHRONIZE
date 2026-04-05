@@ -3,12 +3,16 @@
 import { useState } from 'react';
 import { InputField } from '@singchronize/ui';
 import { BaseModal } from '@/shared/components';
+import useDebounce from '@/shared/hooks/useDebounce';
 import { LikeIconButton, SongListItem } from '@/entities/song/ui';
 import type { SongUiType } from '@/entities/song/model/types';
 
 import { useSearchMusic } from '@/entities/song';
-import { useAddWishlistItem, useDeleteWishlistItem, useWishlist } from '@/entities/library';
-import useDebounce from '@/shared/hooks/useDebounce';
+import {
+  useAddWishlistItem,
+  useDeleteWishlistItem,
+  useWishlist,
+} from '@/entities/library';
 
 type AddFavoriteModalProps = {
   folderId?: string;
@@ -49,7 +53,11 @@ const AddFavoriteModal = ({ folderId, onClose }: AddFavoriteModalProps) => {
       },
       {
         onSettled: () => {
-          setAddingIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
+          setAddingIds((prev) => {
+            const next = new Set(prev);
+            next.delete(id);
+            return next;
+          });
         },
       },
     );
@@ -86,7 +94,9 @@ const AddFavoriteModal = ({ folderId, onClose }: AddFavoriteModalProps) => {
                 thumbnail={song.thumbnail ?? ''}
                 rightSlot={
                   <LikeIconButton
-                    isLiked={wishlistItems.some((item) => item.songId === String(song.id))}
+                    isLiked={wishlistItems.some(
+                      (item) => item.songId === String(song.id),
+                    )}
                     onClick={() => toggleLike(song)}
                     disabled={addingIds.has(String(song.id))}
                   />
