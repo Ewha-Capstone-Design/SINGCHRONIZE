@@ -6,6 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import init_db
 from app.routers import auth, user, songs, library, busking, recommendations, singers
+from app.routers.analysis import router as analysis_router
+from app.routers.home import router as home_router
 from app.routers.oauth_test import router as oauth_test_router
 from app.routers.onboarding import router as onboarding_router
 from fastapi.staticfiles import StaticFiles
@@ -40,6 +42,8 @@ app.include_router(library.router)
 app.include_router(busking.router)
 app.include_router(recommendations.router)
 app.include_router(singers.router)
+app.include_router(analysis_router)
+app.include_router(home_router)
 app.include_router(onboarding_router)
 app.include_router(oauth_test_router)
 

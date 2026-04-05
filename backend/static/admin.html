@@ -236,6 +236,8 @@
     <a onclick="showSection('analysis', this)">보컬 분석</a>
     <a onclick="showSection('recommendation', this)">추천 파이프라인</a>
     <a onclick="showSection('artist-actions', this)">아티스트 액션</a>
+    <div class="nav-group">Home</div>
+    <a onclick="showSection('home', this)">홈 피드</a>
     <div class="nav-group">Busking</div>
     <a onclick="showSection('busking-rooms', this)">방 목록/생성</a>
     <a onclick="showSection('busking-ctrl', this)">방 제어</a>
@@ -785,9 +787,36 @@
         <h3><span class="method method-post">POST</span>/api/v1/analysis/upload-url &nbsp;<small style="color:var(--text2);font-weight:400">[1단계] S3 presigned PUT URL 발급</small></h3>
       </div>
       <div class="card-body">
-        <p class="text-sm" style="color:var(--text2);margin-bottom:12px">이 URL로 프론트엔드가 S3에 직접 오디오 파일을 업로드합니다. 반환된 <code>s3_key</code>를 다음 단계에서 사용합니다.</p>
-        <div class="btn-group"><button class="btn-primary" onclick="getAnalysisUploadUrl()">URL 발급</button></div>
+        <p class="text-sm" style="color:var(--text2);margin-bottom:12px">오디오 파일을 선택하면 presigned URL 발급 → S3 업로드 → s3_key 자동 입력까지 한 번에 처리합니다.</p>
+        <div class="form-row">
+          <label>오디오 파일 <span style="color:var(--red)">*</span></label>
+          <input type="file" id="analysis-audio-file" accept="audio/*,.m4a,.wav,.mp3,.aac" style="color:var(--text2)">
+        </div>
+        <div class="btn-group">
+          <button class="btn-primary" onclick="uploadAudioAndGetKey()">S3 업로드 + URL 발급</button>
+          <button class="btn-outline btn-sm" onclick="getAnalysisUploadUrl()">URL만 발급 (파일 없이)</button>
+        </div>
+        <div id="analysis-upload-progress" style="display:none;margin-top:8px;font-size:13px;color:var(--yellow)"></div>
         <div class="response-box" id="analysis-upload-response" style="display:none"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3><span class="method" style="background:var(--orange);color:#fff">PUT</span>S3 직접 업로드 &nbsp;<small style="color:var(--text2);font-weight:400">[1.5단계] presigned URL로 파일 올리기</small></h3>
+      </div>
+      <div class="card-body">
+        <p class="text-sm" style="color:var(--text2);margin-bottom:12px">위에서 URL 발급 후 자동 입력됩니다. 직접 붙여넣기도 가능합니다.</p>
+        <div class="form-row">
+          <label>presigned URL</label>
+          <input type="text" id="s3-put-url" placeholder="https://s3.amazonaws.com/...">
+        </div>
+        <div class="form-row">
+          <label>오디오 파일 <span style="color:var(--red)">*</span></label>
+          <input type="file" id="s3-put-file" accept="audio/*,.m4a,.wav,.mp3,.aac" style="color:var(--text2)">
+        </div>
+        <div class="btn-group"><button class="btn-outline" onclick="uploadToS3()">S3 업로드</button></div>
+        <div id="s3-put-progress" style="display:none;margin-top:8px;font-size:13px"></div>
       </div>
     </div>
 
@@ -977,6 +1006,39 @@
         </div>
         <div class="btn-group"><button class="btn-red" onclick="deleteArtistAction()">취소</button></div>
         <div class="response-box" id="artist-delete-response" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── HOME ── -->
+  <div id="section-home" class="section">
+    <div class="page-header"><h2>홈 피드</h2><p class="text-sm" style="color:var(--text2);margin-top:4px">이번주 차트(찜 기반 Top 5) · 라이브 띠배너</p></div>
+
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3><span class="method method-get">GET</span>/api/v1/home/feeds &nbsp;<small style="color:var(--text2);font-weight:400">이번주 차트 + 라이브 띠배너 통합</small></h3>
+      </div>
+      <div class="card-body">
+        <div class="btn-group"><button class="btn-blue" onclick="getHomeFeeds()">조회</button></div>
+        <div id="home-weekly-list" style="display:none;margin-top:16px">
+          <p style="font-weight:600;margin-bottom:8px">🏆 이번주 차트 Top 5</p>
+          <div id="home-weekly-items"></div>
+        </div>
+        <div id="home-live-list" style="display:none;margin-top:16px">
+          <p style="font-weight:600;margin-bottom:8px">📡 라이브 중인 방</p>
+          <div id="home-live-items"></div>
+        </div>
+        <div class="response-box" id="home-feeds-response" style="display:none;margin-top:12px"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)">
+        <h3><span class="method method-get">GET</span>/api/v1/busking/live-ticker &nbsp;<small style="color:var(--text2);font-weight:400">라이브 띠배너만 단독 조회</small></h3>
+      </div>
+      <div class="card-body">
+        <div class="btn-group"><button class="btn-blue" onclick="getLiveTicker()">조회</button></div>
+        <div class="response-box" id="live-ticker-response" style="display:none;margin-top:12px"></div>
       </div>
     </div>
   </div>
@@ -1582,7 +1644,65 @@ function stopPoll(key) {
 async function getAnalysisUploadUrl() {
   const { ok, data } = await apiFetch('POST', '/api/v1/analysis/upload-url', {});
   showResp('analysis-upload-response', data, ok);
-  if (ok && data.s3_key) document.getElementById('analysis-s3-key').value = data.s3_key;
+  if (ok) {
+    if (data.s3_key) document.getElementById('analysis-s3-key').value = data.s3_key;
+    if (data.upload_url) document.getElementById('s3-put-url').value = data.upload_url;
+  }
+}
+async function uploadToS3() {
+  const url = document.getElementById('s3-put-url').value.trim();
+  const file = document.getElementById('s3-put-file').files[0];
+  const progress = document.getElementById('s3-put-progress');
+  if (!url) return alert('presigned URL을 입력하거나 먼저 URL을 발급하세요');
+  if (!file) return alert('파일을 선택하세요');
+
+  progress.style.display = 'block';
+  progress.style.color = 'var(--yellow)';
+  progress.textContent = '⏳ S3 업로드 중...';
+  try {
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'audio/m4a' },
+      body: file,
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    progress.style.color = 'var(--green)';
+    progress.textContent = '✅ 업로드 성공! 이제 [2단계] Job 생성을 누르세요.';
+  } catch (e) {
+    progress.style.color = 'var(--red)';
+    progress.textContent = `❌ 실패: ${e.message}`;
+  }
+}
+async function uploadAudioAndGetKey() {
+  const fileInput = document.getElementById('analysis-audio-file');
+  const file = fileInput.files[0];
+  if (!file) return alert('파일을 먼저 선택하세요');
+
+  const progress = document.getElementById('analysis-upload-progress');
+  const setProgress = (msg) => { progress.style.display = 'block'; progress.textContent = msg; };
+
+  // 1. presigned URL 발급
+  setProgress('⏳ [1/2] presigned URL 발급 중...');
+  const { ok, data } = await apiFetch('POST', '/api/v1/analysis/upload-url', {});
+  showResp('analysis-upload-response', data, ok);
+  if (!ok) { setProgress('❌ URL 발급 실패'); return; }
+
+  // 2. S3에 직접 PUT
+  setProgress('⏳ [2/2] S3에 파일 업로드 중...');
+  try {
+    const res = await fetch(data.upload_url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'audio/m4a' },
+      body: file,
+    });
+    if (!res.ok) throw new Error(`S3 응답: ${res.status}`);
+    document.getElementById('analysis-s3-key').value = data.s3_key;
+    setProgress(`✅ 업로드 완료! s3_key가 아래 [2단계]에 자동 입력됐습니다.`);
+    progress.style.color = 'var(--green)';
+  } catch (e) {
+    setProgress(`❌ S3 업로드 실패: ${e.message}`);
+    progress.style.color = 'var(--red)';
+  }
 }
 async function createAnalysisJob() {
   const s3_key = document.getElementById('analysis-s3-key').value.trim();
@@ -1653,8 +1773,8 @@ async function submitFeedback() {
   const body = { reranking_top3 };
   const genre = document.getElementById('rec-feedback-genre').value.trim();
   const keyword = document.getElementById('rec-feedback-keyword').value.trim();
-  if (genre) body.selected_genre = genre;
-  if (keyword) body.selected_keyword = keyword;
+  if (genre) body.selected_genre = genre.split(',').map(s => s.trim()).filter(Boolean);
+  if (keyword) body.selected_keyword = keyword.split(',').map(s => s.trim()).filter(Boolean);
   const { ok, data } = await apiFetch('POST', `/api/v1/recommendations/${id}/feedback`, body);
   showResp('rec-feedback-response', data, ok);
 }
@@ -1692,6 +1812,48 @@ async function deleteArtistAction() {
   if (!name) return alert('아티스트 이름을 입력하세요');
   const { ok, data } = await apiFetch('DELETE', `/api/v1/artist-actions/${encodeURIComponent(name)}`);
   showResp('artist-delete-response', data, ok);
+}
+
+// ═══════════════════════════════════════
+// Home
+// ═══════════════════════════════════════
+async function getHomeFeeds() {
+  const { ok, data } = await apiFetch('GET', '/api/v1/home/feeds');
+  showResp('home-feeds-response', data, ok);
+  if (!ok) return;
+
+  // 이번주 차트
+  const weeklyEl = document.getElementById('home-weekly-items');
+  const liveEl = document.getElementById('home-live-items');
+
+  if (data.weekly?.length) {
+    document.getElementById('home-weekly-list').style.display = 'block';
+    weeklyEl.innerHTML = data.weekly.map(s =>
+      `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:18px;font-weight:700;color:var(--purple-light);width:24px">${s.rank}</span>
+        ${s.album_image ? `<img src="${s.album_image}" style="width:40px;height:40px;border-radius:6px;object-fit:cover">` : ''}
+        <div style="flex:1"><div style="font-weight:600">${s.name}</div><div style="font-size:12px;color:var(--text2)">${s.artist}</div></div>
+        <span style="font-size:12px;color:var(--text2)">찜 ${s.wish_count}회</span>
+      </div>`
+    ).join('');
+  }
+
+  // 라이브 띠배너
+  if (data.live_ticker?.length) {
+    document.getElementById('home-live-list').style.display = 'block';
+    liveEl.innerHTML = data.live_ticker.map(r =>
+      `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span style="background:var(--red);color:#fff;font-size:11px;padding:2px 6px;border-radius:4px">LIVE</span>
+        <span style="flex:1;font-weight:600">${r.title}</span>
+        <span style="font-size:12px;color:var(--text2)">👥 ${r.viewer_count}</span>
+      </div>`
+    ).join('');
+  }
+}
+
+async function getLiveTicker() {
+  const { ok, data } = await apiFetch('GET', '/api/v1/busking/live-ticker');
+  showResp('live-ticker-response', data, ok);
 }
 
 // ── storage 이벤트 리스너 (팝업 → 메인창 토큰 수신 fallback) ──
