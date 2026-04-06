@@ -155,7 +155,10 @@ async def get_thumbnail_presigned_url(
     key = f"busking/thumbnails/{current_user.id}/{uuid_lib.uuid4()}.jpg"
     upload_url = generate_presigned_url(key, content_type="image/jpeg")
     if not upload_url:
-        raise HTTPException(status_code=500, detail="Presigned URL 생성 실패")
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail={"code": "S3_URL_FAILED", "message": "썸네일 업로드 URL 생성에 실패했습니다. 잠시 후 다시 시도해 주세요."},
+        )
     s3_url = f"https://{settings.S3_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/{key}"
     return ThumbnailPresignedResponse(upload_url=upload_url, s3_url=s3_url, key=key)
 
@@ -256,7 +259,10 @@ async def start_room(
     _require_host(room, current_user)
 
     if room.status != "PREPARING":
-        raise HTTPException(status_code=400, detail=f"PREPARING 상태가 아닙니다 (현재: {room.status})")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "INVALID_STATUS", "message": f"PREPARING 상태인 방만 라이브를 시작할 수 있습니다. (현재: {room.status})"},
+        )
 
     room.status = "LIVE"
     room.started_at = datetime.now(timezone.utc)
@@ -284,7 +290,10 @@ async def end_room(
     _require_host(room, current_user)
 
     if room.status != "LIVE":
-        raise HTTPException(status_code=400, detail=f"LIVE 상태가 아닙니다 (현재: {room.status})")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "INVALID_STATUS", "message": f"LIVE 상태인 방만 종료할 수 있습니다. (현재: {room.status})"},
+        )
 
     now = datetime.now(timezone.utc)
     room.status = "ENDED"
@@ -331,7 +340,10 @@ async def join_room(
     """뷰어 입장용 LiveKit 토큰 발급. LIVE 상태인 방만 허용."""
     room = await _get_room_or_404(db, room_id)
     if room.status != "LIVE":
-        raise HTTPException(status_code=400, detail="라이브 중인 방에만 입장할 수 있습니다.")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "ROOM_NOT_LIVE", "message": "라이브 중인 방에만 입장할 수 있습니다."},
+        )
 
     viewer_token = create_viewer_token(room_id, str(current_user.id))
     return LiveKitJoinResponse(
@@ -354,11 +366,17 @@ async def advance_setlist(
     _require_host(room, current_user)
 
     if room.status != "LIVE":
-        raise HTTPException(status_code=400, detail="라이브 중에만 곡을 변경할 수 있습니다.")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "ROOM_NOT_LIVE", "message": "라이브 중에만 곡을 변경할 수 있습니다."},
+        )
 
     setlist = await _get_setlist(db, room_id)
     if room.current_song_index >= len(setlist) - 1:
-        raise HTTPException(status_code=400, detail="이미 마지막 곡입니다.")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "ALREADY_LAST_SONG", "message": "이미 마지막 곡입니다."},
+        )
 
     room.current_song_index += 1
     await db.flush()
@@ -378,13 +396,19 @@ async def get_result(room_id: UUID, db: AsyncSession = Depends(get_db)):
     """라이브 종료 후 결과 조회."""
     room = await _get_room_or_404(db, room_id)
     if room.status != "ENDED":
-        raise HTTPException(status_code=400, detail="종료된 방만 결과를 조회할 수 있습니다.")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "ROOM_NOT_ENDED", "message": f"종료된 방만 결과를 조회할 수 있습니다. (현재: {room.status})"},
+        )
 
     result_row = (await db.execute(
         select(BuskingResult).where(BuskingResult.room_id == room_id)
     )).scalar_one_or_none()
     if not result_row:
-        raise HTTPException(status_code=404, detail="결과 데이터가 없습니다.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "RESULT_NOT_FOUND", "message": "결과 데이터가 없습니다."},
+        )
 
     setlist = await _get_setlist(db, room_id)
     return BuskingResultResponse(
@@ -556,7 +580,10 @@ async def _get_room_or_404(db: AsyncSession, room_id) -> BuskingRoom:
     result = await db.execute(select(BuskingRoom).where(BuskingRoom.id == room_id))
     room = result.scalar_one_or_none()
     if not room:
-        raise HTTPException(status_code=404, detail="방을 찾을 수 없습니다.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "ROOM_NOT_FOUND", "message": "버스킹 방을 찾을 수 없습니다."},
+        )
     return room
 
 
@@ -571,7 +598,10 @@ async def _get_setlist(db: AsyncSession, room_id) -> list[BuskingSetlistItem]:
 
 def _require_host(room: BuskingRoom, user: User):
     if str(room.host_id) != str(user.id):
-        raise HTTPException(status_code=403, detail="호스트만 수행할 수 있는 작업입니다.")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "FORBIDDEN", "message": "호스트만 수행할 수 있는 작업입니다."},
+        )
 
 
 def _build_room_response(room: BuskingRoom, viewer_count: int) -> BuskingRoomResponse:
