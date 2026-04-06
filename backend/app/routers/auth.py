@@ -41,7 +41,7 @@ async def social_login(
     if provider not in ("kakao", "naver"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"지원하지 않는 provider: {provider}",
+            detail={"code": "UNSUPPORTED_PROVIDER", "message": f"지원하지 않는 로그인 provider입니다: {provider}. kakao 또는 naver만 가능합니다."},
         )
 
     try:
@@ -69,7 +69,7 @@ async def social_login(
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
+            detail={"code": "LOGIN_FAILED", "message": str(e)},
         )
 
 
@@ -94,7 +94,7 @@ async def refresh(
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e),
+            detail={"code": "INVALID_TOKEN", "message": str(e)},
         )
 
 

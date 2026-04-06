@@ -308,7 +308,7 @@ async def update_profile(
     if not update_data:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="수정할 항목이 없습니다.",
+            detail={"code": "NOTHING_TO_UPDATE", "message": "수정할 항목이 없습니다."},
         )
     service = UserService(db)
     updated = await service.update_profile(
@@ -336,7 +336,7 @@ async def update_settings(
     if not update_data:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="수정할 항목이 없습니다.",
+            detail={"code": "NOTHING_TO_UPDATE", "message": "수정할 항목이 없습니다."},
         )
     service = UserService(db)
     return await service.update_settings(
