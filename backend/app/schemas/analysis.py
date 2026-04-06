@@ -19,6 +19,8 @@ class AnalysisJobResponse(BaseModel):
     job_id: UUID
     status: str
     result_data: Optional[Dict[str, Any]] = None
+    # FAILED 시 에러 원인 (result_data["error"] 에서 추출)
+    error_message: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

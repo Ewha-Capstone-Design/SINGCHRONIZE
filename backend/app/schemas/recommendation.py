@@ -20,6 +20,17 @@ class RecommendationStatusResponse(BaseModel):
     status: Optional[str] = None
     first_recommended_songs: Optional[List[Dict[str, Any]]] = None
     recommended_songs: Optional[Dict[str, Any]] = None
+
+    # 에러 정보 (status=FAILED 일 때)
+    error_message: Optional[str] = None
+    failed_at: Optional[datetime] = None
+
+    # 단계별 진행 타임스탬프
+    stage1_started_at: Optional[datetime] = None
+    stage1_completed_at: Optional[datetime] = None
+    stage2_started_at: Optional[datetime] = None
+    stage2_completed_at: Optional[datetime] = None
+
     created_at: datetime
     updated_at: datetime
 
