@@ -1,8 +1,11 @@
 """Library & Archive 라우터 - 폴더, 위시리스트, 부른 노래 기록"""
+from collections import defaultdict
+from datetime import date
 from uuid import UUID
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 
@@ -11,6 +14,8 @@ from app.dependencies.auth import get_current_user
 from app.models.user import User
 from app.models.library import Folder, WishlistItem
 from app.models.archive import Archive
+from app.models.recommendation import Recommendation
+from app.models.song import Song as SongModel
 from app.schemas.library import (
     FolderCreate, FolderResponse,
     WishlistItemCreate, WishlistItemResponse,
@@ -203,3 +208,156 @@ async def delete_history(
     if not archive:
         raise HTTPException(status_code=404, detail="기록을 찾을 수 없습니다.")
     await db.delete(archive)
+
+
+# ──────────────────────────────────────────────────────────────
+# GET /api/v1/library/history/recommendations — 추천 아카이브
+# ──────────────────────────────────────────────────────────────
+
+class ArchiveSong(BaseModel):
+    song_id: str
+    title: str
+    artist: str
+    album_cover: Optional[str] = None
+    score: Optional[float] = None
+
+class ArchiveRecItem(BaseModel):
+    rec_id: str
+    date: str                          # "2026.04.06"
+    selected_genre: Optional[List[str]] = None
+    selected_keyword: Optional[List[str]] = None
+    songs: List[ArchiveSong]
+
+class ArchiveDateGroup(BaseModel):
+    date: str                          # "2026.04.06"
+    items: List[ArchiveRecItem]
+
+class RecommendationArchiveResponse(BaseModel):
+    groups: List[ArchiveDateGroup]     # 날짜별 그룹, 최신순
+    total: int
+
+
+def _extract_songs(rec: Recommendation, genre: Optional[str], keyword: Optional[str]) -> List[ArchiveSong]:
+    """recommended_songs JSONB에서 필터 조건에 맞는 곡 목록 추출"""
+    data: Dict[str, Any] = rec.recommended_songs or {}
+    genre_recs: Dict = data.get("genre_recommendations", {})
+    situation_recs: Dict = data.get("situation_recommendations", {})
+
+    raw: List[Dict] = []
+
+    if keyword and keyword in situation_recs:
+        raw = situation_recs[keyword]
+    elif genre:
+        raw = genre_recs.get(genre, [])
+    else:
+        # 기본: 전체
+        raw = genre_recs.get("전체", [])
+        if not raw and genre_recs:
+            raw = next(iter(genre_recs.values()), [])
+
+    return [
+        ArchiveSong(
+            song_id=s.get("song_id", ""),
+            title=s.get("title", ""),
+            artist=s.get("artist", ""),
+            album_cover=s.get("album_cover"),
+            score=s.get("score"),
+        )
+        for s in raw if s.get("song_id")
+    ]
+
+
+@router.get("/history/recommendations", response_model=RecommendationArchiveResponse)
+async def get_recommendation_archive(
+    genre: Optional[str] = Query(None, description="장르 필터 (발라드, POP, DANCE 등)"),
+    keyword: Optional[str] = Query(None, description="상황 필터 (회식하며 즐길 때 등)"),
+    date_str: Optional[str] = Query(None, alias="date", description="날짜 필터 YYYY-MM-DD"),
+    page: int = Query(1, ge=1),
+    size: int = Query(20, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    stmt = (
+        select(Recommendation)
+        .where(
+            Recommendation.user_id == current_user.id,
+            Recommendation.status == "DONE",
+            Recommendation.recommended_songs.isnot(None),
+        )
+        .order_by(Recommendation.created_at.desc())
+    )
+
+    # 날짜 필터: 해당 날짜 하루치만
+    if date_str:
+        try:
+            target = date.fromisoformat(date_str)
+        except ValueError:
+            raise HTTPException(status_code=400, detail={"code": "INVALID_DATE", "message": "날짜 형식은 YYYY-MM-DD 입니다."})
+        stmt = stmt.where(
+            func.date(Recommendation.created_at) == target
+        )
+
+    result = await db.execute(stmt)
+    recs: List[Recommendation] = result.scalars().all()
+
+    # 1차 추출 — rec별 곡 목록
+    grouped: Dict[str, List[ArchiveRecItem]] = defaultdict(list)
+    rec_song_map: Dict[str, List[ArchiveSong]] = {}  # rec_id → songs
+    for rec in recs:
+        songs = _extract_songs(rec, genre, keyword)
+        if not songs:
+            continue
+        rec_song_map[str(rec.id)] = songs
+
+    # 2차: title/artist 비어있는 song_id 일괄 조회 (songs 테이블 fallback)
+    missing_ids = {
+        UUID(s.song_id)
+        for songs in rec_song_map.values()
+        for s in songs
+        if not s.title and s.song_id
+    }
+    song_db_map: Dict[str, Any] = {}
+    if missing_ids:
+        rows = (await db.execute(
+            select(SongModel).where(SongModel.id.in_(list(missing_ids)))
+        )).scalars().all()
+        song_db_map = {str(r.id): r for r in rows}
+
+    # 빈 필드 보완 후 그룹핑
+    for rec in recs:
+        rec_id = str(rec.id)
+        if rec_id not in rec_song_map:
+            continue
+        songs = rec_song_map[rec_id]
+        filled = []
+        for s in songs:
+            if not s.title and s.song_id in song_db_map:
+                db_song = song_db_map[s.song_id]
+                s = ArchiveSong(
+                    song_id=s.song_id,
+                    title=db_song.title or "",
+                    artist=db_song.artist or "",
+                    album_cover=db_song.album_cover or s.album_cover,
+                    score=s.score,
+                )
+            filled.append(s)
+        dt_str = rec.created_at.strftime("%Y.%m.%d")
+        grouped[dt_str].append(
+            ArchiveRecItem(
+                rec_id=rec_id,
+                date=dt_str,
+                selected_genre=rec.selected_genre if isinstance(rec.selected_genre, list) else None,
+                selected_keyword=rec.selected_keyword if isinstance(rec.selected_keyword, list) else None,
+                songs=filled,
+            )
+        )
+
+    # 날짜 내림차순 정렬 후 페이지네이션
+    sorted_dates = sorted(grouped.keys(), reverse=True)
+    total = len(sorted_dates)
+    paged_dates = sorted_dates[(page - 1) * size: page * size]
+
+    return RecommendationArchiveResponse(
+        groups=[ArchiveDateGroup(date=d, items=grouped[d]) for d in paged_dates],
+        total=total,
+    )
