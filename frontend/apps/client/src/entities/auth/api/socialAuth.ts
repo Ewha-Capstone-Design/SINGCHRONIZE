@@ -11,6 +11,9 @@ export const loginWithKakao = (): void => {
     throw new Error('NEXT_PUBLIC_KAKAO_REDIRECT_URI가 설정되지 않았습니다.');
   }
 
+  const next = new URLSearchParams(window.location.search).get('next');
+  if (next) localStorage.setItem('login_next', next);
+
   const state = crypto.randomUUID();
   localStorage.setItem('kakao_oauth_state', state);
 

@@ -53,7 +53,9 @@ export const useKakaoLoginCallback = () => {
               if (data.is_new_user) {
                 go(ROUTES.login.profile);
               } else {
-                go(ROUTES.home);
+                const next = localStorage.getItem('login_next');
+                localStorage.removeItem('login_next');
+                go(next ?? ROUTES.home);
               }
             },
             onError: (error) => {
