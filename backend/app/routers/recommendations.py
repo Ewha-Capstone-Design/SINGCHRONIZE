@@ -1,6 +1,7 @@
 """추천 파이프라인 라우터 — Job 생성 / 상태 조회 / 2차 피드백"""
 import json
 import logging
+from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -50,6 +51,9 @@ async def create_recommendation(
     msg_id = send_sqs_message(json.dumps(payload))
     if not msg_id:
         logger.error("Recommendation SQS 전송 실패 — job_id=%s", job.id)
+        job.status = "FAILED"
+        job.error_message = "SQS 전송 실패: 추천 작업을 큐에 등록하지 못했습니다. 잠시 후 다시 시도해 주세요."
+        job.failed_at = datetime.now(timezone.utc)
 
     await db.commit()
     await db.refresh(job)
@@ -89,6 +93,7 @@ async def submit_feedback(
             },
         )
 
+    # 1. DB 먼저 — worker가 SQS 받은 후 DB에서 읽으므로 반드시 커밋 선행
     job.input_preferences = {"reranking_top3": body.reranking_top3}
     if body.selected_genre is not None:
         job.selected_genre = body.selected_genre
@@ -97,6 +102,22 @@ async def submit_feedback(
 
     await db.commit()
     await db.refresh(job)
+
+    # 2. SQS stage2 트리거 — DB 저장 완료 후 전송
+    payload = json.dumps({
+        "job_id": str(job.id),
+        "user_id": str(current_user.id),
+        "stage": "stage2",
+    })
+    msg_id = send_sqs_message(payload)
+    if not msg_id:
+        logger.error("stage2 SQS 전송 실패 — job_id=%s", job.id)
+        job.status = "FAILED"
+        job.error_message = "SQS 전송 실패: 2차 추천 작업을 큐에 등록하지 못했습니다. 잠시 후 다시 시도해 주세요."
+        job.failed_at = datetime.now(timezone.utc)
+        await db.commit()
+        await db.refresh(job)
+
     return _to_response(job)
 
 
@@ -142,6 +163,12 @@ def _to_response(job: Recommendation) -> RecommendationStatusResponse:
         status=job.status,
         first_recommended_songs=job.first_recommended_songs,
         recommended_songs=job.recommended_songs,
+        error_message=job.error_message,
+        failed_at=job.failed_at,
+        stage1_started_at=job.stage1_started_at,
+        stage1_completed_at=job.stage1_completed_at,
+        stage2_started_at=job.stage2_started_at,
+        stage2_completed_at=job.stage2_completed_at,
         created_at=job.created_at,
         updated_at=job.updated_at,
     )

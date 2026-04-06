@@ -2,6 +2,7 @@
 import json
 import uuid
 import logging
+from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -66,22 +67,20 @@ async def create_analysis_job(
     await db.flush()   # id 확보
     await db.refresh(job)
 
-    # SQS 전송 — 실패해도 DB는 롤백하지 않음 (워커 재전송 가능)
+    # SQS 전송 — 실패 시 FAILED 처리 (프론트에서 폴링으로 확인 가능)
     message = json.dumps({"job_id": str(job.id), "s3_key": body.s3_key})
     msg_id = send_vocal_sqs_message(message)
     if not msg_id:
         logger.error("Vocal SQS 전송 실패 — job_id=%s", job.id)
+        job.status = "FAILED"
+        job.result_data = {
+            "error": "SQS 전송 실패: 분석 작업을 큐에 등록하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+            "failed_at": datetime.now(timezone.utc).isoformat(),
+        }
 
     await db.commit()
     await db.refresh(job)
-
-    return AnalysisJobResponse(
-        job_id=job.id,
-        status=job.status,
-        result_data=job.result_data,
-        created_at=job.created_at,
-        updated_at=job.updated_at,
-    )
+    return _to_job_response(job)
 
 
 @router.get("/jobs/{job_id}", response_model=AnalysisJobResponse)
@@ -103,14 +102,7 @@ async def get_analysis_job(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"code": "JOB_NOT_FOUND", "message": "분석 작업을 찾을 수 없습니다."},
         )
-
-    return AnalysisJobResponse(
-        job_id=job.id,
-        status=job.status,
-        result_data=job.result_data,
-        created_at=job.created_at,
-        updated_at=job.updated_at,
-    )
+    return _to_job_response(job)
 
 
 @router.get("/profile", response_model=VocalProfileResponse)
@@ -145,4 +137,18 @@ async def get_vocal_profile(
         latest_timbre_summary=profile.latest_timbre_summary,
         latest_best_genre=profile.latest_best_genre,
         updated_at=profile.updated_at,
+    )
+
+
+# ── 헬퍼 ──────────────────────────────────────────────────────
+
+def _to_job_response(job: AnalysisJob) -> AnalysisJobResponse:
+    error_msg = job.result_data.get("error") if job.result_data else None
+    return AnalysisJobResponse(
+        job_id=job.id,
+        status=job.status,
+        result_data=job.result_data,
+        error_message=error_msg,
+        created_at=job.created_at,
+        updated_at=job.updated_at,
     )
