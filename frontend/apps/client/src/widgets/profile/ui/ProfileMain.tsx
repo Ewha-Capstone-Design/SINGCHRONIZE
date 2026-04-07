@@ -2,13 +2,14 @@
 
 import { useNavigate } from '@/shared/lib/navigation';
 import { useModal } from '@/shared/hooks';
-import { ProfileCard } from '@/entities/user/ui';
 import { BlockedModal } from '@/features/block';
+import { ProfileCard } from '@/entities/user/ui';
+import { toSnsAccountsUiType } from '@/entities/user/model/types';
 import SnsAccountItem from './SnsAccountItem';
 
+import { getApiErrorMessage } from '@/shared/api/apiError';
 import { useLogout, useWithdraw } from '@/entities/auth';
 import { useMe } from '@/entities/user';
-import { toSnsAccountsUiType } from '@/entities/user/model/types';
 
 const ProfileMain = () => {
   const { go, ROUTES } = useNavigate();
@@ -36,7 +37,7 @@ const ProfileMain = () => {
         },
         onError: (error) => {
           console.error('탈퇴 실패:', error);
-          alert('탈퇴 처리 중 에러가 발생했습니다.');
+          alert(getApiErrorMessage(error, '탈퇴 처리 중 에러가 발생했습니다.'));
         },
       });
     }
