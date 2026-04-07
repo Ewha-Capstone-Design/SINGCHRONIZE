@@ -39,3 +39,14 @@ export type MusicSearchResultType = {
   artist: string;
   album_image?: string | null;
 };
+
+export type FirstRecommendedSongType = {
+  song_id: string;
+  title: string;
+  artist: string;
+  album_cover?: string | null;
+  score?: number;
+  ecapa_score?: number;
+  pitch_total?: number;
+  timbre_score?: number;
+};

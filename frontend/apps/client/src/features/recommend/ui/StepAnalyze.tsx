@@ -13,11 +13,12 @@ const STATUS_TEXT: Record<AnalyzeStatus, { title: string; desc: string }> = {
 };
 
 type StepAnalyzeProps = {
+  audioBlob: Blob;
   onNext: (jobId: string, firstSongs: SongUiType[]) => void;
 };
 
-const StepAnalyze = ({ onNext }: StepAnalyzeProps) => {
-  const { status } = useRecommendPolling(onNext);
+const StepAnalyze = ({ audioBlob, onNext }: StepAnalyzeProps) => {
+  const { status } = useRecommendPolling(audioBlob, onNext);
   const text = STATUS_TEXT[status];
 
   return (

@@ -1,14 +1,17 @@
 import { privateClient } from '@/shared/api/client';
 import type {
+  RecommendationCreateBody,
   RecommendationFeedbackBody,
   RecommendationStatusResponse,
 } from '../model/types';
 
 export const recommendationApi = {
   // POST: 추천 Job 생성
-  create: async (): Promise<RecommendationStatusResponse> => {
+  create: async (
+    body: RecommendationCreateBody = {},
+  ): Promise<RecommendationStatusResponse> => {
     const { data, error } = await privateClient.POST('/api/v1/recommendations', {
-      body: {},
+      body,
     });
     if (error) throw error;
     return data as unknown as RecommendationStatusResponse;

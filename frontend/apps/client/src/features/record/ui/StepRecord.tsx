@@ -8,11 +8,11 @@ import MicTestModal from './MicTestModal';
 import { useRecorder, useTimer } from '../model';
 import { GUIDE_TEXT_BY_LEVEL } from '../model/constants';
 
-const StepRecord = ({ onNext }: { onNext: () => void }) => {
+const StepRecord = ({ onNext }: { onNext: (blob: Blob) => void }) => {
   const { open: isMicTestOpen, closeModal } = useModal(true);
   const [micGain, setMicGain] = useState(1);
 
-  const { phase, start, pause, finish, handleRecorded } = useRecorder();
+  const { phase, start, pause, finish } = useRecorder();
   const { mm, ss, reset, guideLevel, isMax, canDone } = useTimer(phase);
 
   // 60초 도달 시 녹음 자동 종료
@@ -44,7 +44,7 @@ const StepRecord = ({ onNext }: { onNext: () => void }) => {
             phase={phase}
             mode='record'
             gain={micGain}
-            onRecorded={handleRecorded}
+            onRecorded={onNext}
           />
 
           {/* 타이머 */}
@@ -70,11 +70,8 @@ const StepRecord = ({ onNext }: { onNext: () => void }) => {
             if (phase === 'finish') return;
             start();
           }}
-          onDone={() => {
-            finish();
-            onNext();
-          }}
-          canDone={true} // TODO: canDone로 교체
+          onDone={finish}
+          canDone={canDone}
         />
       </div>
     </>

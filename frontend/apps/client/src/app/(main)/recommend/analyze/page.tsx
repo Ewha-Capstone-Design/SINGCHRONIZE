@@ -17,6 +17,7 @@ const BG_CLASS = {
 const RecommendAnalyzePage = () => {
   const {
     step,
+    audioBlob,
     firstSongs,
     goBack,
     onRecordDone,
@@ -27,6 +28,8 @@ const RecommendAnalyzePage = () => {
   } = useRecommendFlow();
 
   const filled = FILLED_COUNT_BY_STEP[step];
+
+  const canAnalyze = step === 'analyze' && audioBlob;
 
   return (
     <div
@@ -39,7 +42,7 @@ const RecommendAnalyzePage = () => {
       <FlowHeader filled={filled} onBack={goBack} />
       <div className='flex-1 flex flex-col items-center'>
         {step === 'record' && <StepRecord onNext={onRecordDone} />}
-        {step === 'analyze' && <StepAnalyze onNext={onAnalyzeDone} />}
+        {canAnalyze && <StepAnalyze audioBlob={audioBlob} onNext={onAnalyzeDone} />}
         {step === 'ranking' && <StepRanking songs={firstSongs} onNext={onRankingDone} />}
         {step === 'situation' && <StepSituation onNext={onSituationDone} />}
         {step === 'genre' && <StepGenre onNext={onGenreDone} />}
