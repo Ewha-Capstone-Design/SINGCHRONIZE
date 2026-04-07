@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useNavigate } from '@/shared/lib/navigation';
 import { RECOMMEND_STEPS } from '@/shared/types/recommend';
 import type { InternalRecommendStep } from '@/shared/types/recommend';
-import type { SituationKey, GenreKey } from '@/shared/types/category';
 import type { SongUiType } from '@/entities/song/model/types';
 
 import { isApiError } from '@/shared/api/apiError';
@@ -15,7 +14,7 @@ type FlowState = {
   audioBlob: Blob | null;
   firstSongs: SongUiType[];
   rankedSongIds: string[];
-  selectedSituations: SituationKey[];
+  selectedSituations: string[];
 };
 
 const INITIAL_STATE: FlowState = {
@@ -62,12 +61,12 @@ export const useRecommendFlow = () => {
     setStep('situation');
   };
 
-  const onSituationDone = (selectedSituations: SituationKey[]) => {
+  const onSituationDone = (selectedSituations: string[]) => {
     setFlowState((prev) => ({ ...prev, selectedSituations }));
     setStep('genre');
   };
 
-  const onGenreDone = async (selectedGenres: GenreKey[]) => {
+  const onGenreDone = async (selectedGenres: string[]) => {
     const { jobId, rankedSongIds, selectedSituations } = flowState;
     if (!jobId) return;
 

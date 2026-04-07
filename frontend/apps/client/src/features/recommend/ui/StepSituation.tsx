@@ -3,11 +3,11 @@
 import { useState } from 'react';
 import { Button } from '@singchronize/ui';
 import { SituationCard } from '@/shared/components';
-import { MAX_SITUATION_SELECT, SITUATION_KEYS } from '@/shared/constants/situation';
+import { MAX_SITUATION_SELECT, SITUATION_ITEMS, SITUATION_KEYS } from '@/shared/constants/situation';
 import type { SituationKey } from '@/shared/types/category';
 
 type StepSituationProps = {
-  onNext: (selectedKeys: SituationKey[]) => void;
+  onNext: (selectedLabels: string[]) => void;
 };
 
 const StepSituation = ({ onNext }: StepSituationProps) => {
@@ -50,7 +50,7 @@ const StepSituation = ({ onNext }: StepSituationProps) => {
           ))}
         </div>
 
-        <Button variant='normal' onClick={() => onNext(selectedKeys)}>
+        <Button variant='normal' onClick={() => onNext(selectedKeys.map((k) => SITUATION_ITEMS[k].label.replace(/\n/g, ' ')))}>
           선택 완료하기
         </Button>
       </div>
