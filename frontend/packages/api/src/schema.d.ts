@@ -218,6 +218,23 @@ export interface paths {
         patch: operations["update_settings_api_v1_users_me_settings_patch"];
         trace?: never;
     };
+    "/api/v1/users/me/busking-history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 내 버스킹 목록 조회 */
+        get: operations["get_my_busking_history_api_v1_users_me_busking_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/music/search": {
         parameters: {
             query?: never;
@@ -345,6 +362,23 @@ export interface paths {
         head?: never;
         /** Update History */
         patch: operations["update_history_api_v1_library_history__archive_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/library/history/recommendations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Recommendation Archive */
+        get: operations["get_recommendation_archive_api_v1_library_history_recommendations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/busking/thumbnail/presigned-url": {
@@ -634,6 +668,124 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/analysis/upload-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Upload Url
+         * @description S3 presigned PUT URL 발급.
+         *     프론트엔드는 이 URL로 직접 오디오 파일을 업로드하고,
+         *     반환된 s3_key로 POST /jobs를 호출한다.
+         */
+        post: operations["get_upload_url_api_v1_analysis_upload_url_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analysis/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Analysis Job
+         * @description 보컬 분석 Job 생성 + SQS 전송.
+         *     1. analysis_jobs 테이블에 레코드 생성 (QUEUED)
+         *     2. Vocal Analysis SQS에 { job_id, s3_key } 전송
+         */
+        post: operations["create_analysis_job_api_v1_analysis_jobs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analysis/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Analysis Job
+         * @description 분석 Job 상태 및 결과 조회. 프론트엔드 폴링용.
+         */
+        get: operations["get_analysis_job_api_v1_analysis_jobs__job_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analysis/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Vocal Profile
+         * @description 현재 유저의 보컬 프로필 존재 여부 및 최신 job 확인.
+         */
+        get: operations["get_vocal_profile_api_v1_analysis_profile_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/home/feeds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Home Feeds */
+        get: operations["get_home_feeds_api_v1_home_feeds_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/busking/live-ticker": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Live Ticker */
+        get: operations["get_live_ticker_api_v1_busking_live_ticker_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/me/onboarding/step1": {
         parameters: {
             query?: never;
@@ -763,6 +915,37 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AnalysisJobCreate */
+        AnalysisJobCreate: {
+            /** S3 Key */
+            s3_key: string;
+            /** Recording Id */
+            recording_id?: string | null;
+        };
+        /** AnalysisJobResponse */
+        AnalysisJobResponse: {
+            /**
+             * Job Id
+             * Format: uuid
+             */
+            job_id: string;
+            /** Status */
+            status: string;
+            /** Result Data */
+            result_data?: Record<string, never> | null;
+            /** Error Message */
+            error_message?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
         /** ArchiveCreate */
         ArchiveCreate: {
             /** Song Data */
@@ -774,6 +957,26 @@ export interface components {
             tags: string[];
             /** Memo */
             memo?: string | null;
+        };
+        /** ArchiveDateGroup */
+        ArchiveDateGroup: {
+            /** Date */
+            date: string;
+            /** Items */
+            items: components["schemas"]["ArchiveRecItem"][];
+        };
+        /** ArchiveRecItem */
+        ArchiveRecItem: {
+            /** Rec Id */
+            rec_id: string;
+            /** Date */
+            date: string;
+            /** Selected Genre */
+            selected_genre?: string[] | null;
+            /** Selected Keyword */
+            selected_keyword?: string[] | null;
+            /** Songs */
+            songs: components["schemas"]["ArchiveSong"][];
         };
         /** ArchiveResponse */
         ArchiveResponse: {
@@ -801,6 +1004,19 @@ export interface components {
              * Format: date-time
              */
             recorded_date: string;
+        };
+        /** ArchiveSong */
+        ArchiveSong: {
+            /** Song Id */
+            song_id: string;
+            /** Title */
+            title: string;
+            /** Artist */
+            artist: string;
+            /** Album Cover */
+            album_cover?: string | null;
+            /** Score */
+            score?: number | null;
         };
         /** ArchiveUpdate */
         ArchiveUpdate: {
@@ -1086,6 +1302,13 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** HomeFeedsResponse */
+        HomeFeedsResponse: {
+            /** Weekly */
+            weekly: components["schemas"]["WeeklySong"][];
+            /** Live Ticker */
+            live_ticker: components["schemas"]["LiveTickerItem"][];
+        };
         /**
          * LiveKitJoinResponse
          * @description 뷰어 입장 응답 — LiveKit 뷰어 토큰 포함.
@@ -1100,6 +1323,17 @@ export interface components {
              * Format: uuid
              */
             room_id: string;
+        };
+        /** LiveTickerItem */
+        LiveTickerItem: {
+            /** Room Id */
+            room_id: string;
+            /** Title */
+            title: string;
+            /** Thumbnail */
+            thumbnail?: string | null;
+            /** Viewer Count */
+            viewer_count: number;
         };
         /**
          * LoginResponse
@@ -1123,6 +1357,13 @@ export interface components {
             /** Singers */
             singers: components["schemas"]["SingerInfo"][];
         };
+        /** RecommendationArchiveResponse */
+        RecommendationArchiveResponse: {
+            /** Groups */
+            groups: components["schemas"]["ArchiveDateGroup"][];
+            /** Total */
+            total: number;
+        };
         /**
          * RecommendationCreate
          * @description 기본 (1차 DB 프로필 기반): job_id + user_id만 SQS에 전송.
@@ -1144,9 +1385,9 @@ export interface components {
             /** Reranking Top3 */
             reranking_top3: string[];
             /** Selected Genre */
-            selected_genre?: unknown | null;
+            selected_genre?: string[] | null;
             /** Selected Keyword */
-            selected_keyword?: unknown | null;
+            selected_keyword?: string[] | null;
         };
         /** RecommendationStatusResponse */
         RecommendationStatusResponse: {
@@ -1161,6 +1402,18 @@ export interface components {
             first_recommended_songs?: Record<string, never>[] | null;
             /** Recommended Songs */
             recommended_songs?: Record<string, never> | null;
+            /** Error Message */
+            error_message?: string | null;
+            /** Failed At */
+            failed_at?: string | null;
+            /** Stage1 Started At */
+            stage1_started_at?: string | null;
+            /** Stage1 Completed At */
+            stage1_completed_at?: string | null;
+            /** Stage2 Started At */
+            stage2_started_at?: string | null;
+            /** Stage2 Completed At */
+            stage2_completed_at?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -1269,6 +1522,13 @@ export interface components {
              */
             token_type: string;
         };
+        /** UploadUrlResponse */
+        UploadUrlResponse: {
+            /** Upload Url */
+            upload_url: string;
+            /** S3 Key */
+            s3_key: string;
+        };
         /**
          * UserMeResponse
          * @description GET /users/me 전용 - 선호 가수, 차단 가수, 차단 곡, 연동 SNS 포함
@@ -1370,6 +1630,61 @@ export interface components {
             /** Error Type */
             type: string;
         };
+        /** VocalProfileResponse */
+        VocalProfileResponse: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Latest Analysis Job Id */
+            latest_analysis_job_id?: string | null;
+            /** Latest Recording Id */
+            latest_recording_id?: string | null;
+            /** Has Profile */
+            has_profile: boolean;
+            /** Observed Lowest Note */
+            observed_lowest_note?: string | null;
+            /** Observed Highest Note */
+            observed_highest_note?: string | null;
+            /** Stable Lowest Note */
+            stable_lowest_note?: string | null;
+            /** Stable Highest Note */
+            stable_highest_note?: string | null;
+            /** Radar Median Avg */
+            radar_median_avg?: number | null;
+            /** Radar Median Pitch Stability */
+            radar_median_pitch_stability?: number | null;
+            /** Radar Median Rhythm Stability */
+            radar_median_rhythm_stability?: number | null;
+            /** Radar Median High Note Stability */
+            radar_median_high_note_stability?: number | null;
+            /** Radar Median Dynamic Control */
+            radar_median_dynamic_control?: number | null;
+            /** Radar Median Vocal Clarity */
+            radar_median_vocal_clarity?: number | null;
+            /** Latest Timbre Summary */
+            latest_timbre_summary?: string | null;
+            /** Latest Best Genre */
+            latest_best_genre?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+        };
+        /** WeeklySong */
+        WeeklySong: {
+            /** Rank */
+            rank: number;
+            /** Name */
+            name: string;
+            /** Artist */
+            artist: string;
+            /** Album Image */
+            album_image?: string | null;
+            /** Uri */
+            uri?: string | null;
+            /** Wish Count */
+            wish_count: number;
+        };
         /** WishlistItemCreate */
         WishlistItemCreate: {
             /** Song Data */
@@ -1409,6 +1724,45 @@ export interface components {
              * @description 탈퇴 사유
              */
             reason?: string | null;
+        };
+        /** _BuskingHistoryItem */
+        _BuskingHistoryItem: {
+            /** Room Id */
+            room_id: string;
+            /** Title */
+            title: string;
+            /** Thumbnail */
+            thumbnail?: string | null;
+            /** Status */
+            status: string;
+            /** Started At */
+            started_at?: string | null;
+            /** Ended At */
+            ended_at?: string | null;
+            /** Peak Viewer Count */
+            peak_viewer_count: number;
+            /** Total Unique Viewers */
+            total_unique_viewers: number;
+            /** Setlist */
+            setlist: components["schemas"]["_SetlistItem"][];
+        };
+        /** _BuskingHistoryResponse */
+        _BuskingHistoryResponse: {
+            /** Stats */
+            stats: Record<string, never>;
+            /** History */
+            history: components["schemas"]["_BuskingHistoryItem"][];
+        };
+        /** _SetlistItem */
+        _SetlistItem: {
+            /** Title */
+            title: string;
+            /** Artist */
+            artist: string;
+            /** Album Art Url */
+            album_art_url?: string | null;
+            /** Order Index */
+            order_index: number;
         };
     };
     responses: never;
@@ -1817,6 +2171,26 @@ export interface operations {
             };
         };
     };
+    get_my_busking_history_api_v1_users_me_busking_history_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["_BuskingHistoryResponse"];
+                };
+            };
+        };
+    };
     search_music_api_v1_music_search_get: {
         parameters: {
             query: {
@@ -2139,6 +2513,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ArchiveResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_recommendation_archive_api_v1_library_history_recommendations_get: {
+        parameters: {
+            query?: {
+                /** @description 장르 필터 (발라드, POP, DANCE 등) */
+                genre?: string | null;
+                /** @description 상황 필터 (회식하며 즐길 때 등) */
+                keyword?: string | null;
+                /** @description 날짜 필터 YYYY-MM-DD */
+                date?: string | null;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecommendationArchiveResponse"];
                 };
             };
             /** @description Validation Error */
@@ -2604,6 +3016,150 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_upload_url_api_v1_analysis_upload_url_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadUrlResponse"];
+                };
+            };
+        };
+    };
+    create_analysis_job_api_v1_analysis_jobs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnalysisJobCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalysisJobResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_analysis_job_api_v1_analysis_jobs__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalysisJobResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_vocal_profile_api_v1_analysis_profile_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VocalProfileResponse"];
+                };
+            };
+        };
+    };
+    get_home_feeds_api_v1_home_feeds_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeFeedsResponse"];
+                };
+            };
+        };
+    };
+    get_live_ticker_api_v1_busking_live_ticker_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiveTickerItem"][];
                 };
             };
         };
