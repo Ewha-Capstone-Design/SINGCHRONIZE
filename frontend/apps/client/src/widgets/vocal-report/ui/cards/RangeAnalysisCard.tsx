@@ -20,7 +20,7 @@ const StatPill = ({ label, value }: { label: string; value: string }) => (
   <div
     className={cn(
       'py-4 flex justify-center items-center gap-2 w-37.5 rounded-20',
-      'border border-gray-700 text-center'
+      'border border-gray-700 text-center',
     )}
   >
     <div className='w-11 typo-14r text-gray-300'>{label}</div>
@@ -74,11 +74,13 @@ const RangeAnalysisCard = ({
   data,
   comfort,
   stats,
+  nickname,
   description,
 }: {
   data: RangePoint[];
   comfort: { from: string; to: string };
   stats: { max: string; avg: string; min: string };
+  nickname: string;
   description?: string;
 }) => {
   const { open, openModal, closeModal } = useModal();
@@ -93,7 +95,7 @@ const RangeAnalysisCard = ({
       >
         <div className='pt-4 flex flex-col gap-4 md:flex-row md:justify-between h-full md:items-end'>
           <p className='typo-18sb text-white whitespace-pre-line shrink-0'>
-            {`지연님에게 가장 편안한\n음역대는 `}
+            {`${nickname}님에게 가장 편안한\n음역대는 `}
             <span className='typo-18sb text-brand'>
               {comfort.from}-{comfort.to}
             </span>
@@ -120,7 +122,7 @@ const RangeAnalysisCard = ({
               <RangeAnalysisChart data={data} comfort={comfort} />
             </div>
           }
-          description={description ?? ""}
+          description={description ?? ''}
           onClose={closeModal}
         />
       )}

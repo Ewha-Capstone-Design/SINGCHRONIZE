@@ -5,6 +5,8 @@ import GenreFitCard from './cards/GenreFitCard';
 import TimbreBarsCard from './cards/TimbreBarsCard';
 import RangeAnalysisCard from './cards/RangeAnalysisCard';
 
+import { useMe } from '@/entities/user';
+
 type DesktopLayout = 'grid' | 'wide';
 
 type VocalReportWidgetProps = {
@@ -18,13 +20,16 @@ const VocalReportWidget = ({
 }: VocalReportWidgetProps) => {
   const isGrid = desktopLayout === 'grid';
 
+  const { data: me } = useMe();
+  const nickname = me?.nickname ?? '사용자';
+
   return (
     <div
       className={cn(
         'grid grid-cols-1 gap-6',
         isGrid
           ? 'lg:grid-cols-3 lg:grid-rows-2 lg:grid-flow-col'
-          : 'lg:grid-cols-2 lg:grid-flow-row'
+          : 'lg:grid-cols-2 lg:grid-flow-row',
       )}
     >
       <VocalTraitsRadarCard data={report.traits} />
@@ -32,7 +37,11 @@ const VocalReportWidget = ({
       <TimbreBarsCard data={report.timbre} />
 
       <div className='lg:col-span-2'>
-        <GenreFitCard data={report.genreFit.data} bestGenre={report.genreFit.bestGenre} />
+        <GenreFitCard
+          data={report.genreFit.data}
+          bestGenre={report.genreFit.bestGenre}
+          nickname={nickname}
+        />
       </div>
 
       <div className='lg:col-span-2'>
@@ -40,6 +49,7 @@ const VocalReportWidget = ({
           data={report.range.data}
           comfort={report.range.comfort}
           stats={report.range.stats}
+          nickname={nickname}
         />
       </div>
     </div>
