@@ -26,9 +26,10 @@
 
   /* Sidebar */
   #sidebar {
-    width: 220px; min-height: 100vh; background: var(--bg2);
+    width: 220px; height: 100vh; background: var(--bg2);
     border-right: 1px solid var(--border); position: fixed; top: 0; left: 0;
     display: flex; flex-direction: column; padding: 20px 0; z-index: 100;
+    overflow: hidden;
   }
   #sidebar .logo { padding: 0 20px 20px; border-bottom: 1px solid var(--border); }
   #sidebar .logo h1 { font-size: 14px; font-weight: 700; color: var(--purple-light); letter-spacing: 1px; }
@@ -151,12 +152,28 @@
   .room-card .room-actions { display: flex; gap: 6px; }
 
   /* Setlist builder */
-  #setlist-items .setlist-item {
-    display: grid; grid-template-columns: 30px 1fr 1fr 1fr 28px; gap: 6px;
-    align-items: center; margin-bottom: 6px;
+  .setlist-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px;
+    background: var(--bg3); margin-bottom: 6px;
   }
-  #setlist-items .setlist-item .idx { font-size: 11px; color: var(--text2); text-align: center; }
-  #setlist-items .setlist-item button { padding: 4px; background: transparent; color: var(--red); font-size: 16px; line-height: 1; }
+  .setlist-item .sl-num { font-size: 11px; color: var(--text2); min-width: 16px; text-align: center; }
+  .setlist-item img { width: 36px; height: 36px; border-radius: 4px; object-fit: cover; flex-shrink: 0; background: var(--bg2); }
+  .setlist-item .sl-info { flex: 1; min-width: 0; }
+  .setlist-item .sl-info b { display: block; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .setlist-item .sl-info span { font-size: 11px; color: var(--text2); }
+  .setlist-item .sl-remove { padding: 4px 8px; background: transparent; color: var(--red); font-size: 14px; border: none; cursor: pointer; flex-shrink: 0; }
+  /* Spotify search results in setlist builder */
+  .sl-search-result {
+    display: flex; align-items: center; gap: 8px; padding: 7px 10px;
+    border-radius: 6px; cursor: pointer; transition: background .1s;
+  }
+  .sl-search-result:hover { background: var(--bg3); }
+  .sl-search-result img { width: 32px; height: 32px; border-radius: 3px; object-fit: cover; flex-shrink: 0; }
+  .sl-search-result .sr-info { flex: 1; min-width: 0; }
+  .sl-search-result .sr-info b { display: block; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sl-search-result .sr-info span { font-size: 11px; color: var(--text2); }
+  .sl-search-result button { padding: 3px 10px; font-size: 11px; flex-shrink: 0; }
 
   /* WS chat */
   #ws-messages {
@@ -203,8 +220,18 @@
   .api-desc b { color: var(--text); }
   .field-hint { font-size: 11px; color: var(--text2); margin-top: 3px; line-height: 1.5; }
   .required { color: var(--red); font-size: 11px; margin-left: 3px; }
+  /* LiveKit 음성 테스트 */
+  .lk-status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 10px; border-radius: 12px; border: 1px solid var(--border); }
+  .lk-status.idle { color: var(--text2); }
+  .lk-status.connected { color: var(--green); border-color: var(--green); }
+  .lk-status.error { color: var(--red); border-color: var(--red); }
+  .lk-status::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .lk-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .audio-viz { height: 40px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 2px; padding: 8px; overflow: hidden; }
+  .audio-viz .bar { width: 3px; background: var(--green); border-radius: 2px; transition: height .08s; }
 </style>
 </head>
+<script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
 <body>
 
 <!-- ═══════ SIDEBAR ═══════ -->
@@ -241,7 +268,7 @@
     <div class="nav-group">Busking</div>
     <a onclick="showSection('busking-rooms', this)">방 목록/생성</a>
     <a onclick="showSection('busking-ctrl', this)">방 제어</a>
-    <a onclick="showSection('busking-ws', this)">WebSocket</a>
+    <a onclick="showSection('busking-live', this)">🔴 라이브 테스트</a>
   </nav>
 </nav>
 
@@ -459,9 +486,18 @@
           <input type="text" id="room-thumbnail" placeholder="https://...">
         </div>
         <div class="form-row">
-          <label>셋리스트 <span class="required">*</span> <span class="field-hint">곡 검색에서 찾은 name·artist·album_image·uri 입력 (3~5곡)</span></label>
+          <label>셋리스트 <span class="required">*</span> <span class="field-hint">Spotify에서 검색해 곡을 추가하세요 (3~5곡)</span></label>
+          <!-- 검색창 -->
+          <div class="flex-center" style="gap:6px;margin-bottom:8px">
+            <input type="text" id="sl-search-input" placeholder="곡 제목 또는 가수 검색..." style="flex:1"
+              onkeydown="if(event.key==='Enter')slSearch()">
+            <button class="btn-outline btn-sm" onclick="slSearch()" style="flex-shrink:0">검색</button>
+          </div>
+          <!-- 검색 결과 -->
+          <div id="sl-search-results" style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;padding:4px;margin-bottom:10px;display:none"></div>
+          <!-- 현재 셋리스트 -->
           <div id="setlist-items"></div>
-          <button class="btn-outline btn-sm" onclick="addSetlistItem()" style="margin-top:6px">+ 곡 추가</button>
+          <div id="sl-count-hint" style="font-size:11px;color:var(--text2);margin-top:4px">0 / 3~5곡</div>
         </div>
         <div class="btn-group">
           <button class="btn-green" onclick="createRoom()">방 생성</button>
@@ -542,39 +578,171 @@
     </div>
   </div>
 
-  <!-- ── BUSKING WS ── -->
-  <div id="section-busking-ws" class="section">
-    <div class="page-header"><h2>WebSocket 테스트</h2><p>버스킹 실시간 채팅 및 리액션 WebSocket 연결 테스트입니다. 라이브 중인 방에서만 동작합니다.</p></div>
+  <!-- ── BUSKING LIVE (통합 테스트) ── -->
+  <div id="section-busking-live" class="section">
+    <div class="page-header">
+      <h2>🔴 라이브 테스트</h2>
+      <p>음성 · 채팅 · 리액션 · 셋리스트 — 버스킹 라이브 전체 기능 테스트입니다.</p>
+    </div>
+
+    <!-- ① 방 연결 -->
     <div class="card">
-      <div class="card-header" onclick="toggleCard(this)">
-        <h3><span class="method method-ws">WS</span>/api/v1/busking/ws/{room_id}</h3>
-      </div>
+      <div class="card-header" onclick="toggleCard(this)"><h3>① 방 연결</h3></div>
       <div class="card-body">
         <div class="api-desc">
-          <b>연결 조건:</b> 방이 <code>LIVE</code> 상태여야 합니다. JWT 토큰은 URL 쿼리 파라미터 <code>?token=...</code>으로 전달됩니다.<br>
-          <b>수신 이벤트:</b> <code>CHAT</code> · <code>REACTION</code> · <code>SONG_CHANGED</code> · <code>ROOM_ENDED</code><br>
-          <b>전송 가능 메시지:</b> <code>{"type":"chat","message":"..."}</code> · <code>{"type":"reaction","reaction_type":"match"}</code>
+          방 목록/생성 탭에서 방을 먼저 만드세요. Room ID를 입력하고 <b>라이브 시작</b> → <b>WebSocket 연결</b> 순서로 진행합니다.<br>
+          PREPARING 상태에서도 LiveKit 음성은 테스트 가능합니다.
         </div>
-        <div class="form-row">
-          <label>Room ID <span class="required">*</span> <span class="field-hint">LIVE 상태인 방의 UUID</span></label>
-          <input type="text" id="ws-room-id" placeholder="버스킹 방 UUID">
-        </div>
-        <div class="btn-group" style="margin-bottom:12px">
-          <button class="btn-green" id="ws-connect-btn" onclick="wsConnect()">연결</button>
-          <button class="btn-red" id="ws-disconnect-btn" onclick="wsDisconnect()" disabled>해제</button>
-        </div>
-        <div id="ws-messages"></div>
-        <div class="form-row">
-          <label>채팅 메시지</label>
-          <div class="flex-center">
-            <input type="text" id="ws-chat-input" placeholder="채팅 메시지" onkeydown="if(event.key==='Enter')wsSendChat()">
-            <button class="btn-primary btn-sm" onclick="wsSendChat()">전송</button>
+        <div class="flex-center" style="gap:10px;flex-wrap:wrap">
+          <div style="flex:1;min-width:240px">
+            <label>Room ID <span class="required">*</span></label>
+            <input type="text" id="live-room-id" placeholder="버스킹 방 UUID">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;padding-top:18px">
+            <span id="live-ws-status" class="lk-status idle">WS 비연결</span>
+            <span id="live-lk-url-display" style="font-size:11px;color:var(--text2)"></span>
           </div>
         </div>
-        <div class="btn-group">
-          <button class="btn-outline btn-sm" onclick="wsSendReaction('match')">👍 Match</button>
-          <button class="btn-outline btn-sm" onclick="wsSendReaction('mismatch')">👎 Mismatch</button>
-          <button class="btn-outline btn-sm" onclick="wsSendNextSong()">⏭ Next Song (호스트)</button>
+        <div class="btn-group" style="margin-top:10px">
+          <button class="btn-outline btn-sm" onclick="liveCopyFromRooms()">방 목록에서 ID 복사</button>
+          <button class="btn-green btn-sm" id="live-ws-connect-btn" onclick="liveWsConnect()">WS 연결</button>
+          <button class="btn-red btn-sm" id="live-ws-disconnect-btn" onclick="liveWsDisconnect()" disabled>WS 해제</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ② 방 제어 (호스트) -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)"><h3>② 방 제어 <span style="font-size:11px;font-weight:400;color:var(--text2)">(호스트 전용)</span></h3></div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+          <div>
+            <button class="btn-green" style="width:100%" onclick="liveStartRoom()">▶ 라이브 시작</button>
+            <div class="response-box" id="live-start-resp" style="display:none;margin-top:8px"></div>
+          </div>
+          <div>
+            <button class="btn-outline" style="width:100%" onclick="liveNextSong()">⏭ 다음 곡</button>
+            <div class="response-box" id="live-next-resp" style="display:none;margin-top:8px"></div>
+          </div>
+          <div>
+            <button class="btn-red" style="width:100%" onclick="liveEndRoom()">■ 라이브 종료</button>
+            <div class="response-box" id="live-end-resp" style="display:none;margin-top:8px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ③ 셋리스트 -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)"><h3>③ 셋리스트 현황</h3></div>
+      <div class="card-body">
+        <div class="btn-group" style="margin-bottom:10px">
+          <button class="btn-outline btn-sm" onclick="liveFetchSetlist()">서버에서 불러오기</button>
+        </div>
+        <div id="live-setlist" style="font-size:13px;color:var(--text2)">셋리스트 없음 (서버에서 불러오거나 WS 연결 후 자동 업데이트)</div>
+      </div>
+    </div>
+
+    <!-- ④ 음성 -->
+    <div class="lk-panel">
+      <!-- 호스트 -->
+      <div class="card">
+        <div class="card-header" onclick="toggleCard(this)"><h3>④-A 🎙 호스트 음성</h3></div>
+        <div class="card-body">
+          <div class="api-desc">방 생성 응답의 <code>livekit_token</code> 사용. 마이크를 LiveKit 룸에 publish합니다.</div>
+          <div class="form-row">
+            <label>호스트 LiveKit Token</label>
+            <div class="flex-center" style="gap:6px">
+              <input type="text" id="lk-host-token" placeholder="방 생성 응답의 livekit_token" style="flex:1">
+              <button class="btn-outline btn-sm" onclick="lkFillHostToken()" style="white-space:nowrap;flex-shrink:0">자동 채우기</button>
+            </div>
+          </div>
+          <div class="form-row">
+            <label>LiveKit URL</label>
+            <input type="text" id="lk-url" placeholder="wss://...livekit.cloud">
+          </div>
+          <div style="margin-bottom:10px"><span id="lk-host-status" class="lk-status idle">비연결</span></div>
+          <div class="audio-viz" id="lk-host-viz"><span style="font-size:11px;color:var(--text2)">마이크 레벨</span></div>
+          <div class="btn-group" style="margin-top:10px">
+            <button class="btn-green" id="lk-host-connect-btn" onclick="lkHostConnect()">연결 + 마이크 켜기</button>
+            <button class="btn-red" id="lk-host-disconnect-btn" onclick="lkHostDisconnect()" disabled>해제</button>
+            <button class="btn-outline btn-sm" id="lk-mic-toggle-btn" onclick="lkToggleMic()" disabled>마이크 끄기</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 뷰어 -->
+      <div class="card">
+        <div class="card-header" onclick="toggleCard(this)"><h3>④-B 👂 뷰어 음성</h3></div>
+        <div class="card-body">
+          <div class="api-desc">Room ID를 입력 후 <b>뷰어 토큰 발급</b>을 누르면 자동으로 채워집니다.</div>
+          <div class="form-row">
+            <label>뷰어 LiveKit Token</label>
+            <div class="flex-center" style="gap:6px">
+              <input type="text" id="lk-viewer-token" placeholder="뷰어 토큰 발급 버튼으로 자동 채우기" style="flex:1">
+              <button class="btn-outline btn-sm" onclick="lkFetchViewerToken()" style="white-space:nowrap;flex-shrink:0">토큰 발급</button>
+            </div>
+          </div>
+          <div style="margin-bottom:10px"><span id="lk-viewer-status" class="lk-status idle">비연결</span></div>
+          <div id="lk-viewer-participants" style="font-size:12px;color:var(--text2);min-height:32px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;margin-bottom:8px">참가자 없음</div>
+          <div id="lk-audio-container"></div>
+          <div class="btn-group">
+            <button class="btn-blue" id="lk-viewer-connect-btn" onclick="lkViewerConnect()">연결 + 듣기</button>
+            <button class="btn-red" id="lk-viewer-disconnect-btn" onclick="lkViewerDisconnect()" disabled>해제</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ⑤ 채팅 + 리액션 -->
+    <div class="lk-panel">
+      <!-- 채팅 -->
+      <div class="card">
+        <div class="card-header" onclick="toggleCard(this)"><h3>⑤-A 💬 채팅</h3></div>
+        <div class="card-body">
+          <div id="live-chat" style="height:220px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:13px;margin-bottom:8px">
+            <span style="color:var(--text2);font-size:12px">WS 연결 후 채팅이 표시됩니다.</span>
+          </div>
+          <div class="flex-center">
+            <input type="text" id="live-chat-input" placeholder="채팅 메시지 입력..." onkeydown="if(event.key==='Enter')liveSendChat()" style="flex:1">
+            <button class="btn-primary btn-sm" onclick="liveSendChat()" style="flex-shrink:0">전송</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 리액션 -->
+      <div class="card">
+        <div class="card-header" onclick="toggleCard(this)"><h3>⑤-B 👍 리액션</h3></div>
+        <div class="card-body">
+          <div style="display:flex;gap:16px;margin-bottom:20px">
+            <div style="flex:1;text-align:center;background:var(--bg);border:1px solid var(--green);border-radius:8px;padding:16px">
+              <div style="font-size:28px;font-weight:700;color:var(--green)" id="live-match-count">0</div>
+              <div style="font-size:12px;color:var(--text2);margin-top:4px">👍 어울려요</div>
+            </div>
+            <div style="flex:1;text-align:center;background:var(--bg);border:1px solid var(--red);border-radius:8px;padding:16px">
+              <div style="font-size:28px;font-weight:700;color:var(--red)" id="live-mismatch-count">0</div>
+              <div style="font-size:12px;color:var(--text2);margin-top:4px">👎 안 어울려요</div>
+            </div>
+          </div>
+          <div class="btn-group" style="justify-content:center">
+            <button class="btn-green" style="flex:1;font-size:16px;padding:12px" onclick="liveSendReaction('match')">👍 어울려요</button>
+            <button class="btn-red" style="flex:1;font-size:16px;padding:12px" onclick="liveSendReaction('mismatch')">👎 안 어울려요</button>
+          </div>
+          <hr class="divider">
+          <div class="btn-group" style="justify-content:center">
+            <button class="btn-outline btn-sm" onclick="liveSendNextSong()">⏭ 다음 곡 (WS, 호스트)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ⑥ 이벤트 로그 -->
+    <div class="card">
+      <div class="card-header" onclick="toggleCard(this)"><h3>⑥ 이벤트 로그</h3></div>
+      <div class="card-body">
+        <div id="lk-log" style="height:180px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:12px;font-family:monospace"></div>
+        <div class="btn-group" style="margin-top:8px">
+          <button class="btn-outline btn-sm" onclick="document.getElementById('lk-log').innerHTML=''">로그 지우기</button>
         </div>
       </div>
     </div>
@@ -1344,67 +1512,115 @@ async function getRooms() {
 }
 
 function copyToCtrl(id) {
-  document.getElementById('ctrl-room-id').value = id;
+  document.getElementById('ctrl-room-id').value  = id;
+  document.getElementById('live-room-id').value  = id;
   showSection('busking-ctrl');
 }
 
 function copyToWs(id) {
-  document.getElementById('ws-room-id').value = id;
-  showSection('busking-ws');
+  document.getElementById('live-room-id').value = id;
+  showSection('busking-live');
 }
 
-// Setlist builder
-let setlistCount = 0;
-function addSetlistItem() {
-  const container = document.getElementById('setlist-items');
-  const idx = setlistCount++;
-  const div = document.createElement('div');
-  div.className = 'setlist-item';
-  div.dataset.idx = idx;
-  div.innerHTML = `
-    <span class="idx">${container.children.length + 1}</span>
-    <input type="text" placeholder="곡 제목" class="sl-title">
-    <input type="text" placeholder="아티스트" class="sl-artist">
-    <input type="text" placeholder="앨범아트 URL (선택)" class="sl-art">
-    <button onclick="removeSetlistItem(this)">✕</button>`;
-  container.appendChild(div);
-  renumberSetlist();
+// ═══════════════════════════════════════
+// Setlist builder (Spotify 검색 기반)
+// ═══════════════════════════════════════
+let slItems = []; // { title, artist, album_art_url, song_id (spotify uri) }
+
+async function slSearch() {
+  const q = document.getElementById('sl-search-input').value.trim();
+  if (!q) return;
+  const resultsBox = document.getElementById('sl-search-results');
+  resultsBox.style.display = 'block';
+  resultsBox.innerHTML = '<div style="padding:8px;font-size:12px;color:var(--text2)">검색 중...</div>';
+
+  const { ok, data } = await apiFetch('GET', `/api/v1/music/search?q=${encodeURIComponent(q)}`);
+  if (!ok || !Array.isArray(data)) {
+    resultsBox.innerHTML = `<div style="padding:8px;font-size:12px;color:var(--red)">${JSON.stringify(data)}</div>`;
+    return;
+  }
+  if (data.length === 0) {
+    resultsBox.innerHTML = '<div style="padding:8px;font-size:12px;color:var(--text2)">결과 없음</div>';
+    return;
+  }
+
+  window._slSearchResults = data;
+  resultsBox.innerHTML = data.map((s, i) => `
+    <div class="sl-search-result">
+      <img src="${s.album_image || ''}" onerror="this.style.display='none'">
+      <div class="sr-info">
+        <b>${s.name}</b>
+        <span>${s.artist}</span>
+      </div>
+      <button class="btn-outline btn-sm" onclick="slAddSong(${i})">+ 추가</button>
+    </div>`).join('');
 }
 
-function removeSetlistItem(btn) {
-  btn.closest('.setlist-item').remove();
-  renumberSetlist();
-}
+function slAddSong(idx) {
+  const s = window._slSearchResults?.[idx];
+  if (!s) return;
+  if (slItems.length >= 5) { alert('셋리스트는 최대 5곡입니다'); return; }
+  // 중복 체크
+  if (slItems.some(x => x.song_id === s.uri)) { alert('이미 추가된 곡입니다'); return; }
 
-function renumberSetlist() {
-  document.querySelectorAll('#setlist-items .setlist-item').forEach((el, i) => {
-    el.querySelector('.idx').textContent = i + 1;
+  slItems.push({
+    title:         s.name,
+    artist:        s.artist,
+    album_art_url: s.album_image || null,
+    song_id:       s.uri || null,   // Spotify URI — Optional이므로 서버에서 허용
   });
+  slRender();
 }
+
+function slRemove(idx) {
+  slItems.splice(idx, 1);
+  slRender();
+}
+
+function slRender() {
+  const container = document.getElementById('setlist-items');
+  const hint = document.getElementById('sl-count-hint');
+  container.innerHTML = slItems.map((s, i) => `
+    <div class="setlist-item">
+      <span class="sl-num">${i + 1}</span>
+      <img src="${s.album_art_url || ''}" onerror="this.style.display='none'">
+      <div class="sl-info">
+        <b>${s.title}</b>
+        <span>${s.artist}</span>
+      </div>
+      <button class="sl-remove" onclick="slRemove(${i})">✕</button>
+    </div>`).join('');
+  const n = slItems.length;
+  hint.textContent = `${n} / 3~5곡`;
+  hint.style.color = n >= 3 && n <= 5 ? 'var(--green)' : 'var(--text2)';
+}
+
+// 레거시 함수 (init에서 호출되므로 빈 함수로 유지)
+function addSetlistItem() {}
+function removeSetlistItem() {}
+function renumberSetlist() {}
 
 async function createRoom() {
   const title = document.getElementById('room-title').value.trim();
   const thumbnail_url = document.getElementById('room-thumbnail').value.trim() || null;
   if (!title) return alert('방 제목을 입력하세요');
 
-  const items = document.querySelectorAll('#setlist-items .setlist-item');
-  if (items.length < 3 || items.length > 5) return alert('셋리스트는 3~5곡이어야 합니다');
+  if (slItems.length < 3 || slItems.length > 5) return alert('셋리스트는 3~5곡이어야 합니다 (현재 ' + slItems.length + '곡)');
 
-  const setlist = Array.from(items).map((el, i) => ({
-    title: el.querySelector('.sl-title').value.trim(),
-    artist: el.querySelector('.sl-artist').value.trim(),
-    album_art_url: el.querySelector('.sl-art').value.trim() || null,
-    order_index: i,
+  const setlist = slItems.map((s, i) => ({
+    title:         s.title,
+    artist:        s.artist,
+    album_art_url: s.album_art_url || null,
+    song_id:       s.song_id || null,
+    order_index:   i,
   }));
-
-  if (setlist.some(s => !s.title || !s.artist)) return alert('모든 곡의 제목과 아티스트를 입력하세요');
 
   const { ok, data } = await apiFetch('POST', '/api/v1/busking/rooms', { title, thumbnail_url, setlist });
   showResp('create-room-response', data, ok);
   if (ok) {
     document.getElementById('ctrl-room-id').value = data.id;
-    document.getElementById('ws-room-id').value = data.id;
-    alert(`방 생성 완료!\nRoom ID: ${data.id}\nLiveKit Token이 응답에 포함되어 있습니다.`);
+    document.getElementById('live-room-id').value = data.id;
+    alert(`방 생성 완료!\nRoom ID: ${data.id}\n\n"라이브 테스트" 탭에서 자동 채우기 버튼을 누르세요.`);
   }
 }
 
@@ -1522,8 +1738,8 @@ function wsSendNextSong() { wsSend({ type: 'next_song' }); }
 // ═══════════════════════════════════════
 updateTokenDisplay();
 
-// Default 3 setlist items as placeholder
-for (let i = 0; i < 3; i++) addSetlistItem();
+// Setlist 초기화
+slRender();
 
 // Highlight first nav item
 document.querySelector('#sidebar nav a').classList.add('active');
@@ -1857,6 +2073,380 @@ async function getLiveTicker() {
 }
 
 // ── storage 이벤트 리스너 (팝업 → 메인창 토큰 수신 fallback) ──
+// ═══════════════════════════════════════
+// 라이브 테스트 — 통합
+// ═══════════════════════════════════════
+let liveWs = null;
+let lkHostRoom = null;
+let lkViewerRoom = null;
+let lkMicEnabled = true;
+let lkAudioCtx = null;
+let lkAnalyser = null;
+let lkVizRaf = null;
+let liveSetlistData = [];
+let liveCurrentIdx = 0;
+
+// ── 공통 유틸 ──────────────────────────
+function lkLog(msg, type = 'info') {
+  const box = document.getElementById('lk-log');
+  if (!box) return;
+  const ts = new Date().toTimeString().slice(0, 8);
+  const colors = { info: 'var(--text2)', ok: 'var(--green)', err: 'var(--red)', evt: 'var(--blue)', ws: 'var(--purple-light)' };
+  box.innerHTML += `<div style="color:${colors[type] || colors.info}">[${ts}] ${msg}</div>`;
+  box.scrollTop = box.scrollHeight;
+}
+
+function lkSetStatus(id, state, label) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'lk-status ' + state;
+  el.textContent = label;
+}
+
+function liveRoomId() {
+  const id = document.getElementById('live-room-id').value.trim();
+  if (!id) { alert('Room ID를 입력하세요'); return null; }
+  return id;
+}
+
+function liveCopyFromRooms() {
+  const firstBtn = document.querySelector('#rooms-list .room-card');
+  if (!firstBtn) return alert('방 목록/생성 탭에서 먼저 방을 조회하세요');
+  const txt = firstBtn.querySelector('p')?.textContent || '';
+  const m = txt.match(/ID:\s*([\w-]+)/);
+  if (m) { document.getElementById('live-room-id').value = m[1]; lkLog('Room ID 복사됨: ' + m[1], 'ok'); }
+}
+
+// ── WebSocket ───────────────────────────
+function liveWsConnect() {
+  const roomId = liveRoomId(); if (!roomId) return;
+  const token = getToken();
+  if (!token) return alert('먼저 로그인하세요');
+  if (liveWs) { liveWs.close(); }
+
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const url = `${proto}://${location.host}/api/v1/busking/ws/${roomId}?token=${encodeURIComponent(token)}`;
+  lkLog(`WS 연결 중... ${url}`, 'ws');
+  liveWs = new WebSocket(url);
+
+  liveWs.onopen = () => {
+    lkLog('WS 연결됨', 'ok');
+    lkSetStatus('live-ws-status', 'connected', 'WS 연결됨');
+    document.getElementById('live-ws-connect-btn').disabled = true;
+    document.getElementById('live-ws-disconnect-btn').disabled = false;
+  };
+
+  liveWs.onmessage = (e) => {
+    let msg;
+    try { msg = JSON.parse(e.data); } catch { lkLog('WS 수신(raw): ' + e.data, 'ws'); return; }
+
+    switch (msg.type) {
+      case 'state_update':
+        liveCurrentIdx = msg.current_song_index ?? liveCurrentIdx;
+        lkLog(`상태 업데이트 — 현재 곡 인덱스: ${liveCurrentIdx}, 뷰어: ${msg.viewer_count ?? '-'}`, 'ws');
+        liveRenderSetlist();
+        break;
+      case 'reaction_update':
+        document.getElementById('live-match-count').textContent    = msg.match    ?? 0;
+        document.getElementById('live-mismatch-count').textContent = msg.mismatch ?? 0;
+        lkLog(`리액션 — 👍 ${msg.match ?? 0}  👎 ${msg.mismatch ?? 0}`, 'ws');
+        break;
+      case 'chat':
+        liveChatAppend(msg.user_id, msg.message);
+        break;
+      case 'session_ended':
+        lkLog('🔴 세션 종료됨', 'err');
+        lkSetStatus('live-ws-status', 'error', '세션 종료');
+        break;
+      default:
+        lkLog('WS 수신: ' + JSON.stringify(msg), 'ws');
+    }
+  };
+
+  liveWs.onclose = (e) => {
+    lkLog(`WS 연결 해제 (code: ${e.code})`, 'ws');
+    lkSetStatus('live-ws-status', 'idle', 'WS 비연결');
+    document.getElementById('live-ws-connect-btn').disabled = false;
+    document.getElementById('live-ws-disconnect-btn').disabled = true;
+    liveWs = null;
+  };
+  liveWs.onerror = () => lkLog('WS 오류', 'err');
+}
+
+function liveWsDisconnect() {
+  if (liveWs) liveWs.close();
+}
+
+function liveWsSend(obj) {
+  if (!liveWs || liveWs.readyState !== 1) { lkLog('WS 미연결 상태', 'err'); return; }
+  liveWs.send(JSON.stringify(obj));
+  lkLog('WS 전송: ' + JSON.stringify(obj), 'ws');
+}
+
+function liveSendChat() {
+  const msg = document.getElementById('live-chat-input').value.trim();
+  if (!msg) return;
+  liveWsSend({ type: 'chat', message: msg });
+  document.getElementById('live-chat-input').value = '';
+}
+
+function liveSendReaction(value) {
+  liveWsSend({ type: 'reaction', value });
+}
+
+function liveSendNextSong() {
+  liveWsSend({ type: 'next_song' });
+}
+
+function liveChatAppend(userId, message) {
+  const box = document.getElementById('live-chat');
+  const myId = ''; // 자신 구분 없이 모두 표시
+  const div = document.createElement('div');
+  div.style.cssText = 'margin-bottom:6px;font-size:13px';
+  div.innerHTML = `<span style="color:var(--purple-light);font-weight:600">${userId.slice(0, 8)}…</span> <span style="color:var(--text)">${message.replace(/</g,'&lt;')}</span>`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+// ── 셋리스트 ────────────────────────────
+async function liveFetchSetlist() {
+  const id = liveRoomId(); if (!id) return;
+  const { ok, data } = await apiFetch('GET', `/api/v1/busking/rooms/${id}`);
+  if (!ok) { lkLog('셋리스트 조회 실패: ' + JSON.stringify(data), 'err'); return; }
+  liveSetlistData  = data.setlist  || [];
+  liveCurrentIdx   = data.current_song_index ?? 0;
+  lkLog(`셋리스트 ${liveSetlistData.length}곡 로드됨`, 'ok');
+  liveRenderSetlist();
+}
+
+function liveRenderSetlist() {
+  const el = document.getElementById('live-setlist');
+  if (!liveSetlistData.length) { el.textContent = '셋리스트 없음'; return; }
+  el.innerHTML = liveSetlistData.map((s, i) => {
+    const isCurrent = i === liveCurrentIdx;
+    return `<div style="
+      padding:8px 12px;border-radius:6px;margin-bottom:4px;font-size:13px;
+      background:${isCurrent ? 'rgba(63,185,80,.12)' : 'var(--bg3)'};
+      border:1px solid ${isCurrent ? 'var(--green)' : 'var(--border)'};
+      color:${isCurrent ? 'var(--green)' : 'var(--text2)'}
+    ">
+      ${isCurrent ? '▶ ' : `${i+1}. `}<b>${s.title}</b> — ${s.artist}
+      ${isCurrent ? '<span style="float:right;font-size:11px">현재 곡</span>' : ''}
+    </div>`;
+  }).join('');
+}
+
+// ── 방 제어 ─────────────────────────────
+async function liveStartRoom() {
+  const id = liveRoomId(); if (!id) return;
+  const { ok, data } = await apiFetch('POST', `/api/v1/busking/rooms/${id}/start`);
+  showResp('live-start-resp', data, ok);
+  if (ok) lkLog('라이브 시작됨', 'ok');
+}
+
+async function liveNextSong() {
+  const id = liveRoomId(); if (!id) return;
+  const { ok, data } = await apiFetch('PATCH', `/api/v1/busking/rooms/${id}/setlist/current`);
+  showResp('live-next-resp', data, ok);
+  if (ok) { liveCurrentIdx++; liveRenderSetlist(); lkLog('다음 곡으로 이동', 'ok'); }
+}
+
+async function liveEndRoom() {
+  if (!confirm('라이브를 종료하시겠습니까?')) return;
+  const id = liveRoomId(); if (!id) return;
+  const { ok, data } = await apiFetch('POST', `/api/v1/busking/rooms/${id}/end`);
+  showResp('live-end-resp', data, ok);
+  if (ok) lkLog('라이브 종료됨', 'ok');
+}
+
+// ── LiveKit 호스트 ──────────────────────
+function lkFillHostToken() {
+  const respEl = document.getElementById('create-room-response');
+  if (!respEl || respEl.style.display === 'none') return alert('방 목록/생성 탭에서 방을 생성하세요');
+  try {
+    const data = JSON.parse(respEl.innerText.replace('복사', '').trim());
+    if (data.livekit_token) document.getElementById('lk-host-token').value = data.livekit_token;
+    if (data.livekit_url)   document.getElementById('lk-url').value         = data.livekit_url;
+    if (data.id)            document.getElementById('live-room-id').value   = data.id;
+    lkLog('호스트 토큰/URL/Room ID 자동 채움', 'ok');
+  } catch { alert('방 생성 응답 파싱 실패. 직접 붙여넣으세요.'); }
+}
+
+async function lkHostConnect() {
+  const token = document.getElementById('lk-host-token').value.trim();
+  const url   = document.getElementById('lk-url').value.trim();
+  if (!url)   return alert('LiveKit URL을 입력하세요');
+  if (!token) return alert('호스트 토큰을 입력하세요');
+  if (lkHostRoom) { lkLog('이미 연결됨', 'err'); return; }
+
+  const { Room, RoomEvent } = LivekitClient;
+  lkHostRoom = new Room({ adaptiveStream: true, dynacast: true });
+
+  lkHostRoom.on(RoomEvent.Connected,    () => { lkLog('LiveKit 호스트 연결됨', 'ok'); lkSetStatus('lk-host-status', 'connected', '연결됨'); });
+  lkHostRoom.on(RoomEvent.Disconnected, () => {
+    lkLog('LiveKit 호스트 해제', 'evt');
+    lkSetStatus('lk-host-status', 'idle', '비연결');
+    lkHostRoom = null; lkStopViz();
+    document.getElementById('lk-host-connect-btn').disabled = false;
+    document.getElementById('lk-host-disconnect-btn').disabled = true;
+    document.getElementById('lk-mic-toggle-btn').disabled = true;
+  });
+  lkHostRoom.on(RoomEvent.ParticipantConnected,    p => lkLog(`참가자 입장: ${p.identity}`, 'evt'));
+  lkHostRoom.on(RoomEvent.ParticipantDisconnected, p => lkLog(`참가자 퇴장: ${p.identity}`, 'evt'));
+
+  lkLog(`LiveKit 호스트 연결 중...`, 'info');
+  try {
+    await lkHostRoom.connect(url, token);
+    await lkHostRoom.localParticipant.setMicrophoneEnabled(true);
+    lkMicEnabled = true;
+    document.getElementById('lk-host-connect-btn').disabled    = true;
+    document.getElementById('lk-host-disconnect-btn').disabled = false;
+    document.getElementById('lk-mic-toggle-btn').disabled      = false;
+    document.getElementById('lk-mic-toggle-btn').textContent   = '마이크 끄기';
+    lkLog('마이크 켜짐 — 오디오 publish 시작', 'ok');
+    lkStartViz();
+  } catch (e) {
+    lkLog('연결 실패: ' + e.message, 'err');
+    lkSetStatus('lk-host-status', 'error', '오류');
+    lkHostRoom = null;
+  }
+}
+
+async function lkHostDisconnect() {
+  if (lkHostRoom) { await lkHostRoom.disconnect(); lkHostRoom = null; }
+  lkStopViz();
+  document.getElementById('lk-host-connect-btn').disabled    = false;
+  document.getElementById('lk-host-disconnect-btn').disabled = true;
+  document.getElementById('lk-mic-toggle-btn').disabled      = true;
+  lkSetStatus('lk-host-status', 'idle', '비연결');
+  lkLog('LiveKit 호스트 연결 해제', 'info');
+}
+
+async function lkToggleMic() {
+  if (!lkHostRoom) return;
+  lkMicEnabled = !lkMicEnabled;
+  await lkHostRoom.localParticipant.setMicrophoneEnabled(lkMicEnabled);
+  document.getElementById('lk-mic-toggle-btn').textContent = lkMicEnabled ? '마이크 끄기' : '마이크 켜기';
+  lkLog('마이크 ' + (lkMicEnabled ? 'ON' : 'OFF'), 'evt');
+}
+
+// ── LiveKit 뷰어 ────────────────────────
+async function lkFetchViewerToken() {
+  const id = liveRoomId(); if (!id) return;
+  const { ok, data } = await apiFetch('POST', `/api/v1/busking/rooms/${id}/join`);
+  if (!ok) { lkLog('뷰어 토큰 발급 실패: ' + JSON.stringify(data), 'err'); return; }
+  if (data.livekit_token) document.getElementById('lk-viewer-token').value = data.livekit_token;
+  if (data.livekit_url)   document.getElementById('lk-url').value           = data.livekit_url;
+  lkLog('뷰어 토큰 발급됨', 'ok');
+}
+
+async function lkViewerConnect() {
+  const token = document.getElementById('lk-viewer-token').value.trim();
+  const url   = document.getElementById('lk-url').value.trim();
+  if (!url)   return alert('LiveKit URL을 입력하세요');
+  if (!token) return alert('뷰어 토큰을 입력하세요 (토큰 발급 버튼 클릭)');
+  if (lkViewerRoom) { lkLog('이미 연결됨', 'err'); return; }
+
+  const { Room, RoomEvent, Track } = LivekitClient;
+  lkViewerRoom = new Room({ adaptiveStream: true });
+
+  lkViewerRoom.on(RoomEvent.Connected, () => {
+    lkLog('LiveKit 뷰어 연결됨', 'ok');
+    lkSetStatus('lk-viewer-status', 'connected', '연결됨');
+    lkUpdateParticipants();
+  });
+  lkViewerRoom.on(RoomEvent.Disconnected, () => {
+    lkLog('LiveKit 뷰어 해제', 'evt');
+    lkSetStatus('lk-viewer-status', 'idle', '비연결');
+    lkViewerRoom = null;
+    document.getElementById('lk-viewer-connect-btn').disabled    = false;
+    document.getElementById('lk-viewer-disconnect-btn').disabled = true;
+    document.getElementById('lk-viewer-participants').textContent = '참가자 없음';
+  });
+  lkViewerRoom.on(RoomEvent.TrackSubscribed, (track, pub, participant) => {
+    lkLog(`오디오 수신 시작: ${participant.identity}`, 'ok');
+    if (track.kind === Track.Kind.Audio) {
+      const el = track.attach();
+      el.dataset.pid = participant.identity;
+      document.getElementById('lk-audio-container').appendChild(el);
+    }
+    lkUpdateParticipants();
+  });
+  lkViewerRoom.on(RoomEvent.TrackUnsubscribed, (track, pub, participant) => {
+    lkLog(`오디오 수신 종료: ${participant.identity}`, 'evt');
+    track.detach().forEach(el => el.remove());
+    lkUpdateParticipants();
+  });
+  lkViewerRoom.on(RoomEvent.ParticipantConnected,    p => { lkLog(`참가자 입장: ${p.identity}`, 'evt'); lkUpdateParticipants(); });
+  lkViewerRoom.on(RoomEvent.ParticipantDisconnected, p => { lkLog(`참가자 퇴장: ${p.identity}`, 'evt'); lkUpdateParticipants(); });
+
+  lkLog('LiveKit 뷰어 연결 중...', 'info');
+  try {
+    await lkViewerRoom.connect(url, token);
+    document.getElementById('lk-viewer-connect-btn').disabled    = true;
+    document.getElementById('lk-viewer-disconnect-btn').disabled = false;
+    lkLog('뷰어 연결 완료 — 오디오 수신 대기 중', 'ok');
+  } catch (e) {
+    lkLog('연결 실패: ' + e.message, 'err');
+    lkSetStatus('lk-viewer-status', 'error', '오류');
+    lkViewerRoom = null;
+  }
+}
+
+async function lkViewerDisconnect() {
+  if (lkViewerRoom) { await lkViewerRoom.disconnect(); lkViewerRoom = null; }
+  document.getElementById('lk-audio-container').innerHTML     = '';
+  document.getElementById('lk-viewer-connect-btn').disabled    = false;
+  document.getElementById('lk-viewer-disconnect-btn').disabled = true;
+  lkSetStatus('lk-viewer-status', 'idle', '비연결');
+}
+
+function lkUpdateParticipants() {
+  if (!lkViewerRoom) return;
+  const parts = [...lkViewerRoom.remoteParticipants.values()];
+  document.getElementById('lk-viewer-participants').textContent =
+    parts.length === 0 ? '참가자 없음' : parts.map(p => `• ${p.identity}`).join('\n');
+}
+
+// ── 마이크 시각화 ───────────────────────
+function lkStartViz() {
+  navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+    lkAudioCtx = new AudioContext();
+    lkAnalyser = lkAudioCtx.createAnalyser();
+    lkAnalyser.fftSize = 256;
+    lkAudioCtx.createMediaStreamSource(stream).connect(lkAnalyser);
+    const viz = document.getElementById('lk-host-viz');
+    viz.innerHTML = '';
+    const bars = Array.from({ length: 20 }, () => {
+      const b = document.createElement('div');
+      b.className = 'bar'; b.style.height = '4px';
+      viz.appendChild(b); return b;
+    });
+    const data = new Uint8Array(lkAnalyser.frequencyBinCount);
+    (function draw() {
+      lkVizRaf = requestAnimationFrame(draw);
+      lkAnalyser.getByteFrequencyData(data);
+      bars.forEach((b, i) => { b.style.height = Math.max(3, (data[i * 3] / 255) * 36) + 'px'; });
+    })();
+  }).catch(e => lkLog('마이크 접근 실패: ' + e.message, 'err'));
+}
+
+function lkStopViz() {
+  if (lkVizRaf) { cancelAnimationFrame(lkVizRaf); lkVizRaf = null; }
+  if (lkAudioCtx) { lkAudioCtx.close(); lkAudioCtx = null; }
+  const viz = document.getElementById('lk-host-viz');
+  if (viz) viz.innerHTML = '<span style="font-size:11px;color:var(--text2)">마이크 레벨</span>';
+}
+
+// ── 레거시 WS 함수 (방 제어 탭 호환) ──
+function wsLog() {}
+function wsConnect() { lkLog('이 기능은 라이브 테스트 탭에서 사용하세요', 'err'); }
+function wsDisconnect() { liveWsDisconnect(); }
+function wsSend(obj) { liveWsSend(obj); }
+function wsSendChat() { liveSendChat(); }
+function wsSendReaction(v) { liveSendReaction(v); }
+function wsSendNextSong() { liveSendNextSong(); }
+
 // window.opener 가 null 이어서 postMessage 가 실패해도 이쪽으로 동작
 window.addEventListener('storage', (e) => {
   if (e.key === 'singchronize_jwt' && e.newValue) {
