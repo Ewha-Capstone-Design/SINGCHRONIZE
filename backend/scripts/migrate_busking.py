@@ -29,6 +29,11 @@ ALTER_BUSKING_ROOMS = [
     "ALTER TABLE busking_rooms ADD COLUMN IF NOT EXISTS total_unique_viewers INTEGER DEFAULT 0",
 ]
 
+# ── busking_setlist_items 신규 컬럼 (테이블이 이미 존재할 때 song_id 누락 방지) ──
+ALTER_SETLIST_ITEMS = [
+    "ALTER TABLE busking_setlist_items ADD COLUMN IF NOT EXISTS song_id TEXT",
+]
+
 # ── 신규 테이블 ────────────────────────────────────────────────
 CREATE_SETLIST = """
 CREATE TABLE IF NOT EXISTS busking_setlist_items (
@@ -85,6 +90,11 @@ async def run():
         for stmt in ALTER_BUSKING_ROOMS:
             await conn.execute(text(stmt))
             logger.info("  OK: %s", stmt[:60])
+
+        logger.info("busking_setlist_items 컬럼 보완 중...")
+        for stmt in ALTER_SETLIST_ITEMS:
+            await conn.execute(text(stmt))
+            logger.info("  OK: %s", stmt[:80])
 
         logger.info("신규 테이블 생성 중...")
         for name, ddl in [
