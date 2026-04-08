@@ -145,6 +145,8 @@ async def update_mypage_profile(
         _nickname_provided=nickname_provided,
         _bio_provided=bio_provided,
     )
+    await db.commit()
+    await db.refresh(updated)
     return UserResponse.model_validate(updated)
 
 

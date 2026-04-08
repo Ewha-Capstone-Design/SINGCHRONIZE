@@ -10,6 +10,8 @@ from app.routers.analysis import router as analysis_router
 from app.routers.home import router as home_router
 from app.routers.oauth_test import router as oauth_test_router
 from app.routers.onboarding import router as onboarding_router
+from app.routers.analysis import router as analysis_router
+from app.routers.artist_actions import router as artist_actions_router
 from fastapi.staticfiles import StaticFiles
 
 
@@ -46,6 +48,8 @@ app.include_router(analysis_router)
 app.include_router(home_router)
 app.include_router(onboarding_router)
 app.include_router(oauth_test_router)
+app.include_router(analysis_router)
+app.include_router(artist_actions_router)
 
 @app.get("/health", status_code=status.HTTP_200_OK)
 async def health_check():
