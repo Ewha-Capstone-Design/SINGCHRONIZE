@@ -184,7 +184,7 @@ async def create_room(
     items = [
         BuskingSetlistItem(
             room_id=room.id,
-            song_id=item.song_id,
+            song_id=item.song_id or None,   # Spotify URI 또는 내부 UUID — 없으면 NULL
             title=item.title,
             artist=item.artist,
             album_art_url=item.album_art_url,
