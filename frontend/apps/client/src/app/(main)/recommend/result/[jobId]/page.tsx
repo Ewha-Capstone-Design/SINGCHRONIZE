@@ -10,21 +10,24 @@ import { VocalReportWidget } from '@/widgets/vocal-report/ui';
 import { RecommendSongWidget } from '@/widgets/vocal-analyze/ui';
 import { useRecommendResult } from '@/features/recommend/model';
 
-import { MOCK_VOCAL_REPORT } from '@/entities/vocal-report/model/mock';
+import { useVocalProfile } from '@/entities/analysis';
+import { useMe } from '@/entities/user';
 
 const SECTION_TABS = [
   { key: 'report', label: '보컬 분석' },
   { key: 'recommend', label: '추천 곡' },
 ] as const;
 
-// TODO: 임시 닉네임 교체 필요
-const USERNAME = '지연';
-
 const RecommendResultPage = () => {
   const { jobId } = useParams<{ jobId: string }>();
   const { go, ROUTES } = useNavigate();
 
   const { isLoading, situationTabs, genreTabs } = useRecommendResult(jobId);
+
+  const { data: report } = useVocalProfile();
+  const { data: me } = useMe();
+  const username = me?.nickname ?? '사용자';
+
   const { tab, tabs, changeTab } = useSectionTab({
     items: SECTION_TABS,
     initialTab: 'report',
@@ -42,8 +45,8 @@ const RecommendResultPage = () => {
     >
       <h1 className='typo-32b text-white text-center'>
         {isReport
-          ? `${USERNAME}님의 보컬 분석 결과를 살펴보세요!`
-          : `${USERNAME}님께 딱 맞는 곡도 만나보세요!`}
+          ? `${username}님의 보컬 분석 결과를 살펴보세요!`
+          : `${username}님께 딱 맞는 곡도 만나보세요!`}
       </h1>
 
       <div className='mt-2 flex flex-col gap-8'>
@@ -58,7 +61,7 @@ const RecommendResultPage = () => {
         </div>
 
         {isReport ? (
-          <VocalReportWidget desktopLayout='grid' report={MOCK_VOCAL_REPORT} />
+          report && <VocalReportWidget desktopLayout='grid' report={report} />
         ) : isLoading ? (
           <div className='flex flex-1 items-center justify-center text-white typo-24b'>
             추천 곡을 준비하고 있어요...

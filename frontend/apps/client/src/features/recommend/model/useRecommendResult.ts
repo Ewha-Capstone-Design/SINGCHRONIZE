@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { recommendationApi } from '@/entities/recommendation';
 import { buildRecommendTabs } from './mapper';
-import type { SongApiType } from '@/entities/song';
 import type { RecommendSongType, RecommendTab } from '@/widgets/vocal-analyze/model';
 
 const POLL_INTERVAL_MS = 3000;
@@ -30,7 +29,7 @@ export const useRecommendResult = (jobId: string | null) => {
 
       if (result.status === 'DONE') {
         const { situationTabs, genreTabs } = buildRecommendTabs(
-          (result.recommended_songs ?? {}) as Record<string, SongApiType[]>,
+          result.recommended_songs ?? {},
         );
         setSituationTabs(situationTabs);
         setGenreTabs(genreTabs);
