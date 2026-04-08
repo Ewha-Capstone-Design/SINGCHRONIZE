@@ -110,33 +110,62 @@ async def get_vocal_profile(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """현재 유저의 보컬 프로필 존재 여부 및 최신 job 확인."""
-    result = await db.execute(
+    """보컬 프로필 조회 — UI 렌더링에 필요한 필드만 반환."""
+    profile_row = await db.execute(
         select(UserVocalProfile).where(UserVocalProfile.user_id == current_user.id)
     )
-    profile = result.scalar_one_or_none()
+    profile = profile_row.scalar_one_or_none()
 
     if not profile:
         return VocalProfileResponse(user_id=current_user.id, has_profile=False)
 
+    # analysis_jobs.result_data 에서 UI 필드만 추출
+    _TIMBRE_LABELS = {"밝기", "따뜻함", "두께감"}
+    avg_note: str | None = None
+    traits = None
+    genre_fit = None
+    timbre = None
+    range_info = None
+
+    if profile.latest_analysis_job_id:
+        job_row = await db.execute(
+            select(AnalysisJob).where(AnalysisJob.id == profile.latest_analysis_job_id)
+        )
+        job = job_row.scalar_one_or_none()
+        if job and isinstance(job.result_data, dict):
+            rd = job.result_data
+
+            # 평균음
+            avg_note = (rd.get("range") or {}).get("stats", {}).get("avg")
+
+            # 레이더 차트
+            traits = rd.get("traits")
+
+            # 장르 적합도
+            genre_fit = rd.get("genreFit")
+
+            # 음색 — 밝기·따뜻함·두께감만
+            raw_timbre = rd.get("timbre") or []
+            timbre = [t for t in raw_timbre if t.get("label") in _TIMBRE_LABELS]
+
+            # 음역대 그래프
+            raw_range = rd.get("range") or {}
+            range_info = {
+                "data": raw_range.get("data"),
+                "comfort": raw_range.get("comfort"),
+            }
+
     return VocalProfileResponse(
         user_id=current_user.id,
         has_profile=True,
-        latest_analysis_job_id=profile.latest_analysis_job_id,
-        latest_recording_id=profile.latest_recording_id,
+        updated_at=profile.updated_at,
         observed_lowest_note=profile.observed_lowest_note,
         observed_highest_note=profile.observed_highest_note,
-        stable_lowest_note=profile.stable_lowest_note,
-        stable_highest_note=profile.stable_highest_note,
-        radar_median_avg=profile.radar_median_avg,
-        radar_median_pitch_stability=profile.radar_median_pitch_stability,
-        radar_median_rhythm_stability=profile.radar_median_rhythm_stability,
-        radar_median_high_note_stability=profile.radar_median_high_note_stability,
-        radar_median_dynamic_control=profile.radar_median_dynamic_control,
-        radar_median_vocal_clarity=profile.radar_median_vocal_clarity,
-        latest_timbre_summary=profile.latest_timbre_summary,
-        latest_best_genre=profile.latest_best_genre,
-        updated_at=profile.updated_at,
+        avg_note=avg_note,
+        traits=traits,
+        genreFit=genre_fit,
+        timbre=timbre,
+        range=range_info,
     )
 
 
