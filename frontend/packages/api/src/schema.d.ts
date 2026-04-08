@@ -741,7 +741,7 @@ export interface paths {
         };
         /**
          * Get Vocal Profile
-         * @description 현재 유저의 보컬 프로필 존재 여부 및 최신 job 확인.
+         * @description 보컬 프로필 조회 — UI 렌더링에 필요한 필드만 반환.
          */
         get: operations["get_vocal_profile_api_v1_analysis_profile_get"];
         put?: never;
@@ -894,6 +894,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/artist-actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Artist Actions
+         * @description 현재 유저의 아티스트 액션 목록 조회.
+         */
+        get: operations["get_artist_actions_api_v1_artist_actions_get"];
+        put?: never;
+        /**
+         * Set Artist Action
+         * @description 아티스트 PREFER / BLOCK 설정.
+         *     동일 아티스트에 이미 액션이 있으면 덮어씁니다 (upsert).
+         */
+        post: operations["set_artist_action_api_v1_artist_actions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/artist-actions/{artist_name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Artist Action
+         * @description 아티스트 액션(선호/차단) 취소.
+         */
+        delete: operations["delete_artist_action_api_v1_artist_actions__artist_name__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -1024,6 +1069,38 @@ export interface components {
             tags?: string[] | null;
             /** Memo */
             memo?: string | null;
+        };
+        /** ArtistActionRequest */
+        ArtistActionRequest: {
+            /** Artist Name */
+            artist_name: string;
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "PREFER" | "BLOCK";
+        };
+        /** ArtistActionResponse */
+        ArtistActionResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Artist Name */
+            artist_name: string;
+            /** Action */
+            action: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** ArtistActionsListResponse */
+        ArtistActionsListResponse: {
+            /** Actions */
+            actions: components["schemas"]["ArtistActionResponse"][];
         };
         /** BlockSingerRequest */
         BlockSingerRequest: {
@@ -1637,38 +1714,24 @@ export interface components {
              * Format: uuid
              */
             user_id: string;
-            /** Latest Analysis Job Id */
-            latest_analysis_job_id?: string | null;
-            /** Latest Recording Id */
-            latest_recording_id?: string | null;
             /** Has Profile */
             has_profile: boolean;
+            /** Updated At */
+            updated_at?: string | null;
             /** Observed Lowest Note */
             observed_lowest_note?: string | null;
             /** Observed Highest Note */
             observed_highest_note?: string | null;
-            /** Stable Lowest Note */
-            stable_lowest_note?: string | null;
-            /** Stable Highest Note */
-            stable_highest_note?: string | null;
-            /** Radar Median Avg */
-            radar_median_avg?: number | null;
-            /** Radar Median Pitch Stability */
-            radar_median_pitch_stability?: number | null;
-            /** Radar Median Rhythm Stability */
-            radar_median_rhythm_stability?: number | null;
-            /** Radar Median High Note Stability */
-            radar_median_high_note_stability?: number | null;
-            /** Radar Median Dynamic Control */
-            radar_median_dynamic_control?: number | null;
-            /** Radar Median Vocal Clarity */
-            radar_median_vocal_clarity?: number | null;
-            /** Latest Timbre Summary */
-            latest_timbre_summary?: string | null;
-            /** Latest Best Genre */
-            latest_best_genre?: string | null;
-            /** Updated At */
-            updated_at?: string | null;
+            /** Avg Note */
+            avg_note?: string | null;
+            /** Traits */
+            traits?: Record<string, never>[] | null;
+            /** Genrefit */
+            genreFit?: Record<string, never> | null;
+            /** Timbre */
+            timbre?: Record<string, never>[] | null;
+            /** Range */
+            range?: Record<string, never> | null;
         };
         /** WeeklySong */
         WeeklySong: {
@@ -3321,6 +3384,88 @@ export interface operations {
                 content: {
                     "application/json": unknown;
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_artist_actions_api_v1_artist_actions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtistActionsListResponse"];
+                };
+            };
+        };
+    };
+    set_artist_action_api_v1_artist_actions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArtistActionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtistActionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_artist_action_api_v1_artist_actions__artist_name__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                artist_name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
