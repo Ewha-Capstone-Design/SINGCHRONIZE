@@ -3,11 +3,10 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from '@/shared/lib/navigation';
 import { SectionHeader, SelectChip } from '@/shared/components';
-import { GenreKey } from '@/shared/types/category';
-import { GENRE_ITEMS } from '@/shared/constants/genre';
+import type { GenreKey } from '@/shared/types/category';
+import { GENRE_ITEMS, GENRE_API_LABEL, GENRE_LABEL_TO_KEY } from '@/shared/constants/genre';
 import { SongListItem } from '@/entities/song/ui';
-
-import { MOCK_ARCHIVE_UI } from '@/entities/archive/model/mock';
+import { useArchivePreview } from '@/entities/archive';
 
 type ArchiveFilter = 'all' | GenreKey;
 
@@ -17,25 +16,22 @@ type ArchivePreviewProps = {
 
 export const ArchivePreview = ({ className }: ArchivePreviewProps) => {
   const { go, ROUTES } = useNavigate();
-
   const [filter, setFilter] = useState<ArchiveFilter>('all');
 
-  // TODO: 추후 API로 필터링
+  const genreParam = filter !== 'all' ? GENRE_API_LABEL[filter] : undefined;
+  const { data } = useArchivePreview(genreParam);
+
   const filterChips = useMemo(() => {
-    const genreKeys = MOCK_ARCHIVE_UI.genres.slice(0, 3);
+    const genreKeys = (data?.genreLabels ?? [])
+      .map((l) => GENRE_LABEL_TO_KEY[l])
+      .filter((k): k is GenreKey => !!k)
+      .slice(0, 3);
 
     return [
       { key: 'all' as const, label: '전체' },
-      ...genreKeys.map((key) => ({
-        key,
-        label: GENRE_ITEMS[key].tabLabel,
-      })),
+      ...genreKeys.map((key) => ({ key, label: GENRE_ITEMS[key].tabLabel })),
     ];
-  }, []);
-
-  const items = useMemo(() => {
-    return MOCK_ARCHIVE_UI.items;
-  }, [filter]);
+  }, [data?.genreLabels]);
 
   return (
     <section className={className}>
@@ -53,7 +49,7 @@ export const ArchivePreview = ({ className }: ArchivePreviewProps) => {
       </div>
 
       <div className='mt-4 flex flex-col gap-3'>
-        {items.map((song, idx) => (
+        {(data?.items ?? []).map((song, idx) => (
           <SongListItem
             key={song.id}
             variant='list5'

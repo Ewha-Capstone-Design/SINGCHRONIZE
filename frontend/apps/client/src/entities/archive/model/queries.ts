@@ -24,11 +24,11 @@ export const useRecommendationArchive = (params: ArchiveParams = {}) =>
 export const useArchivePreview = (genre?: string) =>
   useQuery({
     queryKey: queryKeys.recommendationArchive({ genre }),
-    queryFn: () => archiveApi.getRecommendationArchive({ genre, size: 10 }),
+    queryFn: () => archiveApi.getRecommendationArchive({ genre, size: 4 }),
     select: (data) => ({
-      items: data.groups.flatMap((g) =>
-        g.items.flatMap((item) => item.songs.map(toArchiveItemFromSong)),
-      ),
+      items: data.groups
+        .flatMap((g) => g.items.flatMap((item) => item.songs.map(toArchiveItemFromSong)))
+        .slice(0, 4),
       genreLabels: [
         ...new Set(
           data.groups.flatMap((g) =>
