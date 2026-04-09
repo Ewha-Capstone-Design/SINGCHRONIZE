@@ -80,7 +80,8 @@ const WaveformRecorder = ({
     if (!record) return;
 
     if (phase === 'finish') {
-      if (record.isRecording && record.isRecording()) {
+      const isActive = record.isRecording?.() || record.isPaused?.();
+      if (isActive) {
         record.stopRecording();
       }
       return;

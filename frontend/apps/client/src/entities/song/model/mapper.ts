@@ -1,4 +1,9 @@
-import type { SongApiType, SongUiType, MusicSearchResultType } from './types';
+import type {
+  SongApiType,
+  SongUiType,
+  MusicSearchResultType,
+  FirstRecommendedSongType,
+} from './types';
 
 export const toSongUi = (song: SongApiType): SongUiType => ({
   id: String(song.id),
@@ -12,4 +17,11 @@ export const musicSearchResultToSongUi = (song: MusicSearchResultType): SongUiTy
   title: song.name,
   artist: song.artist,
   thumbnail: song.album_image ?? undefined,
+});
+
+export const toFirstRecommendedSongUi = (song: FirstRecommendedSongType): SongUiType => ({
+  id: song.song_id,
+  title: song.title,
+  artist: song.artist,
+  thumbnail: song.album_cover ?? undefined,
 });

@@ -2,21 +2,24 @@
 
 import { useState } from 'react';
 import { useNavigate } from '@/shared/lib/navigation';
-import { recommendationApi } from '@/entities/recommendation';
 import { RECOMMEND_STEPS } from '@/shared/types/recommend';
 import type { InternalRecommendStep } from '@/shared/types/recommend';
 import type { SongUiType } from '@/entities/song/model/types';
-import type { SituationKey, GenreKey } from '@/shared/types/category';
+
+import { isApiError } from '@/shared/api/apiError';
+import { recommendationApi } from '@/entities/recommendation';
 
 type FlowState = {
   jobId: string | null;
+  audioBlob: Blob | null;
   firstSongs: SongUiType[];
   rankedSongIds: string[];
-  selectedSituations: SituationKey[];
+  selectedSituations: string[];
 };
 
 const INITIAL_STATE: FlowState = {
   jobId: null,
+  audioBlob: null,
   firstSongs: [],
   rankedSongIds: [],
   selectedSituations: [],
@@ -29,7 +32,10 @@ export const useRecommendFlow = () => {
   const [step, setStep] = useState<InternalRecommendStep>('record');
   const [flowState, setFlowState] = useState<FlowState>(INITIAL_STATE);
 
-  const onRecordDone = () => setStep('analyze');
+  const onRecordDone = (blob: Blob) => {
+    setFlowState((prev) => ({ ...prev, audioBlob: blob }));
+    setStep('analyze');
+  };
 
   const goBack = () => {
     if (step === 'analyze') {
@@ -55,12 +61,12 @@ export const useRecommendFlow = () => {
     setStep('situation');
   };
 
-  const onSituationDone = (selectedSituations: SituationKey[]) => {
+  const onSituationDone = (selectedSituations: string[]) => {
     setFlowState((prev) => ({ ...prev, selectedSituations }));
     setStep('genre');
   };
 
-  const onGenreDone = async (selectedGenres: GenreKey[]) => {
+  const onGenreDone = async (selectedGenres: string[]) => {
     const { jobId, rankedSongIds, selectedSituations } = flowState;
     if (!jobId) return;
 
@@ -72,12 +78,17 @@ export const useRecommendFlow = () => {
       });
       go(dynamic.recommendResult(jobId));
     } catch (err) {
-      console.error('피드백 제출 실패:', err);
+      if (isApiError(err)) {
+        console.error(`[Recommend] 피드백 제출 실패 [${err.code}]:`, err.message, err);
+      } else {
+        console.error('[Recommend] 피드백 제출 실패:', err);
+      }
     }
   };
 
   return {
     step,
+    audioBlob: flowState.audioBlob,
     firstSongs: flowState.firstSongs,
     goBack,
     onRecordDone,

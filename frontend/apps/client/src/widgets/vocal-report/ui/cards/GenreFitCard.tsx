@@ -94,10 +94,12 @@ const GenreFitChart = ({
 const GenreFitCard = ({
   data,
   bestGenre,
+  nickname,
   description,
 }: {
   data: GenreDatum[];
   bestGenre: string;
+  nickname: string;
   description?: string;
 }) => {
   const { open, openModal, closeModal } = useModal();
@@ -112,7 +114,7 @@ const GenreFitCard = ({
       >
         <div className='pt-4 flex flex-col gap-4 md:flex-row md:justify-between h-full md:items-end'>
           <p className='typo-18sb text-white whitespace-pre-line shrink-0'>
-            {`지연님에게 가장 잘 맞는\n장르는 `}
+            {`${nickname}님에게 가장 잘 맞는\n장르는 `}
             <span className='typo-18sb text-brand'>{bestGenre}</span>
             {`예요`}
           </p>
@@ -130,7 +132,7 @@ const GenreFitCard = ({
               <GenreFitChart data={data} bestGenre={bestGenre} />
             </div>
           }
-          description={description ?? ""}
+          description={description ?? ''}
           onClose={closeModal}
         />
       )}

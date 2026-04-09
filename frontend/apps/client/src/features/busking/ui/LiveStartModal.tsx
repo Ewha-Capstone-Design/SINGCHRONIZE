@@ -8,6 +8,7 @@ import { useThumbnail } from '@/shared/hooks';
 import { LiveStartStep1 } from './LiveStartStep1';
 import { LiveStartStep2 } from './LiveStartStep2';
 
+import { getApiErrorMessage } from '@/shared/api/apiError';
 import type { SongUiType } from '@/entities/song/model/types';
 import {
   useCreateBuskingRoom,
@@ -76,6 +77,8 @@ const LiveStartModal = ({ open, onClose }: LiveStartModalProps) => {
       await startRoom(room.id);
 
       go(dynamic.liveRoom(room.id, 'live'));
+    } catch (err) {
+      alert(getApiErrorMessage(err, '버스킹 시작에 실패했습니다.'));
     } finally {
       setIsSubmitting(false);
     }

@@ -23,4 +23,13 @@ export const GENRE_ITEMS: Record<GenreKey, GenreItemType> = {
   rnb: { label: 'R&B', tabLabel: 'R&B', imageUrl: imgGenre3.src },
 };
 
+export const GENRE_API_LABEL: Record<GenreKey, string> = {
+  ballad: '발라드',
+  dance: '댄스',
+  pop: 'POP',
+  trot: '트로트',
+  rock: '락/메탈',
+  rnb: 'R&B',
+};
+
 export const GENRE_KEYS: GenreKey[] = ['ballad', 'dance', 'pop', 'trot', 'rock', 'rnb'];
