@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { archiveApi } from '../api/archiveApi';
 import { queryKeys } from '@/shared/api/queryKeys';
 import { toArchiveRecItemUi, toArchiveItemFromSong } from './mapper';
@@ -25,6 +25,7 @@ export const useArchivePreview = (genre?: string) =>
   useQuery({
     queryKey: queryKeys.recommendationArchive({ genre }),
     queryFn: () => archiveApi.getRecommendationArchive({ genre, size: 4 }),
+    placeholderData: keepPreviousData,
     select: (data) => ({
       items: data.groups
         .flatMap((g) => g.items.flatMap((item) => item.songs.map(toArchiveItemFromSong)))

@@ -4,7 +4,11 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from '@/shared/lib/navigation';
 import { SectionHeader, SelectChip } from '@/shared/components';
 import type { GenreKey } from '@/shared/types/category';
-import { GENRE_ITEMS, GENRE_API_LABEL, GENRE_LABEL_TO_KEY } from '@/shared/constants/genre';
+import {
+  GENRE_ITEMS,
+  GENRE_API_LABEL,
+  GENRE_LABEL_TO_KEY,
+} from '@/shared/constants/genre';
 import { SongListItem } from '@/entities/song/ui';
 import { useArchivePreview } from '@/entities/archive';
 
@@ -14,7 +18,7 @@ type ArchivePreviewProps = {
   className?: string;
 };
 
-export const ArchivePreview = ({ className }: ArchivePreviewProps) => {
+const ArchivePreview = ({ className }: ArchivePreviewProps) => {
   const { go, ROUTES } = useNavigate();
   const [filter, setFilter] = useState<ArchiveFilter>('all');
 
@@ -67,3 +71,4 @@ export const ArchivePreview = ({ className }: ArchivePreviewProps) => {
 };
 
 export default ArchivePreview;
+
