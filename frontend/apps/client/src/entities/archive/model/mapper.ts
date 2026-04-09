@@ -25,5 +25,5 @@ export const toArchiveItemFromSong = (song: ArchiveSongApiType): ArchiveItemUiTy
   artist: song.artist,
   thumbnail: song.album_cover ?? null,
   matchRate: song.score != null ? Math.round(song.score * 100) : 0,
-  isLiked: false,
+  isLiked: false, // TODO: API 수정 필요
 });
