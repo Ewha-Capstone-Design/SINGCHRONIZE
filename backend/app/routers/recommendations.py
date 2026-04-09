@@ -210,9 +210,9 @@ async def _to_response_with_song_info(job: Recommendation, db: AsyncSession) -> 
             except ValueError:
                 pass
         if uuids:
-            result = await db.execute(select(Song.id, Song.key, Song.bpm).where(Song.id.in_(uuids)))
+            result = await db.execute(select(Song.id, Song.key, Song.bpm, Song.genre).where(Song.id.in_(uuids)))
             for row in result.all():
-                song_map[str(row.id)] = {"key": row.key, "bpm": row.bpm}
+                song_map[str(row.id)] = {"key": row.key, "bpm": row.bpm, "genre": row.genre}
 
     # 3. enrichment 헬퍼
     def enrich(item: dict) -> dict:
@@ -221,7 +221,10 @@ async def _to_response_with_song_info(job: Recommendation, db: AsyncSession) -> 
             return item
         extra = dict(song_map[sid])
         if extra.get("key"):
-            extra["key"] = extra["key"].title()  # "D# major" → "D# Major", "C major" → "C Major"
+            extra["key"] = extra["key"].title()
+        if extra.get("genre"):
+            genres = [g.strip() for g in extra["genre"].split(",") if g.strip() != "전체"]
+            extra["genre"] = genres[0] if genres else None
         return {**item, **extra}
 
     enriched_first = [enrich(i) for i in first]
