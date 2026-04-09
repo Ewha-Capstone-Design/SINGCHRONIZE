@@ -16,7 +16,6 @@ import { SongUiType } from '@/entities/song/model/types';
 
 import { useMe } from '@/entities/user';
 import { useHomeFeeds } from '@/entities/home';
-import { useBuskingRooms } from '@/entities/busking';
 
 const HomePage = () => {
   const [selectedSong, setSelectedSong] = useState<SongUiType | null>(null);
@@ -24,7 +23,6 @@ const HomePage = () => {
 
   const { data: me } = useMe();
   const { data: homeFeeds } = useHomeFeeds();
-  const { data: buskingRooms } = useBuskingRooms();
 
   const handleSongClick = useCallback(
     (song: SongUiType) => {
@@ -58,13 +56,13 @@ const HomePage = () => {
               title='지금 인기 있는 버스킹'
               cardVariant='sm'
               px={0}
-              items={buskingRooms ?? []}
+              items={homeFeeds?.liveTicker ?? []}
             />
             <BuskingSection
               title='NOW ON AIR! 최근 업로드된 버스킹'
               cardVariant='sm'
               px={0}
-              items={buskingRooms ?? []}
+              items={homeFeeds?.liveTicker ?? []}
             />
           </div>
         </div>

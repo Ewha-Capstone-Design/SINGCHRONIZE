@@ -1,4 +1,4 @@
-import type { RankedSongType, SongApiType, SongUiType } from './types';
+import type { SongApiType, SongUiType } from './types';
 import { toSongUi } from './mapper';
 
 export const MOCK_SONGS: SongApiType[] = [
