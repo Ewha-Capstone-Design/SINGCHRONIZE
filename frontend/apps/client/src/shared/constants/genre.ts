@@ -33,3 +33,7 @@ export const GENRE_API_LABEL: Record<GenreKey, string> = {
 };
 
 export const GENRE_KEYS: GenreKey[] = ['ballad', 'dance', 'pop', 'trot', 'rock', 'rnb'];
+
+export const GENRE_LABEL_TO_KEY: Record<string, GenreKey> = Object.fromEntries(
+  Object.entries(GENRE_API_LABEL).map(([key, label]) => [label, key as GenreKey]),
+);

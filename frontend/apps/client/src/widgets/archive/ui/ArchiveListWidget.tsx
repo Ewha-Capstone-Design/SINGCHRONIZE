@@ -1,20 +1,27 @@
 'use client';
 
 import { useRef } from 'react';
-import { useDateSelect, useModal, useClickOutside } from '@/shared/hooks';
+import { useModal, useClickOutside } from '@/shared/hooks';
 import { cn } from '@/shared/lib/cn';
 import { DateSelectButton, DateSelectModal } from '@/features/date-select';
 import { ArchiveSection } from '@/entities/archive/ui';
-import { ArchiveSectionUiType } from '@/entities/archive/model/types';
+
+import { ArchiveSectionUiType } from '@/entities/archive';
 
 type ArchiveListWidgetProps = {
   groups: ArchiveSectionUiType[];
+  selectedDate: Date | null;
+  onDateConfirm: (date: Date) => void;
   isDetail?: boolean;
 };
 
-const ArchiveListWidget = ({ groups, isDetail = false }: ArchiveListWidgetProps) => {
+const ArchiveListWidget = ({
+  groups,
+  selectedDate,
+  onDateConfirm,
+  isDetail = false,
+}: ArchiveListWidgetProps) => {
   const { open: isOpen, openModal, closeModal } = useModal();
-  const { selectedDate, handleConfirm } = useDateSelect();
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useClickOutside(wrapperRef, closeModal);
@@ -26,7 +33,7 @@ const ArchiveListWidget = ({ groups, isDetail = false }: ArchiveListWidgetProps)
 
         <div ref={wrapperRef} className='relative'>
           <DateSelectButton
-            selected={selectedDate}
+            selected={selectedDate ?? undefined}
             isOpen={isOpen}
             onClick={isOpen ? closeModal : openModal}
           />
@@ -35,14 +42,14 @@ const ArchiveListWidget = ({ groups, isDetail = false }: ArchiveListWidgetProps)
             <div
               className={cn(
                 'absolute top-full mt-3 z-50 w-max',
-                isDetail ? 'left-0' : 'right-0'
+                isDetail ? 'left-0' : 'right-0',
               )}
             >
               <DateSelectModal
-                selected={selectedDate}
+                selected={selectedDate ?? undefined}
                 onClose={closeModal}
                 onConfirm={(date) => {
-                  handleConfirm(date);
+                  onDateConfirm(date);
                   closeModal();
                 }}
               />

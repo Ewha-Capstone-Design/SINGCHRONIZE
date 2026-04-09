@@ -18,5 +18,5 @@ export const toWeeklySongUi = (song: WeeklySongApiType): RankedSongType => ({
   artist: song.artist,
   thumbnail: song.album_image ?? undefined,
   likeCount: song.wish_count,
-  isLiked: false,
+  isLiked: false, // TODO: API 수정 필요
 });

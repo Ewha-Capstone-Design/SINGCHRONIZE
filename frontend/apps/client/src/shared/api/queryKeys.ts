@@ -14,4 +14,6 @@ export const queryKeys = {
   analysisJob: (jobId: string) => ['analysis', 'jobs', jobId] as const,
   vocalProfile: ['analysis', 'profile'] as const,
   homeFeeds: ['home', 'feeds'] as const,
+  recommendationArchive: (params?: { genre?: string; keyword?: string; date?: string }) =>
+    ['archive', 'recommendation', params] as const,
 };

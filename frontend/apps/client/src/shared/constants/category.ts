@@ -1,5 +1,5 @@
 import type { GenreKey, SituationKey, CategoryMetaType } from '@/shared/types/category';
-import { GENRE_ITEMS, GENRE_KEYS } from '@/shared/constants/genre';
+import { GENRE_ITEMS, GENRE_KEYS, GENRE_API_LABEL } from '@/shared/constants/genre';
 import { SITUATION_ITEMS, SITUATION_KEYS } from '@/shared/constants/situation';
 
 const isGenreKey = (key: string): key is GenreKey =>
@@ -7,6 +7,16 @@ const isGenreKey = (key: string): key is GenreKey =>
 
 const isSituationKey = (key: string): key is SituationKey =>
   (SITUATION_KEYS as string[]).includes(key);
+
+export const getCategoryApiParam = (
+  category: CategoryMetaType,
+): { genre?: string; keyword?: string } => {
+  if (category.type === 'genre')
+    return { genre: GENRE_API_LABEL[category.key as GenreKey] };
+  return {
+    keyword: SITUATION_ITEMS[category.key as SituationKey].label.replace('\n', ' '),
+  };
+};
 
 export const getCategory = (key: string): CategoryMetaType | null => {
   if (isGenreKey(key)) {
