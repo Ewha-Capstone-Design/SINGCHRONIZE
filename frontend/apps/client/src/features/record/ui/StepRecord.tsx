@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useModal } from '@/shared/hooks';
 import RecordingControls from './RecordingControls';
 import WaveformRecorder from './WaveformRecorder';
@@ -8,12 +8,22 @@ import MicTestModal from './MicTestModal';
 import { useRecorder, useTimer } from '../model';
 import { GUIDE_TEXT_BY_LEVEL } from '../model/constants';
 
+// [데모] 예시 파일 경로
+const DEMO_AUDIO_PATH = '/demo.m4a';
+
 const StepRecord = ({ onNext }: { onNext: (blob: Blob) => void }) => {
   const { open: isMicTestOpen, closeModal } = useModal(true);
   const [micGain, setMicGain] = useState(1);
 
   const { phase, start, pause, finish } = useRecorder();
   const { mm, ss, reset, guideLevel, isMax, canDone } = useTimer(phase);
+
+  // [데모] 실제 녹음 blob 대신 예시 파일을 fetch해서 전달
+  const handleRecorded = useCallback(async () => {
+    const res = await fetch(DEMO_AUDIO_PATH);
+    const demoBlob = await res.blob();
+    onNext(demoBlob);
+  }, [onNext]);
 
   // 60초 도달 시 녹음 자동 종료
   useEffect(() => {
@@ -44,7 +54,7 @@ const StepRecord = ({ onNext }: { onNext: (blob: Blob) => void }) => {
             phase={phase}
             mode='record'
             gain={micGain}
-            onRecorded={onNext}
+            onRecorded={handleRecorded}
           />
 
           {/* 타이머 */}
