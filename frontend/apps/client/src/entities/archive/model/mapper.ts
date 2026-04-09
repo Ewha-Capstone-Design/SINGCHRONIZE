@@ -1,31 +1,29 @@
-import { toSongUi } from '@/entities/song/model/mapper';
-import type { ArchiveSectionAPiType, ArchiveSectionUiType } from './types';
-import type { ArchiveItemApiType, ArchiveItemUiType } from './types';
-import type { ArchiveApiType, ArchiveUiType } from './types';
+import type {
+  ArchiveSectionUiType,
+  ArchiveItemUiType,
+  ArchiveSongApiType,
+  ArchiveRecItemApiType,
+} from './types';
 import { getArchiveHistoryTitle } from './utils';
 
-export const toArchiveSectionUi = (raw: ArchiveSectionAPiType): ArchiveSectionUiType => ({
-  id: raw.rec_id,
-  title: getArchiveHistoryTitle(raw.date),
-  recordingUrl: raw.recording_url,
-  songs: raw.songs.map(toSongUi),
+export const toArchiveRecItemUi = (
+  item: ArchiveRecItemApiType,
+): ArchiveSectionUiType => ({
+  id: item.rec_id,
+  title: getArchiveHistoryTitle(item.date),
+  songs: item.songs.map((s) => ({
+    id: s.song_id,
+    title: s.title,
+    artist: s.artist,
+    thumbnail: s.album_cover ?? undefined,
+  })),
 });
 
-export const toArchiveItemUi = (item: ArchiveItemApiType): ArchiveItemUiType => {
-  return {
-    id: item.id,
-    title: item.title,
-    artist: item.artist,
-    thumbnail: item.album_cover,
-    matchRate: item.match_rate,
-    isLiked: item.is_liked,
-  };
-};
-
-export const toArchiveUi = (data: ArchiveApiType): ArchiveUiType => {
-  return {
-    genres: data.genres,
-    situations: data.situations,
-    items: data.items.map(toArchiveItemUi),
-  };
-};
+export const toArchiveItemFromSong = (song: ArchiveSongApiType): ArchiveItemUiType => ({
+  id: song.song_id,
+  title: song.title,
+  artist: song.artist,
+  thumbnail: song.album_cover ?? null,
+  matchRate: song.score != null ? Math.round(song.score * 100) : 0,
+  isLiked: false,
+});
