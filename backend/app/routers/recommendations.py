@@ -12,6 +12,7 @@ from app.database import get_db
 from app.dependencies.auth import get_current_user
 from app.models.user import User
 from app.models.recommendation import Recommendation
+from app.models.song import Song
 from app.schemas.recommendation import (
     RecommendationCreate,
     RecommendationFeedback,
@@ -127,7 +128,7 @@ async def get_recommendation_songs(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """2차 추천 완료 결과(recommended_songs) 조회."""
+    """2차 추천 완료 결과(recommended_songs) 조회. songs 테이블에서 key/bpm 보완."""
     job = await _get_job_or_404(job_id, current_user.id, db)
 
     if job.status != "DONE":
@@ -136,7 +137,7 @@ async def get_recommendation_songs(
             detail={"code": "NOT_READY", "message": f"추천이 아직 완료되지 않았습니다. 현재: {job.status}"},
         )
 
-    return _to_response(job)
+    return await _to_response_with_song_info(job, db)
 
 
 # ── 헬퍼 ─────────────────────────────────────────────────
@@ -163,6 +164,81 @@ def _to_response(job: Recommendation) -> RecommendationStatusResponse:
         status=job.status,
         first_recommended_songs=job.first_recommended_songs,
         recommended_songs=job.recommended_songs,
+        error_message=job.error_message,
+        failed_at=job.failed_at,
+        stage1_started_at=job.stage1_started_at,
+        stage1_completed_at=job.stage1_completed_at,
+        stage2_started_at=job.stage2_started_at,
+        stage2_completed_at=job.stage2_completed_at,
+        created_at=job.created_at,
+        updated_at=job.updated_at,
+    )
+
+
+async def _to_response_with_song_info(job: Recommendation, db: AsyncSession) -> RecommendationStatusResponse:
+    """recommended_songs / first_recommended_songs 각 항목에 songs 테이블의 key, bpm 보완."""
+
+    # 1. JSONB에서 song_id 수집
+    song_ids: set[str] = set()
+
+    first = job.first_recommended_songs or []
+    for item in first:
+        if sid := item.get("song_id"):
+            song_ids.add(str(sid))
+
+    recommended = job.recommended_songs or {}
+    for group in recommended.values():                      # genre_recommendations, situation_recommendations
+        if isinstance(group, dict):
+            for items in group.values():                    # { "pop": [...], ... }
+                if isinstance(items, list):
+                    for item in items:
+                        if sid := item.get("song_id"):
+                            song_ids.add(str(sid))
+        elif isinstance(group, list):                       # 혹시 flat list인 경우 대비
+            for item in group:
+                if sid := item.get("song_id"):
+                    song_ids.add(str(sid))
+
+    # 2. songs 테이블 bulk 조회
+    song_map: dict[str, dict] = {}
+    if song_ids:
+        from uuid import UUID as _UUID
+        uuids = []
+        for sid in song_ids:
+            try:
+                uuids.append(_UUID(sid))
+            except ValueError:
+                pass
+        if uuids:
+            result = await db.execute(select(Song.id, Song.key, Song.bpm).where(Song.id.in_(uuids)))
+            for row in result.all():
+                song_map[str(row.id)] = {"key": row.key, "bpm": row.bpm}
+
+    # 3. enrichment 헬퍼
+    def enrich(item: dict) -> dict:
+        sid = str(item.get("song_id", ""))
+        if sid not in song_map:
+            return item
+        extra = dict(song_map[sid])
+        if extra.get("key"):
+            extra["key"] = extra["key"].title()  # "D# major" → "D# Major", "C major" → "C Major"
+        return {**item, **extra}
+
+    enriched_first = [enrich(i) for i in first]
+    def enrich_group(group):
+        if isinstance(group, dict):
+            return {k: [enrich(i) for i in v] if isinstance(v, list) else v for k, v in group.items()}
+        if isinstance(group, list):
+            return [enrich(i) for i in group]
+        return group
+
+    enriched_recommended = {k: enrich_group(v) for k, v in recommended.items()}
+
+    return RecommendationStatusResponse(
+        job_id=job.id,
+        status=job.status,
+        first_recommended_songs=enriched_first or None,
+        recommended_songs=enriched_recommended or None,
         error_message=job.error_message,
         failed_at=job.failed_at,
         stage1_started_at=job.stage1_started_at,
