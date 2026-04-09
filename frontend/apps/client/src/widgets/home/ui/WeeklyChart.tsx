@@ -1,18 +1,15 @@
-'use client';
-
 import { cn } from '@/shared/lib/cn';
 import { SectionHeader } from '@/shared/components';
 import { SongListItem } from '@/entities/song/ui';
-import type { SongUiType } from '@/entities/song/model/types';
-
-import { MOCK_WEEKLY_CHART } from '@/entities/song/model/mock';
+import type { RankedSongType, SongUiType } from '@/entities/song/model/types';
 
 type WeeklyChartProps = {
+  items: RankedSongType[];
   onSongClick: (song: SongUiType) => void;
   className?: string;
 };
 
-const WeeklyChart = ({ onSongClick, className }: WeeklyChartProps) => {
+const WeeklyChart = ({ items, onSongClick, className }: WeeklyChartProps) => {
   return (
     <section className={cn('flex flex-col gap-4', className)}>
       <SectionHeader
@@ -21,7 +18,7 @@ const WeeklyChart = ({ onSongClick, className }: WeeklyChartProps) => {
       />
 
       <div className='flex flex-col gap-3'>
-        {MOCK_WEEKLY_CHART.map((song, index) => (
+        {items.map((song, index) => (
           <SongListItem
             key={song.id}
             variant='list4'

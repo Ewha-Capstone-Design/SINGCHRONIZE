@@ -13,4 +13,5 @@ export const queryKeys = {
   buskingResult: (roomId: string) => ['busking', 'rooms', roomId, 'result'] as const,
   analysisJob: (jobId: string) => ['analysis', 'jobs', jobId] as const,
   vocalProfile: ['analysis', 'profile'] as const,
+  homeFeeds: ['home', 'feeds'] as const,
 };
