@@ -7,9 +7,10 @@ import BackButton from './BackButton';
 type FlowHeaderProps = {
   filled: number;
   onBack: () => void;
+  className?: string;
 };
 
-const FlowHeader = ({ filled, onBack }: FlowHeaderProps) => {
+const FlowHeader = ({ filled, onBack, className }: FlowHeaderProps) => {
   const [animatedFilled, setAnimatedFilled] = useState(() => Math.max(0, filled - 1));
 
   useEffect(() => {
@@ -26,7 +27,7 @@ const FlowHeader = ({ filled, onBack }: FlowHeaderProps) => {
   if (filled === 0) return null;
 
   return (
-    <div className='pt-10 px-9 flex flex-col gap-10'>
+    <div className={`pt-10 px-9 flex flex-col gap-10 ${className ?? ''}`}>
       <SegmentedProgress filled={animatedFilled} />
       <BackButton onClick={onBack} />
     </div>

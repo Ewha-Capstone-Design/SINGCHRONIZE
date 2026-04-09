@@ -63,7 +63,7 @@ const RecommendResultPage = () => {
         {isReport ? (
           report && <VocalReportWidget desktopLayout='grid' report={report} />
         ) : isLoading ? (
-          <div className='flex flex-1 items-center justify-center text-white typo-24b'>
+          <div className='flex items-center justify-center h-186 typo-20r text-gray-500'>
             추천 곡을 준비하고 있어요...
           </div>
         ) : (

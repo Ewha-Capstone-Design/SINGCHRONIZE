@@ -39,7 +39,7 @@ const RecommendAnalyzePage = () => {
         ${step === 'record' ? BG_CLASS.record : BG_CLASS.other}
       `}
     >
-      <FlowHeader filled={filled} onBack={goBack} />
+      <FlowHeader filled={filled} onBack={goBack} className={step === 'analyze' ? 'invisible' : ''} />
       <div className='flex-1 flex flex-col items-center'>
         {step === 'record' && <StepRecord onNext={onRecordDone} />}
         {canAnalyze && <StepAnalyze audioBlob={audioBlob} onNext={onAnalyzeDone} />}

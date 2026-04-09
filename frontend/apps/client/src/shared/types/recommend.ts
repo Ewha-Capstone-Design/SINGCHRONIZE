@@ -16,7 +16,7 @@ export type InternalRecommendStep = RecommendStep | 'analyze';
 
 export const FILLED_COUNT_BY_STEP: Record<InternalRecommendStep, number> = {
   record: 1,
-  analyze: 0,
+  analyze: 1,
   ranking: 2,
   situation: 3,
   genre: 3,

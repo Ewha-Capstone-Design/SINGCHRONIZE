@@ -22,7 +22,7 @@ const StepAnalyze = ({ audioBlob, onNext }: StepAnalyzeProps) => {
   const text = STATUS_TEXT[status];
 
   return (
-    <div className='flex-1 w-full flex items-center justify-center'>
+    <div className='pb-29 flex-1 w-full flex items-center justify-center'>
       <div className='flex flex-col items-center typo-32b text-center'>
         <p>{text.title}</p>
         <p>{text.desc}</p>
