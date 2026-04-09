@@ -11,6 +11,8 @@ export type RecommendedSongItemType = {
   artist: string;
   album_cover?: string | null;
   score?: number;
+  key?: string;
+  bpm?: number;
 };
 
 export type RecommendationStatusResponse = Omit<

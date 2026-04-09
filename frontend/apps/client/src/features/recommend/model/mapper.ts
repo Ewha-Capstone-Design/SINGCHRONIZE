@@ -8,6 +8,9 @@ const toRecommendSong = (song: RecommendedSongItemType): RecommendSongType => ({
   title: song.title,
   artist: song.artist,
   thumbnail: song.album_cover ?? undefined,
+  bpm: song.bpm,
+  musicKey: song.key,
+  matchRate: song.score != null ? Math.round(song.score * 100) : undefined,
 });
 
 const toSituationTab = (

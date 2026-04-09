@@ -26,7 +26,7 @@ export const recommendationApi = {
     return data as unknown as RecommendationStatusResponse;
   },
 
-  // POST: 2차 추천 피드백 제출
+  // POST: 2차 추천을 위한 피드백 제출
   submitFeedback: async (
     jobId: string,
     feedback: RecommendationFeedbackBody,
@@ -37,6 +37,16 @@ export const recommendationApi = {
         params: { path: { job_id: jobId } },
         body: feedback,
       },
+    );
+    if (error) throw error;
+    return data as unknown as RecommendationStatusResponse;
+  },
+
+  // GET: 최종 추천 결과 조회
+  getSongs: async (jobId: string): Promise<RecommendationStatusResponse> => {
+    const { data, error } = await privateClient.GET(
+      '/api/v1/recommendations/{job_id}/songs',
+      { params: { path: { job_id: jobId } } },
     );
     if (error) throw error;
     return data as unknown as RecommendationStatusResponse;

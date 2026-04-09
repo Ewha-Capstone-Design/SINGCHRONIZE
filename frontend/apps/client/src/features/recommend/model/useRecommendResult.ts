@@ -24,7 +24,7 @@ export const useRecommendResult = (jobId: string | null) => {
     const poll = async (): Promise<void> => {
       if (cancelledRef.current) return;
 
-      const result = await recommendationApi.getStatus(jobId);
+      const result = await recommendationApi.getSongs(jobId);
       if (cancelledRef.current) return;
 
       if (result.status === 'DONE') {
