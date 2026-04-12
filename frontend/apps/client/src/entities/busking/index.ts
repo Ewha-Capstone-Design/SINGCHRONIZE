@@ -9,6 +9,7 @@ export {
   useEndBuskingRoom,
   useJoinBuskingRoom,
   useAdvanceSetlist,
+  useMyBuskingHistory,
 } from './model/queries';
 export type {
   BuskingRoomApiType,

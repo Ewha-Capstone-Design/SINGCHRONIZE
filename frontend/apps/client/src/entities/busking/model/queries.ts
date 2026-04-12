@@ -90,3 +90,10 @@ export const useAdvanceSetlist = () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.buskingRoom(roomId) }),
   });
 };
+
+// GET: 내 버스킹 기록 조회
+export const useMyBuskingHistory = () =>
+  useQuery({
+    queryKey: queryKeys.myBuskingHistory,
+    queryFn: buskingApi.getMyBuskingHistory,
+  });

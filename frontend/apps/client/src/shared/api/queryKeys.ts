@@ -11,6 +11,7 @@ export const queryKeys = {
   buskingRooms: ['busking', 'rooms'] as const,
   buskingRoom: (roomId: string) => ['busking', 'rooms', roomId] as const,
   buskingResult: (roomId: string) => ['busking', 'rooms', roomId, 'result'] as const,
+  myBuskingHistory: ['busking', 'me', 'history'] as const,
   analysisJob: (jobId: string) => ['analysis', 'jobs', jobId] as const,
   vocalProfile: ['analysis', 'profile'] as const,
   homeFeeds: ['home', 'feeds'] as const,

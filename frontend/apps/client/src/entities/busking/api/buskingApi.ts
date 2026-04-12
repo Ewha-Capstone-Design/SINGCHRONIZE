@@ -100,4 +100,13 @@ export const buskingApi = {
     if (error) throw error;
     return data;
   },
+
+  // GET: 내 버스킹 기록 조회
+  getMyBuskingHistory: async (): Promise<
+    components['schemas']['_BuskingHistoryResponse']
+  > => {
+    const { data, error } = await privateClient.GET('/api/v1/users/me/busking-history');
+    if (error) throw error;
+    return data;
+  },
 };
