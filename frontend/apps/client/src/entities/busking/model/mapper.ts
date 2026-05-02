@@ -7,6 +7,7 @@ import type {
   SetlistType,
   BuskingType,
 } from './types';
+import { BUSKING_STATUS } from './types';
 
 type HostInfo = {
   nickname: string;
@@ -14,7 +15,7 @@ type HostInfo = {
 };
 
 const toBuskingStatus = (status: string): BuskingType =>
-  status === 'live' ? 'live' : 'record';
+  status === BUSKING_STATUS.LIVE ? 'live' : 'record';
 
 export const toBuskingUi = (room: BuskingRoomApiType, hostInfo?: HostInfo): BuskingUiType => ({
   id: room.id,
