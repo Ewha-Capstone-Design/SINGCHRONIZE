@@ -11,3 +11,13 @@ export const formatTime = (seconds: number) => {
   const ss = String(seconds % 60).padStart(2, '0');
   return { mm, ss, formatted: `${mm}:${ss}` };
 };
+
+export const formatElapsedDuration = (startedAt: string): string => {
+  const elapsed = Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000);
+  const h = Math.floor(elapsed / 3600);
+  const m = Math.floor((elapsed % 3600) / 60);
+  const s = elapsed % 60;
+  const mm = String(m).padStart(2, '0');
+  const ss = String(s).padStart(2, '0');
+  return h > 0 ? `${String(h).padStart(2, '0')}:${mm}:${ss}` : `${mm}:${ss}`;
+};

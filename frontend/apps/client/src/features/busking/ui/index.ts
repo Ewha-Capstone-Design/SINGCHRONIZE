@@ -1,3 +1,4 @@
+export { default as BuskingVideoRoom } from './BuskingVideoRoom';
 export { default as LiveChat } from './LiveChat';
 export { default as LiveEndModal } from './LiveEndModal';
 export { default as LiveStartModal } from './LiveStartModal';

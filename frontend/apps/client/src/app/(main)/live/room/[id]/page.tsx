@@ -6,9 +6,16 @@ import { Button } from '@singchronize/ui';
 import { useModal } from '@/shared/hooks';
 import { cn } from '@/shared/lib/cn';
 import { useNavigate } from '@/shared/lib/navigation';
+import { formatElapsedDuration } from '@/shared/lib/formatTime';
 import { BackButton } from '@/shared/components';
 import { BuskingSection } from '@/widgets/busking-list/ui';
-import { LiveEndModal, SetlistPanel, VotePanel, LiveChat } from '@/features/busking/ui';
+import {
+  BuskingVideoRoom,
+  LiveEndModal,
+  SetlistPanel,
+  VotePanel,
+  LiveChat,
+} from '@/features/busking/ui';
 import { useBuskingSocket } from '@/features/busking/hooks/useBuskingSocket';
 import { BuskingBadge } from '@/entities/busking/ui';
 
@@ -22,6 +29,8 @@ import {
 import type { ChatMessageType } from '@/entities/busking';
 import { useMe } from '@/entities/user';
 
+type LiveKitCredentials = { token: string; url: string };
+
 const BuskingViewerPage = () => {
   const { go, ROUTES, dynamic } = useNavigate();
   const params = useParams();
@@ -32,6 +41,10 @@ const BuskingViewerPage = () => {
 
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [showVote] = useState(true);
+  const [isLastSong, setIsLastSong] = useState(false);
+  const [liveKitCredentials, setLiveKitCredentials] = useState<LiveKitCredentials | null>(null);
+  const [liveDuration, setLiveDuration] = useState('00:00');
+  const [viewerCount, setViewerCount] = useState(0);
 
   const endModal = useModal();
   const viewerEndModal = useModal();
@@ -40,15 +53,38 @@ const BuskingViewerPage = () => {
   const { data: room } = useBuskingRoom(roomId);
   const { data: rooms = [] } = useBuskingRooms();
   const { mutate: endRoom } = useEndBuskingRoom();
-  const { mutate: joinRoom } = useJoinBuskingRoom();
-  const { mutate: advanceSetlist } = useAdvanceSetlist();
+  const { mutateAsync: joinRoom } = useJoinBuskingRoom();
+  const { mutate: advanceSetlist, isPending: isAdvancing } = useAdvanceSetlist();
 
   const isStreamer = !isRecord && !!me && !!room && me.id === room.host_id;
 
-  // 시청자 입장 시 LiveKit 토큰 발급
   useEffect(() => {
-    if (!isRecord && !isStreamer && roomId) joinRoom(roomId);
-  }, [isRecord, isStreamer, roomId, joinRoom]);
+    if (isRecord || !me || !room) return;
+
+    if (isStreamer) {
+      const stored = sessionStorage.getItem(`livekit_host_${roomId}`);
+      if (stored) {
+        setLiveKitCredentials(JSON.parse(stored));
+        sessionStorage.removeItem(`livekit_host_${roomId}`);
+      }
+    } else {
+      joinRoom(roomId).then((data) => {
+        setLiveKitCredentials({ token: data.livekit_token, url: data.livekit_url });
+      });
+    }
+  }, [isStreamer, isRecord, roomId, me, room, joinRoom]);
+
+  useEffect(() => {
+    if (room?.total_viewers !== undefined) setViewerCount(room.total_viewers);
+  }, [room?.total_viewers]);
+
+  useEffect(() => {
+    if (isRecord || !room?.started_at) return;
+    const startedAt = room.started_at;
+    setLiveDuration(formatElapsedDuration(startedAt));
+    const id = setInterval(() => setLiveDuration(formatElapsedDuration(startedAt)), 1000);
+    return () => clearInterval(id);
+  }, [isRecord, room?.started_at]);
 
   const handleMessage = useCallback(
     (payload: { userId: string; nickname: string; message: string }) => {
@@ -71,7 +107,18 @@ const BuskingViewerPage = () => {
       if (!isStreamer) viewerEndModal.openModal();
     },
     onMessage: handleMessage,
+    onJoin: () => setViewerCount((prev) => prev + 1),
+    onLeave: () => setViewerCount((prev) => Math.max(0, prev - 1)),
   });
+
+  const handleAdvanceSetlist = () => {
+    advanceSetlist(roomId, {
+      onError: (error) => {
+        const detail = (error as { detail?: { code: string } })?.detail;
+        if (detail?.code === 'ALREADY_LAST_SONG') setIsLastSong(true);
+      },
+    });
+  };
 
   // 스트리머: 종료 버튼 → LiveEndModal 오픈
   const handleEndLive = () => {
@@ -120,14 +167,14 @@ const BuskingViewerPage = () => {
             <div className='flex flex-col'>
               <span className='typo-16m text-white'>{me?.nickname}</span>
               <span className='typo-14r text-gray-300'>
-                {room?.total_viewers ?? 0}명이 같이 듣는 중
+                {viewerCount}명이 같이 듣는 중
               </span>
             </div>
           </div>
 
           <BuskingBadge
             isRecord={isRecord}
-            duration={isRecord ? '3:30' : '2:30'}
+            duration={liveDuration}
             className='ml-4'
           />
 
@@ -138,9 +185,21 @@ const BuskingViewerPage = () => {
           )}
         </div>
 
-        {/* 비디오 영역 */}
         <div className='relative ml-9 mr-5 mb-5 flex-1 min-h-120 rounded-10 overflow-hidden aspect-video'>
-          <div className='size-full bg-gray-700' />
+          <div className='size-full bg-gray-700'>
+            {room?.thumbnail && (
+              <img src={room.thumbnail} alt={room.title} className='size-full object-cover' />
+            )}
+          </div>
+
+          {/* LiveKit 오디오 연결 */}
+          {!isRecord && liveKitCredentials && (
+            <BuskingVideoRoom
+              token={liveKitCredentials.token}
+              serverUrl={liveKitCredentials.url}
+              isHost={isStreamer}
+            />
+          )}
 
           {/* 셋리스트 오버레이 */}
           <div className='absolute top-3 left-3'>
@@ -162,7 +221,11 @@ const BuskingViewerPage = () => {
         {/* 다른 버스킹 */}
         {isStreamer ? (
           <div className='h-62 flex items-center justify-center'>
-            <Button variant='normal' onClick={() => advanceSetlist(roomId)}>
+            <Button
+              variant='normal'
+              onClick={handleAdvanceSetlist}
+              disabled={isAdvancing || isLastSong}
+            >
               다음 곡으로
             </Button>
           </div>

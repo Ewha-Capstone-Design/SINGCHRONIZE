@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
+import { tokenStore } from '@/shared/api/tokenStore';
 
 type BuskingSocketEvent =
   | { type: 'LIVE_END' }
@@ -33,7 +34,6 @@ export const useBuskingSocket = ({
 }: UseBuskingSocketOptions) => {
   const wsRef = useRef<WebSocket | null>(null);
 
-  // 콜백이 바뀌어도 재연결 없이 최신 함수 참조 유지
   const onLiveEndRef = useRef(onLiveEnd);
   const onMessageRef = useRef(onMessage);
   const onVoteRef = useRef(onVote);
@@ -59,7 +59,10 @@ export const useBuskingSocket = ({
   useEffect(() => {
     if (!enabled) return;
 
-    const ws = new WebSocket(`${process.env.NEXT_PUBLIC_WS_URL}/busking/${roomId}`);
+    const token = tokenStore.getAccess();
+    const ws = new WebSocket(
+      `${process.env.NEXT_PUBLIC_WS_URL}/api/v1/busking/ws/${roomId}?token=${token}`
+    );
     wsRef.current = ws;
 
     ws.onmessage = (e) => {
