@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Button } from '@singchronize/ui';
 import { useModal } from '@/shared/hooks';
@@ -11,7 +11,8 @@ import { BackButton } from '@/shared/components';
 import { BuskingSection } from '@/widgets/busking-list/ui';
 import {
   BuskingVideoRoom,
-  LiveEndModal,
+  HostLiveEndModal,
+  ViewerLiveEndModal,
   SetlistPanel,
   VotePanel,
   LiveChat,
@@ -25,6 +26,7 @@ import {
   useEndBuskingRoom,
   useJoinBuskingRoom,
   useAdvanceSetlist,
+  BUSKING_STATUS,
 } from '@/entities/busking';
 import type { ChatMessageType } from '@/entities/busking';
 import { useMe } from '@/entities/user';
@@ -57,6 +59,13 @@ const BuskingViewerPage = () => {
   const { mutate: advanceSetlist, isPending: isAdvancing } = useAdvanceSetlist();
 
   const isStreamer = !isRecord && !!me && !!room && me.id === room.host_id;
+  const sessionEndedRef = useRef(false);
+
+  useEffect(() => {
+    if (!isRecord && room && room.status !== BUSKING_STATUS.LIVE && !sessionEndedRef.current) {
+      go(ROUTES.live.root);
+    }
+  }, [isRecord, room, go, ROUTES.live.root]);
 
   useEffect(() => {
     if (isRecord || !me || !room) return;
@@ -88,6 +97,7 @@ const BuskingViewerPage = () => {
 
   const handleMessage = useCallback(
     (payload: { userId: string; nickname: string; message: string }) => {
+      console.log('[Chat] WS 수신 CHAT_MESSAGE', payload);
       setMessages((prev) => [
         ...prev,
         {
@@ -102,14 +112,22 @@ const BuskingViewerPage = () => {
 
   const { endLive, sendMessage } = useBuskingSocket({
     roomId,
-    enabled: !isRecord,
+    enabled: !isRecord && !!room && room.status === BUSKING_STATUS.LIVE,
     onLiveEnd: () => {
+      sessionEndedRef.current = true;
       if (!isStreamer) viewerEndModal.openModal();
     },
     onMessage: handleMessage,
-    onJoin: () => setViewerCount((prev) => prev + 1),
-    onLeave: () => setViewerCount((prev) => Math.max(0, prev - 1)),
+    onStateUpdate: ({ viewerCount }) => setViewerCount(viewerCount),
   });
+
+  const handleSend = useCallback(
+    (message: string) => {
+      console.log('[Chat] WS 전송', message);
+      sendMessage(message);
+    },
+    [sendMessage],
+  );
 
   const handleAdvanceSetlist = () => {
     advanceSetlist(roomId, {
@@ -244,24 +262,16 @@ const BuskingViewerPage = () => {
 
       {/* 채팅 사이드바 */}
       <div className='w-96 shrink-0'>
-        <LiveChat messages={messages} onSend={sendMessage} />
+        <LiveChat messages={messages} onSend={handleSend} />
       </div>
 
       {/* 스트리머: 종료 확인 모달 */}
       {endModal.open && (
-        <LiveEndModal onClose={endModal.closeModal} onConfirm={handleConfirmEndLive} />
+        <HostLiveEndModal onClose={endModal.closeModal} onConfirm={handleConfirmEndLive} />
       )}
 
-      {/* 시청자: 방송 종료 알림 모달 */}
       {viewerEndModal.open && (
-        <div className='absolute inset-0 flex items-center justify-center bg-dim z-20'>
-          <div className='p-8 flex flex-col items-center gap-6 w-80 rounded-10 bg-gray-800'>
-            <p className='typo-18sb text-white text-center'>라이브가 종료되었습니다</p>
-            <Button variant={'accent'} className='w-52' onClick={handleConfirmViewerEnd}>
-              확인
-            </Button>
-          </div>
-        </div>
+        <ViewerLiveEndModal onConfirm={handleConfirmViewerEnd} />
       )}
     </div>
   );
