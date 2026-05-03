@@ -1,6 +1,7 @@
 'use client';
 
 import { IcPlus } from '@/shared/assets/icons';
+import { AppImage } from '@/shared/components';
 
 type ThumbnailUploaderProps = {
   preview: string | null;
@@ -18,7 +19,7 @@ const ThumbnailUploader = ({ preview, onChange }: ThumbnailUploaderProps) => {
   return (
     <label className='relative flex items-center justify-center w-103 aspect-video cursor-pointer overflow-hidden rounded-10 bg-gray-800 text-gray-300'>
       {preview ? (
-        <img src={preview} alt='썸네일' className='h-full object-cover' />
+        <AppImage src={preview} alt='thumbnail' fill className='object-cover' />
       ) : (
         <IcPlus />
       )}

@@ -8,6 +8,7 @@ import {
 } from '@singchronize/ui';
 import { IcMore } from '@/shared/assets/icons';
 import { cn } from '@/shared/lib/cn';
+import { AppImage } from '@/shared/components';
 import type { HistoryItemUiType } from '../model/types';
 import { getHistoryTagLabel } from '../model/tags';
 
@@ -28,11 +29,7 @@ const HistoryItem = ({ item, onEditClick, onDeleteClick }: HistoryItemProps) => 
       )}
     >
       <div className='relative size-23 shrink-0 overflow-hidden rounded-10'>
-        {item.thumbnail ? (
-          <img src={item.thumbnail} alt={item.title} className='size-full object-cover' />
-        ) : (
-          <div className='size-full bg-white-10' />
-        )}
+        <AppImage src={item.thumbnail} alt={item.title} fill className='object-cover' />
       </div>
 
       <div className='flex flex-1 flex-col gap-4 min-w-0'>

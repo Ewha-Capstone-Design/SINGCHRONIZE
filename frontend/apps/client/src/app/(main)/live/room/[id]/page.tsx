@@ -6,8 +6,12 @@ import { Button } from '@singchronize/ui';
 import { useModal } from '@/shared/hooks';
 import { cn } from '@/shared/lib/cn';
 import { useNavigate } from '@/shared/lib/navigation';
-import { formatElapsedDuration, formatFixedDuration, formatMinutesRemaining } from '@/shared/lib/formatTime';
-import { BackButton } from '@/shared/components';
+import {
+  formatElapsedDuration,
+  formatFixedDuration,
+  formatMinutesRemaining,
+} from '@/shared/lib/formatTime';
+import { AppImage, BackButton } from '@/shared/components';
 import { BuskingSection } from '@/widgets/busking-list/ui';
 import {
   BuskingVideoRoom,
@@ -44,7 +48,9 @@ const BuskingViewerPage = () => {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [showVote] = useState(true);
   const [isLastSong, setIsLastSong] = useState(false);
-  const [liveKitCredentials, setLiveKitCredentials] = useState<LiveKitCredentials | null>(null);
+  const [liveKitCredentials, setLiveKitCredentials] = useState<LiveKitCredentials | null>(
+    null,
+  );
   const [liveDuration, setLiveDuration] = useState('00:00');
   const [viewerCount, setViewerCount] = useState(0);
   const [voteTimeLeft, setVoteTimeLeft] = useState<string | undefined>();
@@ -63,7 +69,12 @@ const BuskingViewerPage = () => {
   const sessionEndedRef = useRef(false);
 
   useEffect(() => {
-    if (!isRecord && room && room.status !== BUSKING_STATUS.LIVE && !sessionEndedRef.current) {
+    if (
+      !isRecord &&
+      room &&
+      room.status !== BUSKING_STATUS.LIVE &&
+      !sessionEndedRef.current
+    ) {
       go(ROUTES.live.root);
     }
   }, [isRecord, room, go, ROUTES.live.root]);
@@ -91,7 +102,8 @@ const BuskingViewerPage = () => {
   useEffect(() => {
     if (!room?.started_at) return;
     if (isRecord) {
-      if (room.ended_at) setLiveDuration(formatFixedDuration(room.started_at, room.ended_at));
+      if (room.ended_at)
+        setLiveDuration(formatFixedDuration(room.started_at, room.ended_at));
       return;
     }
     const startedAt = room.started_at;
@@ -188,14 +200,13 @@ const BuskingViewerPage = () => {
           <BackButton />
 
           <div className='ml-5 flex gap-2'>
-            <div className='size-12 rounded-full bg-gray-600 border border-accent-600 shrink-0 overflow-hidden'>
-              {me?.profileImage && (
-                <img
-                  src={me.profileImage}
-                  alt={me.nickname}
-                  className='size-full object-cover'
-                />
-              )}
+            <div className='relative size-12 rounded-full bg-gray-600 border border-accent-600 shrink-0 overflow-hidden'>
+              <AppImage
+                src={me?.profileImage}
+                alt={me?.nickname ?? ''}
+                fill
+                className='object-cover'
+              />
             </div>
             <div className='flex flex-col'>
               <span className='typo-16m text-white'>{me?.nickname}</span>
@@ -205,11 +216,7 @@ const BuskingViewerPage = () => {
             </div>
           </div>
 
-          <BuskingBadge
-            isRecord={isRecord}
-            duration={liveDuration}
-            className='ml-4'
-          />
+          <BuskingBadge isRecord={isRecord} duration={liveDuration} className='ml-4' />
 
           {isStreamer && (
             <Button variant={'accent'} className='ml-auto' onClick={handleEndLive}>
@@ -219,10 +226,13 @@ const BuskingViewerPage = () => {
         </div>
 
         <div className='relative ml-9 mr-5 mb-5 flex-1 min-h-120 rounded-10 overflow-hidden aspect-video'>
-          <div className='size-full bg-gray-700'>
-            {room?.thumbnail && (
-              <img src={room.thumbnail} alt={room.title} className='size-full object-cover' />
-            )}
+          <div className='relative size-full bg-gray-700'>
+            <AppImage
+              src={room?.thumbnail}
+              alt={room?.title ?? ''}
+              fill
+              className='object-cover'
+            />
           </div>
 
           {/* LiveKit 오디오 연결 */}
@@ -287,12 +297,13 @@ const BuskingViewerPage = () => {
 
       {/* 스트리머: 종료 확인 모달 */}
       {endModal.open && (
-        <HostLiveEndModal onClose={endModal.closeModal} onConfirm={handleConfirmEndLive} />
+        <HostLiveEndModal
+          onClose={endModal.closeModal}
+          onConfirm={handleConfirmEndLive}
+        />
       )}
 
-      {viewerEndModal.open && (
-        <ViewerLiveEndModal onConfirm={handleConfirmViewerEnd} />
-      )}
+      {viewerEndModal.open && <ViewerLiveEndModal onConfirm={handleConfirmViewerEnd} />}
     </div>
   );
 };

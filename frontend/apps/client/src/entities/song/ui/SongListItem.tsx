@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/shared/lib/cn';
+import { AppImage } from '@/shared/components';
 import { LikeIconButton } from '.';
 
 type ListVariant = 'list2' | 'list3' | 'list4' | 'list5';
@@ -64,7 +65,7 @@ const SongListItem = ({
         'px-5 flex items-center gap-4 w-full rounded-10 bg-gray-800 shrink-0 border border-transparent',
         isTall ? 'h-22.5' : 'h-20',
         onClick && 'cursor-pointer',
-        selected && 'border-brand'
+        selected && 'border-brand',
       )}
       onClick={onClick}
     >
@@ -77,11 +78,7 @@ const SongListItem = ({
 
       {/* [중앙] 앨범 커버 이미지 */}
       <div className='relative size-13.5 shrink-0 overflow-hidden rounded-10 bg-gray-700'>
-        {thumbnail ? (
-          <img src={thumbnail} alt={title} className='size-full object-cover' />
-        ) : (
-          <div className='size-full bg-white-10' />
-        )}
+        <AppImage src={thumbnail} alt={title} fill className='object-cover' />
       </div>
 
       {/* [중앙] 곡 정보 */}

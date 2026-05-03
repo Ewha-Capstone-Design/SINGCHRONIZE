@@ -2,6 +2,7 @@
 
 import { cn } from '@/shared/lib/cn';
 import { IcPlay } from '@/shared/assets/icons';
+import { AppImage } from '@/shared/components';
 import { BuskingType, BuskingUiType } from '@/entities/busking/model/types';
 
 type BuskingCardVariant = 'sm' | 'md' | 'lg';
@@ -73,16 +74,12 @@ const BuskingCard = ({ variant = 'md', item, onClick }: BuskingCardProps) => {
       onClick={onClick}
       className={cn(
         'relative overflow-hidden rounded-10 bg-gray-800 text-left shrink-0',
-        variantClassMap[variant]
+        variantClassMap[variant],
       )}
     >
       {/* 배경 썸네일 */}
       <div className='absolute inset-0'>
-        {thumbnail ? (
-          <img src={thumbnail} alt={nickname} className='size-full object-cover' />
-        ) : (
-          <div className='size-full bg-gray-100' />
-        )}
+        <AppImage src={thumbnail} alt={nickname} fill className='object-cover' />
       </div>
 
       {/* 상단 배지 */}
@@ -91,7 +88,7 @@ const BuskingCard = ({ variant = 'md', item, onClick }: BuskingCardProps) => {
           className={cn(
             'inline-flex items-center',
             badgeVariantClassMap[variant],
-            badgeClassMap[status]
+            badgeClassMap[status],
           )}
         >
           {badgeTextMap[status]}
@@ -103,7 +100,7 @@ const BuskingCard = ({ variant = 'md', item, onClick }: BuskingCardProps) => {
         <div
           className={cn(
             'absolute inset-x-0 bottom-0 z-1 h-32.5',
-            'bg-[linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.5)_60%,rgba(0,0,0,1)_100%)]'
+            'bg-[linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,0.5)_60%,rgba(0,0,0,1)_100%)]',
           )}
         />
       )}
@@ -112,23 +109,19 @@ const BuskingCard = ({ variant = 'md', item, onClick }: BuskingCardProps) => {
       <div
         className={cn(
           'absolute inset-x-0 bottom-0 z-10 flex items-end justify-between',
-          bottomAreaClassMap[variant]
+          bottomAreaClassMap[variant],
         )}
       >
         <div className={cn('flex items-center min-w-0 h-full', profileGapMap[variant])}>
           {/* 프로필 */}
           <div
             className={cn(
-              'shrink-0 overflow-hidden rounded-full bg-white border',
+              'relative shrink-0 overflow-hidden rounded-full bg-white border',
               status === 'live' ? 'border-accent-500' : 'border-brand',
-              profileSizeMap[variant]
+              profileSizeMap[variant],
             )}
           >
-            {profileImage ? (
-              <img src={profileImage} alt={nickname} className='size-full object-cover' />
-            ) : (
-              <div className='size-full bg-gray-100' />
-            )}
+            <AppImage src={profileImage} alt={nickname} fill className='object-cover' />
           </div>
 
           {/* 텍스트 */}

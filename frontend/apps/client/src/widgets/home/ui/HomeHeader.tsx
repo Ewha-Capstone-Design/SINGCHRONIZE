@@ -2,6 +2,7 @@
 
 import { cn } from '@/shared/lib/cn';
 import { useNavigate } from '@/shared/lib/navigation';
+import { AppImage } from '@/shared/components';
 
 type HomeHeaderProps = {
   username?: string | null;
@@ -26,20 +27,15 @@ export const HomeHeader = ({
         <button
           type='button'
           onClick={() => go(ROUTES.my.root)}
-          className='size-12 overflow-hidden rounded-full bg-gray-800'
+          className='relative size-12 overflow-hidden rounded-full bg-gray-800'
           aria-label='profile'
         >
-          {profileImageUrl ? (
-            <img
-              src={profileImageUrl}
-              alt={`${username} 프로필 이미지`}
-              className='size-full object-cover'
-              loading='lazy'
-              referrerPolicy='no-referrer'
-            />
-          ) : (
-            <div className='size-full bg-white-10' />
-          )}
+          <AppImage
+            src={profileImageUrl}
+            alt={`${username} 프로필 이미지`}
+            fill
+            className='object-cover'
+          />
         </button>
       </div>
     </header>

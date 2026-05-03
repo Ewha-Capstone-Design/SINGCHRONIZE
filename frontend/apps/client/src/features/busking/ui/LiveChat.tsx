@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import type { ChatMessageType } from '@/entities/busking/model/types';
 import { InputField } from '@singchronize/ui';
+import { AppImage } from '@/shared/components';
+import type { ChatMessageType } from '@/entities/busking/model/types';
 
 type LiveChatProps = {
   messages: ChatMessageType[];
@@ -34,14 +35,13 @@ const LiveChat = ({ messages, onSend }: LiveChatProps) => {
         {messages.map((msg) => (
           <div key={msg.id} className='flex flex-col gap-2'>
             <div className='flex items-center gap-1'>
-              <div className='size-5.5 rounded-full bg-gray-600 shrink-0 overflow-hidden'>
-                {msg.profileImage && (
-                  <img
-                    src={msg.profileImage}
-                    alt={msg.username}
-                    className='size-full object-cover'
-                  />
-                )}
+              <div className='relative size-5.5 rounded-full bg-gray-600 shrink-0 overflow-hidden'>
+                <AppImage
+                  src={msg.profileImage}
+                  alt={msg.username}
+                  fill
+                  className='object-cover'
+                />
               </div>
               <span className='typo-12r text-gray-200'>{msg.username}</span>
             </div>

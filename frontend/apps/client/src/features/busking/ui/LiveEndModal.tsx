@@ -2,7 +2,7 @@
 
 import { Button } from '@singchronize/ui';
 import { cn } from '@/shared/lib/cn';
-import { BaseModal } from '@/shared/components';
+import { AppImage, BaseModal } from '@/shared/components';
 
 type HostLiveEndModalProps = {
   onClose: () => void;
@@ -27,14 +27,13 @@ export const HostLiveEndModal = ({
       <div className='flex flex-col gap-9 w-103'>
         <h2 className='typo-32b text-white text-center'>라이브 버스킹을 종료할까요?</h2>
 
-        <div className='w-full aspect-video rounded-10 overflow-hidden bg-gray-700'>
-          {thumbnail && (
-            <img
-              src={thumbnail}
-              alt='busking thumbnail'
-              className='size-full object-cover'
-            />
-          )}
+        <div className='relative w-full aspect-video rounded-10 overflow-hidden bg-gray-700'>
+          <AppImage
+            src={thumbnail}
+            alt='busking thumbnail'
+            fill
+            className='object-cover'
+          />
         </div>
 
         <ul className='self-center flex flex-col'>

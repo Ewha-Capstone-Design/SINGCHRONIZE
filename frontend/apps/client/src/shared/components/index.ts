@@ -1,3 +1,4 @@
+export { default as AppImage } from './AppImage';
 export { default as AudioPlayer } from './AudioPlayer';
 export { default as BackButton } from './BackButton';
 export { default as BaseModal } from './BaseModal';

@@ -2,6 +2,7 @@
 
 import { cn } from '@/shared/lib/cn';
 import { IcPlay } from '@/shared/assets/icons';
+import { AppImage } from '@/shared/components';
 import type { SetlistType } from '@/entities/busking/model/types';
 
 type SetlistPanelProps = {
@@ -31,20 +32,19 @@ const SetlistPanel = ({ title, items, isRecord = false }: SetlistPanelProps) => 
             key={item.rank}
             className={cn(
               'px-3 flex items-center gap-2 h-15 rounded-10',
-              item.isCurrent ? 'bg-yellow-500-30' : 'bg-gray-700'
+              item.isCurrent ? 'bg-yellow-500-30' : 'bg-gray-700',
             )}
           >
             {!isRecord && (
               <span className='w-3 typo-16m text-gray-100 shrink-0'>{item.rank}</span>
             )}
-            <div className='size-8 rounded-sm bg-gray-400 shrink-0 overflow-hidden'>
-              {item.thumbnail && (
-                <img
-                  src={item.thumbnail}
-                  alt={item.title}
-                  className='size-full object-cover'
-                />
-              )}
+            <div className='relative size-8 rounded-sm bg-gray-400 shrink-0 overflow-hidden'>
+              <AppImage
+                src={item.thumbnail}
+                alt={item.title}
+                fill
+                className='object-cover'
+              />
             </div>
             <div className='flex flex-col min-w-0'>
               <span className='typo-14r text-white truncate'>{item.title}</span>

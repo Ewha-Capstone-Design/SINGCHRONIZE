@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@singchronize/ui';
+import { AppImage } from '@/shared/components';
 
 type RecordUploadCompleteProps = {
   thumbnailPreview: string | null;
@@ -20,14 +21,13 @@ export const RecordUploadComplete = ({
         </h2>
 
         {/* 썸네일 */}
-        <div className='w-full aspect-video rounded-10 overflow-hidden bg-gray-700'>
-          {thumbnailPreview && (
-            <img
-              src={thumbnailPreview}
-              alt='busking thumbnail'
-              className='size-full object-cover'
-            />
-          )}
+        <div className='relative w-full aspect-video rounded-10 overflow-hidden bg-gray-700'>
+          <AppImage
+            src={thumbnailPreview}
+            alt='busking thumbnail'
+            fill
+            className='object-cover'
+          />
         </div>
 
         {/* 안내 문구 */}

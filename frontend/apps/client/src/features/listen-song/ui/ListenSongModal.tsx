@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@singchronize/ui';
-import { BaseModal } from '@/shared/components';
+import { AppImage, BaseModal } from '@/shared/components';
 import { getEulReul } from '@/shared/lib/korean';
 import { openYoutubeSearch } from '@/shared/lib/openYoutubeSearch';
 
@@ -59,20 +59,14 @@ const ListenSongModal = ({
   thumbnail,
   onClose,
 }: ListenSongModalProps) => {
-  const imgRef = useRef<HTMLImageElement>(null);
   const [dominantColor, setDominantColor] = useState<string>(DEFAULT_COLOR);
 
   useEffect(() => {
-    const img = imgRef.current;
-    if (!img) return;
-
-    const handleLoad = () => setDominantColor(extractDominantColor(img));
-
-    if (img.complete) handleLoad();
-    else {
-      img.addEventListener('load', handleLoad);
-      return () => img.removeEventListener('load', handleLoad);
-    }
+    if (!thumbnail) return;
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => setDominantColor(extractDominantColor(img));
+    img.src = thumbnail;
   }, [thumbnail]);
 
   const handleListen = () => {
@@ -94,17 +88,8 @@ const ListenSongModal = ({
       />
 
       <div className='flex flex-col items-center gap-11 z-10'>
-        <div className='aspect-square size-38.5 overflow-hidden rounded-10 bg-gray-800'>
-          {thumbnail ? (
-            <img
-              ref={imgRef}
-              src={thumbnail}
-              alt={songTitle}
-              className='size-full object-cover'
-            />
-          ) : (
-            <div className='size-full bg-white-10' />
-          )}
+        <div className='relative aspect-square size-38.5 overflow-hidden rounded-10 bg-gray-800'>
+          <AppImage src={thumbnail} alt={songTitle} fill className='object-cover' />
         </div>
 
         <div className='flex flex-col items-center gap-2 text-center'>

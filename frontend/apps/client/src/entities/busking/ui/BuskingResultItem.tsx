@@ -1,5 +1,6 @@
 'use client';
 
+import { AppImage } from '@/shared/components';
 import type { BuskingResultItemType } from '../model/types';
 
 const clampPercent = (v: number) => Math.min(100, Math.max(0, Math.round(v)));
@@ -20,15 +21,12 @@ const BuskingResultItem = ({ item }: BuskingResultItemProps) => {
         <div className='flex gap-5'>
           {/* 썸네일 */}
           <div className='relative size-19 shrink-0 overflow-hidden rounded-sm'>
-            {item.thumbnail ? (
-              <img
-                src={item.thumbnail}
-                alt={item.title}
-                className='size-full object-cover'
-              />
-            ) : (
-              <div className='size-full bg-white/10' />
-            )}
+            <AppImage
+              src={item.thumbnail}
+              alt={item.title}
+              fill
+              className='object-cover'
+            />
           </div>
 
           {/* 곡명 / 아티스트 */}

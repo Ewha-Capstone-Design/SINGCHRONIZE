@@ -5,6 +5,7 @@ import { InputField, Button } from '@singchronize/ui';
 import { useNavigate } from '@/shared/lib/navigation';
 import { cn } from '@/shared/lib/cn';
 import { IcLogo, IcPlus, IcProfile } from '@/shared/assets/icons';
+import { AppImage } from '@/shared/components';
 import { useOnboardingStep1 } from '@/entities/user';
 
 const ProfilePage = () => {
@@ -51,12 +52,18 @@ const ProfilePage = () => {
 
       <section className='mt-[8vh] flex flex-col items-center gap-12 w-full'>
         <div className='relative'>
-          <div className={cn('w-44 h-44 overflow-hidden rounded-full', 'bg-gray-800')}>
+          <div
+            className={cn(
+              'relative w-44 h-44 overflow-hidden rounded-full',
+              'bg-gray-800',
+            )}
+          >
             {previewUrl ? (
-              <img
+              <AppImage
                 src={previewUrl}
                 alt='프로필 미리보기'
-                className='h-full w-full object-cover'
+                fill
+                className='object-cover'
               />
             ) : (
               <IcProfile />

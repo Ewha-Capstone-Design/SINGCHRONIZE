@@ -9,7 +9,7 @@ export const metadata: Metadata = metadataConfig;
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <html lang='ko'>
+    <html lang='ko' suppressHydrationWarning>
       <body className='h-screen bg-bg scrollbar-hide'>
         <Script
           src='https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js'
