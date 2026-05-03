@@ -10,7 +10,7 @@ import { useMe } from '@/entities/user';
 type DesktopLayout = 'grid' | 'wide';
 
 type VocalReportWidgetProps = {
-  report: VocalReport;
+  report?: VocalReport;
   desktopLayout?: DesktopLayout;
 };
 
