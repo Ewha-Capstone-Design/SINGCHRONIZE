@@ -1,4 +1,3 @@
-import { Button } from '@singchronize/ui';
 import { IcKakao, IcNaver } from '@/shared/assets/icons';
 import type { SnsAccountUiType } from '@/entities/user/model/types';
 
@@ -11,15 +10,10 @@ interface SnsAccountItemProps {
   provider: SnsAccountUiType['provider'];
   email?: string;
   connected: boolean;
-  onConnect?: () => void;
+  // onConnect?: () => void; // TODO: 백엔드 POST /users/me/linked-accounts/{provider} 엔드포인트 추가 후 활성화
 }
 
-const SnsAccountItem = ({
-  provider,
-  email,
-  connected,
-  onConnect,
-}: SnsAccountItemProps) => {
+const SnsAccountItem = ({ provider, email, connected }: SnsAccountItemProps) => {
   const { icon, label } = SNS_CONFIG[provider];
 
   return (
@@ -33,13 +27,14 @@ const SnsAccountItem = ({
           </p>
         </div>
       </div>
-      {connected ? (
-        <span className='typo-16r text-gray-500 shrink-0'>연동됨</span>
-      ) : (
+      {connected ? <span className='typo-16r text-gray-500 shrink-0'>연동됨</span> : null}
+
+      {/* TODO: 백엔드 POST /users/me/linked-accounts/{provider} 엔드포인트 추가 후 구현
+      {!connected && (
         <Button variant='normal' size={'medium'} onClick={onConnect}>
           연동하기
         </Button>
-      )}
+      )} */}
     </div>
   );
 };

@@ -228,7 +228,6 @@ const ProfileEdit = () => {
                   key={account.provider}
                   provider={account.provider}
                   connected={account.connected}
-                  onConnect={() => {}}
                 />
               ))}
             </div>
