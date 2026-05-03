@@ -2,12 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { formatTime } from '@/shared/lib/formatTime';
 import { LevelStatus } from './constants';
 
-export const useMicTest = () => {
+export const useMicTest = (gain: number) => {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [levelStatus, setLevelStatus] = useState<LevelStatus>('low');
   const [elapsedTime, setElapsedTime] = useState(0);
   const rafRef = useRef<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
 
   const isTesting = !!stream;
 
@@ -27,6 +28,7 @@ export const useMicTest = () => {
     setStream(null);
     setElapsedTime(0);
     if (timerRef.current) clearInterval(timerRef.current);
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
   };
 
   useEffect(() => {
@@ -46,9 +48,13 @@ export const useMicTest = () => {
 
     const ctx = new AudioContext();
     const source = ctx.createMediaStreamSource(stream);
+    const gainNode = ctx.createGain();
+    gainNode.gain.value = gain;
+    gainNodeRef.current = gainNode;
     const analyser = ctx.createAnalyser();
     analyser.fftSize = 2048;
-    source.connect(analyser);
+    source.connect(gainNode);
+    gainNode.connect(analyser);
 
     const data = new Uint8Array(analyser.fftSize);
 
@@ -73,10 +79,19 @@ export const useMicTest = () => {
 
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      gainNodeRef.current = null;
       source.disconnect();
+      gainNode.disconnect();
       ctx.close();
     };
   }, [stream]);
+
+  // gain 변경 시 analyser 체인에 반영
+  useEffect(() => {
+    if (gainNodeRef.current) {
+      gainNodeRef.current.gain.value = gain;
+    }
+  }, [gain]);
 
   const { formatted } = formatTime(elapsedTime);
 

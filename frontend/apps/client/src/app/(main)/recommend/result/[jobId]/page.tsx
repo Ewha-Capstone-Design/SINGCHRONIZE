@@ -8,7 +8,7 @@ import { cn } from '@/shared/lib/cn';
 import { useNavigate } from '@/shared/lib/navigation';
 import { VocalReportWidget } from '@/widgets/vocal-report/ui';
 import { RecommendSongWidget } from '@/widgets/vocal-analyze/ui';
-import { useRecommendResult } from '@/features/recommend/model';
+import { useRecordedAudio, useRecommendResult } from '@/features/recommend/model';
 
 import { useVocalProfile } from '@/entities/analysis';
 import { useMe } from '@/entities/user';
@@ -22,6 +22,7 @@ const RecommendResultPage = () => {
   const { jobId } = useParams<{ jobId: string }>();
   const { go, ROUTES } = useNavigate();
 
+  const audioSrc = useRecordedAudio(jobId);
   const { isLoading, situationTabs, genreTabs } = useRecommendResult(jobId);
 
   const { data: report } = useVocalProfile();
@@ -57,7 +58,7 @@ const RecommendResultPage = () => {
             onChange={changeTab}
             textClassName='typo-24b'
           />
-          {isReport && <AudioPlayer src='' />}
+          {isReport && <AudioPlayer src={audioSrc} />}
         </div>
 
         {isReport ? (
