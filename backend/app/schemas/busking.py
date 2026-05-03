@@ -30,6 +30,13 @@ class BuskingRoomCreate(BaseModel):
 
 # ── Response ──────────────────────────────────────────────────
 
+class HostProfile(BaseModel):
+    id: UUID
+    nickname: str
+    profile_img: Optional[str]
+    bio: Optional[str]
+
+
 class SetlistItemResponse(BaseModel):
     id: UUID
     song_id: Optional[str]
@@ -45,6 +52,7 @@ class SetlistItemResponse(BaseModel):
 class BuskingRoomResponse(BaseModel):
     id: UUID
     host_id: UUID
+    host_profile: Optional[HostProfile] = None
     title: str
     thumbnail: Optional[str]
     status: str

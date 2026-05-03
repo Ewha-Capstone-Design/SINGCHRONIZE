@@ -28,6 +28,7 @@ from app.schemas.busking import (
     BuskingRoomDetailResponse,
     BuskingRoomResponse,
     BuskingResultResponse,
+    HostProfile,
     LiveKitJoinResponse,
     SetlistItemResponse,
     ThumbnailPresignedResponse,
@@ -65,6 +66,8 @@ class ConnectionManager:
         self._reactions: dict[str, dict[str, int]] = {}
         # room_id -> peak viewer count
         self._peak_counts: dict[str, int] = {}
+        # room_id -> {user_id -> {nickname, profile_img, bio}}
+        self._profiles: dict[str, dict[str, dict]] = {}
 
     async def connect(self, websocket: WebSocket, room_id: str, user_id: str, is_host: bool):
         await websocket.accept()
@@ -129,6 +132,12 @@ class ConnectionManager:
         for ws in dead:
             self.disconnect(ws, rid)
 
+    def set_profile(self, room_id: str, user_id: str, profile: dict):
+        self._profiles.setdefault(str(room_id), {})[str(user_id)] = profile
+
+    def get_profile(self, room_id: str, user_id: str) -> dict:
+        return self._profiles.get(str(room_id), {}).get(str(user_id), {})
+
     def cleanup(self, room_id):
         rid = str(room_id)
         self._connections.pop(rid, None)
@@ -136,6 +145,7 @@ class ConnectionManager:
         self._unique_viewers.pop(rid, None)
         self._reactions.pop(rid, None)
         self._peak_counts.pop(rid, None)
+        self._profiles.pop(rid, None)
 
 
 manager = ConnectionManager()
@@ -200,7 +210,7 @@ async def create_room(
     host_token = create_host_token(room.id, str(current_user.id))
 
     setlist = await _get_setlist(db, room.id)
-    detail = _build_room_detail(room, setlist, viewer_count=0)
+    detail = _build_room_detail(room, setlist, viewer_count=0, host=current_user)
     return BuskingRoomCreateResponse(
         **detail.model_dump(),
         livekit_token=host_token,
@@ -219,19 +229,13 @@ async def get_rooms(db: AsyncSession = Depends(get_db)):
         .order_by(BuskingRoom.created_at.desc())
     )
     rooms = result.scalars().all()
+
+    host_ids = list({r.host_id for r in rooms})
+    host_rows = await db.execute(select(User).where(User.id.in_(host_ids)))
+    host_map: dict[str, User] = {str(u.id): u for u in host_rows.scalars().all()}
+
     return [
-        BuskingRoomResponse(
-            id=r.id,
-            host_id=r.host_id,
-            title=r.title,
-            thumbnail=r.thumbnail,
-            status=r.status,
-            current_song_index=r.current_song_index,
-            total_viewers=manager.viewer_count(r.id),
-            peak_viewer_count=r.peak_viewer_count,
-            started_at=r.started_at,
-            ended_at=r.ended_at,
-        )
+        _build_room_response(r, manager.viewer_count(r.id), host=host_map.get(str(r.host_id)))
         for r in rooms
     ]
 
@@ -243,7 +247,8 @@ async def get_room(room_id: UUID, db: AsyncSession = Depends(get_db)):
     """방 상세 정보 (셋리스트 포함, 실시간 뷰어 수 반영)."""
     room = await _get_room_or_404(db, room_id)
     setlist = await _get_setlist(db, room_id)
-    return _build_room_detail(room, setlist, viewer_count=manager.viewer_count(room_id))
+    host = await _fetch_user(db, room.host_id)
+    return _build_room_detail(room, setlist, viewer_count=manager.viewer_count(room_id), host=host)
 
 
 # ── 5. 라이브 시작 ────────────────────────────────────────────
@@ -274,7 +279,7 @@ async def start_room(
         "current_song_index": room.current_song_index,
         "viewer_count": manager.viewer_count(room_id),
     })
-    return _build_room_response(room, manager.viewer_count(room_id))
+    return _build_room_response(room, manager.viewer_count(room_id), host=current_user)
 
 
 # ── 6. 라이브 종료 ────────────────────────────────────────────
@@ -326,7 +331,7 @@ async def end_room(
     manager.cleanup(room_id)
     await delete_livekit_room(room_id)
 
-    return _build_room_response(room, viewer_count=0)
+    return _build_room_response(room, viewer_count=0, host=current_user)
 
 
 # ── 7. 뷰어 LiveKit 토큰 발급 ────────────────────────────────
@@ -386,7 +391,7 @@ async def advance_setlist(
         "current_song_index": room.current_song_index,
         "viewer_count": manager.viewer_count(room_id),
     })
-    return _build_room_response(room, manager.viewer_count(room_id))
+    return _build_room_response(room, manager.viewer_count(room_id), host=current_user)
 
 
 # ── 9. 결과 조회 ─────────────────────────────────────────────
@@ -457,10 +462,12 @@ async def websocket_endpoint(
         await websocket.close(code=4001)
         return
 
-    # ── 방 조회 ───────────────────────────────────────────────
+    # ── 방 + 유저 조회 ────────────────────────────────────────
     async with AsyncSessionLocal() as db:
         row = await db.execute(select(BuskingRoom).where(BuskingRoom.id == room_id))
         room = row.scalar_one_or_none()
+        user_row = await db.execute(select(User).where(User.id == user_id))
+        ws_user = user_row.scalar_one_or_none()
 
     if not room:
         await websocket.close(code=4004)
@@ -471,6 +478,12 @@ async def websocket_endpoint(
 
     is_host = str(room.host_id) == str(user_id)
     await manager.connect(websocket, room_id, user_id, is_host)
+    if ws_user:
+        manager.set_profile(room_id, user_id, {
+            "id": str(ws_user.id),
+            "nickname": ws_user.nickname,
+            "profile_img": ws_user.profile_img,
+        })
     logger.info("WS 연결: room=%s user=%s host=%s", room_id, user_id, is_host)
 
     # ── 입장 시 현재 상태 전송 ──────────────────────────────
@@ -494,9 +507,12 @@ async def websocket_endpoint(
                 text = str(msg.get("message", "")).strip()
                 if not text:
                     continue
+                profile = manager.get_profile(room_id, user_id)
                 await manager.broadcast(room_id, {
                     "type": "chat",
                     "user_id": user_id,
+                    "nickname": profile.get("nickname", ""),
+                    "profile_img": profile.get("profile_img"),
                     "message": text,
                 })
                 asyncio.create_task(_save_chat(room_id, user_id, text))
@@ -576,6 +592,11 @@ async def _advance_song_ws(room_id: str):
 # Private helpers
 # ═══════════════════════════════════════════════════════════════
 
+async def _fetch_user(db: AsyncSession, user_id) -> Optional[User]:
+    result = await db.execute(select(User).where(User.id == user_id))
+    return result.scalar_one_or_none()
+
+
 async def _get_room_or_404(db: AsyncSession, room_id) -> BuskingRoom:
     result = await db.execute(select(BuskingRoom).where(BuskingRoom.id == room_id))
     room = result.scalar_one_or_none()
@@ -604,10 +625,17 @@ def _require_host(room: BuskingRoom, user: User):
         )
 
 
-def _build_room_response(room: BuskingRoom, viewer_count: int) -> BuskingRoomResponse:
+def _make_host_profile(user: Optional[User]) -> Optional[HostProfile]:
+    if not user:
+        return None
+    return HostProfile(id=user.id, nickname=user.nickname, profile_img=user.profile_img, bio=user.bio)
+
+
+def _build_room_response(room: BuskingRoom, viewer_count: int, host: Optional[User] = None) -> BuskingRoomResponse:
     return BuskingRoomResponse(
         id=room.id,
         host_id=room.host_id,
+        host_profile=_make_host_profile(host),
         title=room.title,
         thumbnail=room.thumbnail,
         status=room.status,
@@ -623,10 +651,12 @@ def _build_room_detail(
     room: BuskingRoom,
     setlist: list[BuskingSetlistItem],
     viewer_count: int,
+    host: Optional[User] = None,
 ) -> BuskingRoomDetailResponse:
     return BuskingRoomDetailResponse(
         id=room.id,
         host_id=room.host_id,
+        host_profile=_make_host_profile(host),
         title=room.title,
         thumbnail=room.thumbnail,
         status=room.status,
