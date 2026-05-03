@@ -2,14 +2,11 @@ import { useEffect, useRef, useCallback } from 'react';
 import { tokenStore } from '@/shared/api/tokenStore';
 
 type BuskingSocketEvent =
-  | { type: 'live_end' }
   | { type: 'session_ended' }
   | { type: 'chat'; user_id: string; nickname: string; profile_img?: string | null; message: string }
-  | { type: 'new_chat'; payload: { userId: string; nickname: string; profileImg?: string | null; message: string } }
-  | { type: 'vote'; payload: { songId: string; count: number } }
-  | { type: 'join'; payload: { userId: string; nickname: string } }
-  | { type: 'leave'; payload: { userId: string; nickname: string } }
-  | { type: 'state_update'; current_song_index: number; viewer_count: number };
+  | { type: 'reaction_update'; match: number; mismatch: number }
+  | { type: 'state_update'; current_song_index: number; viewer_count: number }
+  | { type: 'error'; detail: string };
 
 type ChatPayload = { userId: string; nickname: string; profileImg?: string | null; message: string };
 
@@ -18,9 +15,7 @@ interface UseBuskingSocketOptions {
   enabled?: boolean;
   onLiveEnd?: () => void;
   onMessage?: (payload: ChatPayload) => void;
-  onVote?: (payload: { songId: string; count: number }) => void;
-  onJoin?: (payload: { userId: string; nickname: string }) => void;
-  onLeave?: (payload: { userId: string; nickname: string }) => void;
+  onReactionUpdate?: (payload: { match: number; mismatch: number }) => void;
   onStateUpdate?: (payload: { currentSongIndex: number; viewerCount: number }) => void;
 }
 
@@ -31,9 +26,7 @@ export const useBuskingSocket = ({
   enabled = true,
   onLiveEnd,
   onMessage,
-  onVote,
-  onJoin,
-  onLeave,
+  onReactionUpdate,
   onStateUpdate,
 }: UseBuskingSocketOptions) => {
   const wsRef = useRef<WebSocket | null>(null);
@@ -42,29 +35,13 @@ export const useBuskingSocket = ({
 
   const onLiveEndRef = useRef(onLiveEnd);
   const onMessageRef = useRef(onMessage);
-  const onVoteRef = useRef(onVote);
-  const onJoinRef = useRef(onJoin);
-  const onLeaveRef = useRef(onLeave);
+  const onReactionUpdateRef = useRef(onReactionUpdate);
   const onStateUpdateRef = useRef(onStateUpdate);
 
-  useEffect(() => {
-    onLiveEndRef.current = onLiveEnd;
-  }, [onLiveEnd]);
-  useEffect(() => {
-    onMessageRef.current = onMessage;
-  }, [onMessage]);
-  useEffect(() => {
-    onVoteRef.current = onVote;
-  }, [onVote]);
-  useEffect(() => {
-    onJoinRef.current = onJoin;
-  }, [onJoin]);
-  useEffect(() => {
-    onLeaveRef.current = onLeave;
-  }, [onLeave]);
-  useEffect(() => {
-    onStateUpdateRef.current = onStateUpdate;
-  }, [onStateUpdate]);
+  useEffect(() => { onLiveEndRef.current = onLiveEnd; }, [onLiveEnd]);
+  useEffect(() => { onMessageRef.current = onMessage; }, [onMessage]);
+  useEffect(() => { onReactionUpdateRef.current = onReactionUpdate; }, [onReactionUpdate]);
+  useEffect(() => { onStateUpdateRef.current = onStateUpdate; }, [onStateUpdate]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -89,7 +66,6 @@ export const useBuskingSocket = ({
         const event: BuskingSocketEvent = JSON.parse(e.data);
 
         switch (event.type) {
-          case 'live_end':
           case 'session_ended':
             onLiveEndRef.current?.();
             break;
@@ -101,17 +77,8 @@ export const useBuskingSocket = ({
               message: event.message,
             });
             break;
-          case 'new_chat':
-            onMessageRef.current?.(event.payload);
-            break;
-          case 'vote':
-            onVoteRef.current?.(event.payload);
-            break;
-          case 'join':
-            onJoinRef.current?.(event.payload);
-            break;
-          case 'leave':
-            onLeaveRef.current?.(event.payload);
+          case 'reaction_update':
+            onReactionUpdateRef.current?.({ match: event.match, mismatch: event.mismatch });
             break;
           case 'state_update':
             onStateUpdateRef.current?.({
@@ -155,12 +122,10 @@ export const useBuskingSocket = ({
     [send],
   );
 
-  const endLive = useCallback(() => send({ type: 'live_end' }), [send]);
-
-  const sendVote = useCallback(
-    (songId: string) => send({ type: 'vote', payload: { songId } }),
+  const sendReaction = useCallback(
+    (value: 'match' | 'mismatch') => send({ type: 'reaction', value }),
     [send],
   );
 
-  return { sendMessage, endLive, sendVote };
+  return { sendMessage, sendReaction };
 };

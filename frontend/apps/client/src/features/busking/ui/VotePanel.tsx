@@ -1,23 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { IcThumbsDown, IcThumbsUp } from '@/shared/assets/icons';
 
-type VoteType = 'up' | 'down' | null;
+type VoteType = 'match' | 'mismatch' | null;
 
 type VotePanelProps = {
   timeLeft?: string;
   songId?: string;
-  onVote?: (songId: string) => void;
+  onVote?: (value: 'match' | 'mismatch') => void;
 };
 
 const VotePanel = ({ timeLeft, songId, onVote }: VotePanelProps) => {
   const [vote, setVote] = useState<VoteType>(null);
 
-  const handleVote = (type: VoteType) => {
-    if (vote || !songId || !onVote) return;
+  useEffect(() => {
+    setVote(null);
+  }, [songId]);
+
+  const handleVote = (type: 'match' | 'mismatch') => {
+    if (type === vote || !onVote) return;
     setVote(type);
-    onVote(songId);
+    onVote(type);
   };
 
   return (
@@ -33,16 +37,16 @@ const VotePanel = ({ timeLeft, songId, onVote }: VotePanelProps) => {
 
       <div className='flex gap-2'>
         <button
-          onClick={() => handleVote('up')}
-          disabled={!!vote}
+          onClick={() => handleVote('match')}
+          disabled={vote === 'match'}
           className='p-3 flex flex-col items-center gap-0.5 w-22.5 rounded-10 bg-yellow-500-30 disabled:opacity-50'
         >
           <IcThumbsUp />
           <span className='typo-12r text-brand'>어울려요</span>
         </button>
         <button
-          onClick={() => handleVote('down')}
-          disabled={!!vote}
+          onClick={() => handleVote('mismatch')}
+          disabled={vote === 'mismatch'}
           className='p-3 flex flex-col items-center gap-0.5 w-22.5 rounded-10 bg-white-20 disabled:opacity-50'
         >
           <IcThumbsDown />

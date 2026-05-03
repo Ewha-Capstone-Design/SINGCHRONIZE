@@ -31,6 +31,7 @@ import {
   useEndBuskingRoom,
   useJoinBuskingRoom,
   useAdvanceSetlist,
+  useInvalidateBuskingRoom,
   BUSKING_STATUS,
 } from '@/entities/busking';
 import type { ChatMessageType } from '@/entities/busking';
@@ -66,8 +67,10 @@ const BuskingViewerPage = () => {
   const { mutateAsync: joinRoom } = useJoinBuskingRoom();
   const { mutate: advanceSetlist, isPending: isAdvancing } = useAdvanceSetlist();
 
+  const invalidateBuskingRoom = useInvalidateBuskingRoom();
   const isStreamer = !isRecord && !!me && !!room && me.id === room.host_id;
   const sessionEndedRef = useRef(false);
+  const songIndexRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     if (
@@ -122,7 +125,12 @@ const BuskingViewerPage = () => {
   }, [isRecord, room?.ended_at]);
 
   const handleMessage = useCallback(
-    (payload: { userId: string; nickname: string; profileImg?: string | null; message: string }) => {
+    (payload: {
+      userId: string;
+      nickname: string;
+      profileImg?: string | null;
+      message: string;
+    }) => {
       console.log('[Chat] WS 수신 CHAT_MESSAGE', payload);
       setMessages((prev) => [
         ...prev,
@@ -139,7 +147,7 @@ const BuskingViewerPage = () => {
 
   const currentSong = room?.setlist?.find((s) => s.isCurrent);
 
-  const { endLive, sendMessage, sendVote } = useBuskingSocket({
+  const { sendMessage, sendReaction } = useBuskingSocket({
     roomId,
     enabled: !!room,
     onLiveEnd: () => {
@@ -147,7 +155,16 @@ const BuskingViewerPage = () => {
       if (!isStreamer && !isRecord) viewerEndModal.openModal();
     },
     onMessage: handleMessage,
-    onStateUpdate: ({ viewerCount }) => setViewerCount(viewerCount),
+    onStateUpdate: ({ currentSongIndex, viewerCount }) => {
+      setViewerCount(viewerCount);
+      if (
+        songIndexRef.current !== undefined &&
+        songIndexRef.current !== currentSongIndex
+      ) {
+        invalidateBuskingRoom(roomId);
+      }
+      songIndexRef.current = currentSongIndex;
+    },
   });
 
   const handleSend = useCallback(
@@ -172,10 +189,9 @@ const BuskingViewerPage = () => {
     endModal.openModal();
   };
 
-  // 스트리머: 모달에서 확인 → 소켓 종료 후 결과 페이지
+  // 스트리머: 모달에서 확인 → REST로 방 종료
   const handleConfirmEndLive = () => {
     if (isEndingRoom) return;
-    endLive();
     endRoom(roomId, {
       onSuccess: () => go(dynamic.liveRoomEnd(roomId, 'live')),
     });
@@ -267,7 +283,7 @@ const BuskingViewerPage = () => {
               <VotePanel
                 timeLeft={voteTimeLeft}
                 songId={currentSong?.id}
-                onVote={sendVote}
+                onVote={sendReaction}
               />
             </div>
           )}
