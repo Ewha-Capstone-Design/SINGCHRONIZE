@@ -9,6 +9,7 @@ export const useMe = () =>
     queryKey: queryKeys.me,
     queryFn: userApi.getMe,
     select: toUserUiType,
+    staleTime: 5 * 60 * 1000,
   });
 
 // PATCH: 닉네임 수정
