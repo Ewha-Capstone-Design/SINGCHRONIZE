@@ -1,4 +1,6 @@
-numpy>=1.26.0
+# Lambda python3.11 베이스(AL2, glibc 2.26)는 manylinux_2_28 휠만 있는 최신 numpy를 못 쓰고 sdist로 떨어짐 →
+# 최신 gcc도 7.x라 NumPy 2.3+ 소스 빌드 불가. AL2 휠 호환 구간으로 고정 + Dockerfile에서 --only-binary=numpy 권장.
+numpy>=1.26.0,<2.1
 python-dotenv==1.0.0
 supabase>=2.8.0
 psycopg2-binary>=2.9.0

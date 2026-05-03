@@ -28,6 +28,9 @@
 • vocal_repr_embedding, f0_*, timbre_*, voiced_ratio (최신 job의 scoring_song_aligned)
     1차 추천 score_song 에 필요한 값 — song_features 와 같은 의미로 저장.
     여러 세션 집계가 아니라 가장 최근 완료 분석 1건 기준.
+    워커에서 VOCAL_ANALYSIS_INCLUDE_SCORING_SONG_ALIGNED=1 이 아니면 result_data에
+    scoring_song_aligned 가 없어 위 컬럼은 비어 있을 수 있음.
+    이때 timbre_brightness~warmth 는 result.timbre_profile 의 value 로 fallback 채움.
 
 • PROFILE_RANGE_OUTLIER_SEMITONES > 0 이면, 세션별 (low~high) 반음 폭이
   집단 중앙 폭 + 임계를 넘는 경우 그 세션의 lowest/highest 만 잘라 이상치 완화
@@ -89,20 +92,61 @@ def profile_columns_from_scoring_song_aligned(aligned: Any) -> Dict[str, Any]:
     return _profile_columns_from_scoring_aligned(aligned)
 
 
+def _timbre_axis_scalar(block: Any) -> Optional[float]:
+    """timbre_profile 축이 {value: n} 이거나 숫자만 온 경우."""
+    if isinstance(block, (int, float)) and not isinstance(block, bool):
+        try:
+            return float(block)
+        except (TypeError, ValueError):
+            return None
+    if isinstance(block, dict):
+        raw = block.get("value")
+        if raw is None:
+            return None
+        try:
+            return float(raw)
+        except (TypeError, ValueError):
+            return None
+    return None
+
+
+def _timbre_scalars_from_result_timbre_profile(timbre_profile: Any) -> Dict[str, float]:
+    """
+    result_data.result.timbre_profile 에서 5축 raw value → DB 컬럼명.
+
+    scoring_song_aligned 가 없을 때 timbre_brightness~warmth 만이라도 채우기 위함.
+    (f0 퍼센타일·임베딩·포먼트는 scoring_song_aligned 또는 워커 기본 포함 권장)
+    """
+    if not isinstance(timbre_profile, dict):
+        return {}
+    axis_to_col = (
+        ("brightness", "timbre_brightness"),
+        ("roughness", "timbre_roughness"),
+        ("body", "timbre_body"),
+        ("clarity", "timbre_clarity"),
+        ("warmth", "timbre_warmth"),
+    )
+    out: Dict[str, float] = {}
+    for axis, col in axis_to_col:
+        s = _timbre_axis_scalar(timbre_profile.get(axis))
+        if s is not None:
+            out[col] = s
+    return out
+
+
 def _profile_columns_from_scoring_aligned(aligned: Any) -> Dict[str, Any]:
-    """result_data.scoring_song_aligned → user_vocal_profiles UPSERT 필드."""
+    """result_data.scoring_song_aligned → user_vocal_profiles UPSERT 필드 (임베딩 없어도 스칼라는 반영)."""
     if not isinstance(aligned, dict):
         return {}
+    out: Dict[str, Any] = {}
     emb = aligned.get("vocal_repr_embedding")
-    if not emb:
-        return {}
-    try:
-        emb_list = [float(x) for x in emb]
-    except (TypeError, ValueError):
-        return {}
-    out: Dict[str, Any] = {
-        _SCORING_PROFILE_VECTOR_KEY: vocal_repr_embedding_to_pgvector_str(emb_list)
-    }
+    if emb is not None:
+        try:
+            emb_list = [float(x) for x in emb]
+        except (TypeError, ValueError):
+            emb_list = []
+        if len(emb_list) == 192:
+            out[_SCORING_PROFILE_VECTOR_KEY] = vocal_repr_embedding_to_pgvector_str(emb_list)
     for k in _SCORING_PROFILE_FLOAT_KEYS:
         v = aligned.get(k)
         if v is None:
@@ -355,6 +399,14 @@ def aggregate_profile_from_jobs(rows: List[Dict[str, Any]]) -> Optional[Dict[str
         scoring_cols = _profile_columns_from_scoring_aligned(
             latest_rd.get("scoring_song_aligned")
         )
+    timbre_fallback = _timbre_scalars_from_result_timbre_profile(tp)
+    if timbre_fallback:
+        if not scoring_cols:
+            scoring_cols = dict(timbre_fallback)
+        else:
+            for k, v in timbre_fallback.items():
+                if scoring_cols.get(k) is None:
+                    scoring_cols[k] = v
 
     return {
         ANALYSIS_JOBS_USER_COLUMN: user_key,

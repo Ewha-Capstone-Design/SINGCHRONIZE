@@ -1,4 +1,4 @@
-# 보컬 분석 워커 — SQS 큐 모드: vocal_analysis_worker.py --queue
+# 보컬 분석 워커 — 프로덕션: Lambda가 SQS 소비 후 RunTask, 컨테이너는 JOB_ID 로 1건 처리
 # 빌드: cd ai && docker build -f Dockerfile.vocal_analysis_worker -t vocal-analysis-worker .
 
 FROM python:3.11-slim
@@ -23,5 +23,10 @@ WORKDIR /app/scripts/vocal_analysis
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app/scripts/vocal_analysis
 
-# SQS 롱폴링 + 분석 시간을 고려해 기본은 큐 모드
-CMD ["python", "vocal_analysis_worker.py", "--queue"]
+# 런타임 HuggingFace 의존 완화: 빌드 시 ECAPA 가중치 캐시 (네트워크 필요, PREFETCH_ECAPA=0 으로 끌 수 있음)
+ARG PREFETCH_ECAPA=1
+RUN if [ "$PREFETCH_ECAPA" = "1" ]; then \
+      python -c "from speechbrain.pretrained import EncoderClassifier; EncoderClassifier.from_hparams(source='speechbrain/spkrec-ecapa-voxceleb', savedir='pretrained_models/spkrec-ecapa-voxceleb')"; \
+    fi
+
+CMD ["python", "vocal_analysis_worker.py"]

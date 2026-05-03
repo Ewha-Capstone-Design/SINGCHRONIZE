@@ -1,0 +1,30 @@
+# Lambda 컨테이너 — 추천 SQS 직접 처리
+# 빌드: cd ai && docker build -f lambda/sqs_direct/Dockerfile.recommendation -t singchronize-recommendation-lambda .
+
+FROM public.ecr.aws/lambda/python:3.11
+
+# AL2: yum / AL2023: dnf — libsndfile(오디오 라이브러리 연쇄 의존 시). ffmpeg는 AL2 기본 repo에 없을 수 있음.
+RUN if command -v dnf >/dev/null 2>&1; then \
+      dnf install -y ffmpeg libsndfile && dnf clean all; \
+    else \
+      yum install -y libsndfile && yum clean all; \
+    fi
+
+WORKDIR ${LAMBDA_TASK_ROOT}
+
+COPY requirements.recommendation.txt ${LAMBDA_TASK_ROOT}/requirements.txt
+# numpy는 AL2 glibc에서 최신 휠 미매칭 시 ssdist → GCC 9.3+ 필요로 실패. 휠만 강제.
+RUN pip install --upgrade pip setuptools wheel \
+    && pip install --no-cache-dir --only-binary=numpy -r ${LAMBDA_TASK_ROOT}/requirements.txt
+
+COPY scripts/recommendation/ ${LAMBDA_TASK_ROOT}/scripts/recommendation/
+COPY scripts/scoring_runner.py ${LAMBDA_TASK_ROOT}/scripts/scoring_runner.py
+COPY scripts/vocal_analysis/__init__.py ${LAMBDA_TASK_ROOT}/scripts/vocal_analysis/__init__.py
+COPY scripts/vocal_analysis/user_song_aligned_features.py ${LAMBDA_TASK_ROOT}/scripts/vocal_analysis/
+
+ENV PYTHONPATH=/var/task/scripts/recommendation
+
+# 구버전 Lambda 콘솔 핸들러명 recommendation.handler 와 맞춤
+COPY lambda/sqs_direct/recommendation_handler.py ${LAMBDA_TASK_ROOT}/recommendation.py
+
+CMD ["recommendation.handler"]

@@ -1,4 +1,4 @@
-# 추천 워커 (1차+2차, SQS 소비) 전용 Dockerfile
+# 추천 워커 (1차+2차) — 프로덕션: Lambda가 SQS 소비 후 RunTask, 컨테이너는 JOB_ID 로 1건 처리
 # 빌드: cd ai && docker build -f Dockerfile.recommendation_worker -t recommendation-worker .
 
 FROM python:3.11-slim
@@ -19,4 +19,4 @@ WORKDIR /app/scripts/recommendation
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app/scripts/recommendation
 
-CMD ["python", "recommendation_worker.py", "--queue"]
+CMD ["python", "recommendation_worker.py"]

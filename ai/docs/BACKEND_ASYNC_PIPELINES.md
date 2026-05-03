@@ -7,11 +7,12 @@
 
 | 영역 | 파일 |
 |------|------|
-| 보컬 분석 워커·SQS | `ai/scripts/vocal_analysis/vocal_analysis_worker.py` |
+| SQS → Lambda → ECS RunTask 디스패처 | `ai/lambda/worker_dispatcher/` |
+| 보컬 분석 워커·SQS(레거시 폴링) | `ai/scripts/vocal_analysis/vocal_analysis_worker.py` |
 | 보컬 `result_data` 슬라이스 | `ai/scripts/vocal_analysis/report_for_db.py` |
 | 보컬 완료 후 프로필 동기화 | `ai/scripts/vocal_analysis/user_vocal_profile_sync.py` |
 | 1차 추천(프로필/파이프라인 분기) | `ai/scripts/recommendation/first_recommendation_worker.py` |
-| 추천 통합 워커·SQS | `ai/scripts/recommendation/recommendation_worker.py` |
+| 추천 통합 워커 (SQS 폴링 레거시 / RunTask 단발) | `ai/scripts/recommendation/recommendation_worker.py` |
 | 2차 추천 | `ai/scripts/recommendation/second_recommendation_worker.py` |
 | `user_vocal_profiles` 스코어링 컬럼 DDL | `ai/scripts/vocal_analysis/sql/add_user_vocal_profiles_song_aligned_columns.sql` |
 
@@ -37,13 +38,15 @@ Body는 **UTF-8 JSON 문자열** 한 덩어리. (SNS 래핑 시 최상위 `Messa
 | JSON 키 | 필수 | 설명 |
 |---------|------|------|
 | `job_id` | ✅ | `recommendation_logs.id` 와 동일 UUID |
-| `user_id` | ✅ | `user_vocal_profiles` 조회 키 (1차 기본 경로) |
+| `user_id` | 권장 | 메시지에 두면 디버깅·계약이 명확. **ECS RunTask에 `JOB_ID`만 넘기는 경우** 워커가 `recommendation_logs`에서 `user_id`를 조회함 |
 | `s3_key` | ❌ (기본) | **생략 가능**. 1차는 DB 프로필만 사용. 워커에 `FIRST_REC_FORCE_PIPELINE=1` 이고 S3 폴백을 쓸 때만 필요 |
 | `stage` | ❌ | `"stage1"` / `"stage2"`. 없으면 `recommendation_logs.status` 로 자동 분기 |
 
 **넣지 않아도 되는 것**: 보컬 프로필 전용 id — 스키마가 `user_id` 당 1행 upsert 이므로 **불필요**.
 
 **운영 권장**: 1차가 `user_vocal_profiles` 를 읽으므로, **보컬 분석 워커가 해당 유저 프로필을 채운 뒤** 추천 메시지 발행.
+
+**제품 플로우 (1차 → 유저 피드백 → 2차)**: 1차 SQS 한 번으로 워커는 **`WAITING_FEEDBACK`에서 멈춘다** (기본). 백엔드가 `input_preferences` 등 피드백을 DB에 저장한 뒤 `status`를 **`READY_FOR_STAGE2`** 로 바꾸고, **2차 전용 SQS**를 한 번 더 발행한다 (`"stage":"stage2"` 명시 권장). 통합 테스트로 1차 직후 2차까지 한 프로세스에서 돌리려면 워커에 `RECOMMENDATION_AUTO_STAGE2=1`.
 
 ---
 
@@ -55,6 +58,11 @@ Body는 **UTF-8 JSON 문자열** 한 덩어리. (SNS 래핑 시 최상위 `Messa
   - `process_recommendation_job` / SQS 수신: `s3_key` 없으면 빈 문자열로 처리.
 - **`first_recommendation_worker`** 와 **기본 경로·폴백 env** 가 맞춰짐.
 - **문서**: 본 MD의 흐름 B·절 3·7·11.4·11.5·11.6 등을 위 동작에 맞게 갱신됨.
+- **`recommendation_worker.py` — 1차/2차 분리 (기본)**  
+  - 기본: 1차 완료 후 **`WAITING_FEEDBACK`** 까지만, **같은 실행에서 2차 자동 호출 안 함**.  
+  - `RECOMMENDATION_AUTO_STAGE2=1` 일 때만 예전처럼 1차 직후 2차 연쇄 실행.  
+  - SQS `stage:"stage2"` 는 `process_second_recommendation` 로 위임 (통합 워커).
+- **백엔드 계약 상태값 `READY_FOR_STAGE2`**: 피드백 저장 후 DB에 세팅; `stage` 생략 시에도 `process_recommendation_job` 이 2차로 분기하도록 워커가 인식.
 
 ---
 
@@ -67,8 +75,9 @@ Body는 **UTF-8 JSON 문자열** 한 덩어리. (SNS 래핑 시 최상위 `Messa
 | 구분 | 주체 | 하는 일 |
 |------|------|---------|
 | 백엔드/API | 서버 | `analysis_jobs` / `recommendation_logs` 행 생성·상태 노출, S3 업로드 URL 또는 업로드 완료 처리, **SQS에 JSON 메시지 발행**, 클라이언트 폴링/Webhook |
-| 보컬 워커 | ECS/Fargate 등 | 보컬 큐 소비 → S3에서 오디오 다운로드 → `analysis_jobs` 갱신 → `user_vocal_profiles` UPSERT |
-| 추천 워커 | 동일 또는 별 태스크 | 추천 큐 소비 → 1차는 `user_vocal_profiles`·`song_features`·Mongo `basescores` → 2차 → `recommendation_logs` 갱신 (S3는 폴백 시만) |
+| Lambda 디스패처 | 함수(큐별) | SQS 이벤트 → `ecs:RunTask` 로 워커 태스크 1건, 컨테이너에 `JOB_ID` 등 주입 (`ai/lambda/worker_dispatcher/`) |
+| 보컬 워커 | ECS/Fargate RunTask | `JOB_ID` 기준 1건 처리 후 종료. S3 키는 SQS/env 또는 `analysis_jobs` 행 컬럼에서 조회 → `analysis_jobs`·`user_vocal_profiles` 갱신 |
+| 추천 워커 | ECS/Fargate RunTask | `JOB_ID` 기준 1건 처리 후 종료. `user_id`는 DB 조회. 1차/2차 동작은 기존과 동일 (ECS **상시 폴링**은 레거시) |
 
 큐가 **두 개**이므로, “한 메시지로 보컬+추천 다 한다”는 흐름은 **이 레포 코드에 없다**. 백엔드가 **두 번** 발행하거나, 한쪽만 쓰는 설계를 택한다.
 
@@ -118,25 +127,28 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
+  participant App as 클라이언트
   participant BE as 백엔드
   participant Qr as 추천 SQS
   participant Wr as 추천 워커
   participant SB as Supabase
   participant MG as MongoDB
 
-  BE->>SB: recommendation_logs 행 생성 (id=job_id, user_id, status 등)
-  BE->>Qr: SendMessage { job_id, user_id, s3_key?, stage? }
+  BE->>SB: recommendation_logs 행 생성 (id=job_id, user_id, QUEUED 등)
+  BE->>Qr: SendMessage 1차 { job_id, user_id } (또는 stage:"stage1")
   Qr->>Wr: 메시지 전달
-  Wr->>SB: status=RUNNING_STAGE1 (+ stage1_started_at)
-  Wr->>SB: user_vocal_profiles 로드 (기본)
-  Wr->>SB: song_features 전량 조회
+  Wr->>SB: RUNNING_STAGE1 (+ stage1_started_at)
+  Wr->>SB: user_vocal_profiles·song_features (기본)
   Wr->>Wr: score_song 루프
-  Wr->>MG: basescores 상위 200 저장
-  Wr->>SB: first_recommendation (상위 3)
-  Wr->>SB: status=WAITING_FEEDBACK (+ stage1_completed_at)
-  Wr->>Wr: 2차 자동 호출 (second_recommendation_worker)
-  Wr->>SB: recommend_songs, status=DONE 등
-  Note over Wr,Qr: 루프 끝에서 메시지는 거의 항상 DeleteMessage
+  Wr->>MG: basescores 상위 200
+  Wr->>SB: first_recommendation, WAITING_FEEDBACK (+ stage1_completed_at)
+  Note over BE,App: 앱이 3곡 피드백 → BE가 input_preferences 저장
+  BE->>SB: status=READY_FOR_STAGE2 (권장)
+  BE->>Qr: SendMessage 2차 { job_id, user_id, stage:"stage2" }
+  Qr->>Wr: 메시지 전달
+  Wr->>SB: RUNNING_STAGE2, 피드백·Mongo basescores 로 2차
+  Wr->>SB: recommend_songs, DONE (+ stage2_completed_at)
+  Note over Wr,Qr: 처리 후 메시지는 거의 항상 DeleteMessage
 ```
 
 **백엔드가 지켜야 할 것**
@@ -144,7 +156,7 @@ sequenceDiagram
 - `recommendation_logs.id` 를 메시지의 `job_id` 와 **동일**하게 두는 것이 워커 코드와 맞다 (`.eq("id", job_id)`).  
 - `user_id` 는 **필수** (없으면 메시지 삭제됨).  
 - 1차 기본 경로: 해당 유저 `user_vocal_profiles` 에 스코어링 컬럼이 있어야 함 → **보컬 분석 `DONE` 이후** 추천 큐를 쏘는 것을 권장.  
-- `stage` 를 생략하면 워커가 DB의 `status` 보고 `stage1` / `stage2` 를 고른다 (자동 분기 규칙은 아래 계약 절 참고).  
+- `stage` 를 생략하면 워커가 DB의 `status` 보고 `stage1` / `stage2` 를 고른다 (자동 분기: `READY_FOR_STAGE2` 포함 — 아래 6절). **2차 트리거는 운영에서 `stage:"stage2"` 명시를 권장**한다.  
 - **실패 재시도는 SQS에 맡기지 않는다** (처리 후 메시지 삭제). 재시도·알람은 DB 상태와 백엔드 정책으로 잡는다.
 
 ---
@@ -264,6 +276,18 @@ Body가 `{"Message": "<JSON 문자열>"}` 이면, 워커가 `Message`를 한 번
   "user_id": "<supabase auth user id 등>"
 }
 ```
+
+**2차 트리거 (피드백 저장 후 — 권장 페이로드):**
+
+```json
+{
+  "job_id": "<recommendation_logs.id 와 동일 uuid>",
+  "user_id": "<동일 user_id>",
+  "stage": "stage2"
+}
+```
+
+직전에 백엔드가 `recommendation_logs.input_preferences`(예: `reranking_top3`)를 갱신하고, **`status`를 `READY_FOR_STAGE2`로 바꾼 뒤** 위 메시지를 발행하면 타이밍·추적이 명확하다.
 
 **필드·옵션 전체 예:**
 
@@ -400,6 +424,7 @@ DDL은 `ai/scripts/vocal_analysis/sql/add_user_vocal_profiles_song_aligned_colum
 - `QUEUED`
 - `RUNNING_STAGE1`
 - `WAITING_FEEDBACK`
+- `READY_FOR_STAGE2` — **백엔드 전용(권장)**: 유저 피드백을 DB에 반영한 뒤 2차 SQS 직전에 설정. 워커는 이 값을 쓰지 않고 **읽기만** 한다(자동 분기용). Postgres에 `status`용 **ENUM/CHECK**가 있으면 이 문자열을 허용하도록 마이그레이션해야 한다.
 - `RUNNING_STAGE2`
 - `DONE`
 - `FAILED`
@@ -409,8 +434,10 @@ DDL은 `ai/scripts/vocal_analysis/sql/add_user_vocal_profiles_song_aligned_colum
 `stage` 가 없을 때:
 
 - `QUEUED` 또는 `RUNNING_STAGE1` → `stage1`
-- `WAITING_FEEDBACK` 또는 `RUNNING_STAGE2` → `stage2`
+- `WAITING_FEEDBACK` 또는 `READY_FOR_STAGE2` 또는 `RUNNING_STAGE2` → `stage2`
 - 그 외 → `result.status == "skipped"`, `reason`에 현재 상태 문자열
+
+**주의**: `WAITING_FEEDBACK` 인데 `stage` 없이 메시지가 오면 2차로 분기될 수 있다. 제품에서는 **2차만 `stage:"stage2"` 를 명시**하고, 피드백 반영 후 **`READY_FOR_STAGE2`** 로 옮기는 것을 권장한다.
 
 ### 6.4 상태 전환 시 같이 갱신되는 컬럼 (통합 워커)
 
@@ -420,6 +447,7 @@ DDL은 `ai/scripts/vocal_analysis/sql/add_user_vocal_profiles_song_aligned_colum
 |--------|-----------|
 | `RUNNING_STAGE1` | `stage1_started_at` |
 | `WAITING_FEEDBACK` | `stage1_completed_at` |
+| `READY_FOR_STAGE2` | (워커 미설정) 백엔드가 필요 시 별도 컬럼·타임스탬프를 두어도 됨 |
 | `RUNNING_STAGE2` | `stage2_started_at` |
 | `DONE` | `stage2_completed_at` |
 | `FAILED` | `error_message`, `failed_at` |
@@ -516,6 +544,7 @@ SQS **기본 계약**은 `job_id` + `user_id` 만으로 1차 가능 (`s3_key` �
 | 변수 | 쓰는 쪽 | 의미 |
 |------|---------|------|
 | `FIRST_REC_FORCE_PIPELINE` | `recommendation_worker.process_stage1`, `first_recommendation_worker` | `1`/`true`/`yes` 이면 S3+파이프라인 강제 (기본은 DB 프로필). |
+| `RECOMMENDATION_AUTO_STAGE2` | `recommendation_worker.process_stage1` | `1`/`true`/`yes` 이면 1차 직후 같은 실행에서 2차까지 실행. **기본(미설정)은 끔** — 피드백 후 별도 SQS `stage2` 권장. |
 
 ### 11.6 레포 **밖**에서 백엔드가 갖추는 것 (AI 코드에 상수로 없음)
 

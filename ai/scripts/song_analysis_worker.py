@@ -129,6 +129,7 @@ class SongAnalysisWorker:
         song_id: str,
         raw_s3_key: str,
         output_dir: Optional[str] = None
+        
     ) -> Dict:
         """
         단일 곡 처리

@@ -41,6 +41,9 @@ __pycache__/
 # pretrained_models/
 # scripts/pretrained_models/
 
+# Lambda 빌드 산출물
+lambda/worker_dispatcher/dist/
+
 # AWS 관련 (선택적 - 공개 레포지토리라면 제외)
 # setup-and-deploy-aws.sh
 # create-iam-roles.sh
