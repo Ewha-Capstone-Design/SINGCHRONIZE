@@ -14,9 +14,9 @@ interface BuskingCardProps {
 }
 
 const variantClassMap: Record<BuskingCardVariant, string> = {
-  sm: 'w-[192px] h-[153px]',
-  md: 'w-[350px] h-[222px]',
-  lg: 'w-[530px] h-[300px]',
+  sm: 'w-[192px] h-[153px] rounded-10',
+  md: 'w-[350px] h-[222px] rounded-[15px]',
+  lg: 'w-[530px] h-[300px] rounded-20',
 };
 
 const badgeVariantClassMap: Record<BuskingCardVariant, string> = {
@@ -79,7 +79,7 @@ const BuskingCard = ({ variant = 'md', item, onClick }: BuskingCardProps) => {
       type='button'
       onClick={onClick}
       className={cn(
-        'relative overflow-hidden rounded-10 bg-gray-800 text-left shrink-0',
+        'relative overflow-hidden bg-gray-800 text-left shrink-0',
         variantClassMap[variant],
       )}
     >
