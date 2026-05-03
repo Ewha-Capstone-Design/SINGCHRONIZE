@@ -1243,6 +1243,7 @@ export interface components {
              * Format: uuid
              */
             host_id: string;
+            host_profile?: components["schemas"]["HostProfile"] | null;
             /** Title */
             title: string;
             /** Thumbnail */
@@ -1281,6 +1282,7 @@ export interface components {
              * Format: uuid
              */
             host_id: string;
+            host_profile?: components["schemas"]["HostProfile"] | null;
             /** Title */
             title: string;
             /** Thumbnail */
@@ -1315,6 +1317,7 @@ export interface components {
              * Format: uuid
              */
             host_id: string;
+            host_profile?: components["schemas"]["HostProfile"] | null;
             /** Title */
             title: string;
             /** Thumbnail */
@@ -1385,6 +1388,20 @@ export interface components {
             weekly: components["schemas"]["WeeklySong"][];
             /** Live Ticker */
             live_ticker: components["schemas"]["LiveTickerItem"][];
+        };
+        /** HostProfile */
+        HostProfile: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Nickname */
+            nickname: string;
+            /** Profile Img */
+            profile_img: string | null;
+            /** Bio */
+            bio: string | null;
         };
         /**
          * LiveKitJoinResponse
