@@ -11,7 +11,7 @@ const RecommendPage = () => {
   return (
     <div>
       <VocalAnalysisBanner size='recommend' />
-      {report && (
+      {report?.updated_at && (
         <div className='py-12 px-[10vw] flex flex-col gap-6'>
           <div className='mx-auto'>
             <h2 className='typo-28b text-gray-100'>나의 보컬 리포트</h2>

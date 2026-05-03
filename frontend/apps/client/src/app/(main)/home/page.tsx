@@ -16,6 +16,7 @@ import { SongUiType } from '@/entities/song/model/types';
 
 import { useMe } from '@/entities/user';
 import { useHomeFeeds } from '@/entities/home';
+import { useVocalProfile } from '@/entities/analysis';
 
 const HomePage = () => {
   const [selectedSong, setSelectedSong] = useState<SongUiType | null>(null);
@@ -23,6 +24,7 @@ const HomePage = () => {
 
   const { data: me } = useMe();
   const { data: homeFeeds } = useHomeFeeds();
+  const { data: vocalProfile } = useVocalProfile();
 
   const handleSongClick = useCallback(
     (song: SongUiType) => {
@@ -50,7 +52,7 @@ const HomePage = () => {
         )}
       >
         <div className='flex flex-col min-w-0'>
-          <SimilarVocalSection onSongClick={handleSongClick} />
+          {!!vocalProfile?.updated_at && <SimilarVocalSection onSongClick={handleSongClick} />}
           <div className='flex flex-col gap-6'>
             <BuskingSection
               title='지금 인기 있는 버스킹'

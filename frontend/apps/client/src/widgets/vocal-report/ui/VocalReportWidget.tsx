@@ -18,9 +18,11 @@ const VocalReportWidget = ({
   report,
   desktopLayout = 'wide',
 }: VocalReportWidgetProps) => {
-  const isGrid = desktopLayout === 'grid';
-
   const { data: me } = useMe();
+
+  if (!report?.updated_at) return null;
+
+  const isGrid = desktopLayout === 'grid';
   const nickname = me?.nickname ?? '사용자';
 
   return (
