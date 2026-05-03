@@ -8,7 +8,6 @@ import { useThumbnail } from '@/shared/hooks';
 import { LiveStartStep1 } from './LiveStartStep1';
 import { LiveStartStep2 } from './LiveStartStep2';
 
-import { getApiErrorMessage } from '@/shared/api/apiError';
 import type { SongUiType } from '@/entities/song/model/types';
 import {
   useCreateBuskingRoom,
@@ -58,7 +57,11 @@ const LiveStartModal = ({ open, onClose }: LiveStartModalProps) => {
       // 썸네일이 있으면 presigned URL로 S3 업로드
       if (thumbnail?.file) {
         const { upload_url, s3_url } = await getPresignedUrl();
-        await fetch(upload_url, { method: 'PUT', body: thumbnail.file });
+        await fetch(upload_url, {
+          method: 'PUT',
+          body: thumbnail.file,
+          headers: { 'Content-Type': 'image/jpeg' },
+        });
         thumbnailUrl = s3_url;
       }
 
@@ -82,8 +85,9 @@ const LiveStartModal = ({ open, onClose }: LiveStartModalProps) => {
       );
 
       go(dynamic.liveRoom(room.id, 'live'));
-    } catch (err) {
-      alert(getApiErrorMessage(err, '버스킹 시작에 실패했습니다.'));
+    } catch (error) {
+      alert('버스킹 시작에 실패했습니다.');
+      console.error(error);
     } finally {
       setIsSubmitting(false);
     }

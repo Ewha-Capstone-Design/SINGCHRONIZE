@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { buskingApi } from '../api/buskingApi';
 import { queryKeys } from '@/shared/api/queryKeys';
@@ -89,6 +90,16 @@ export const useAdvanceSetlist = () => {
     onSuccess: (_data, roomId) =>
       queryClient.invalidateQueries({ queryKey: queryKeys.buskingRoom(roomId) }),
   });
+};
+
+// 버스킹 방 데이터 수동 무효화
+export const useInvalidateBuskingRoom = () => {
+  const queryClient = useQueryClient();
+  return useCallback(
+    (roomId: string) =>
+      queryClient.invalidateQueries({ queryKey: queryKeys.buskingRoom(roomId) }),
+    [queryClient],
+  );
 };
 
 // GET: 내 버스킹 기록 조회
