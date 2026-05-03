@@ -288,7 +288,6 @@ const BuskingViewerPage = () => {
               listClassName='px-9 gap-2'
               cardVariant='sm'
               items={rooms}
-              onItemClick={(item) => go(dynamic.liveRoom(item.id, item.status))}
             />
           </div>
         )}

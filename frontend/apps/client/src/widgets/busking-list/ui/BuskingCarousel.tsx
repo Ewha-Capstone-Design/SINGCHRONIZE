@@ -13,7 +13,7 @@ const STEP = 280;
 
 const BuskingCarousel = ({ items }: { items: BuskingUiType[] }) => {
   const [index, setIndex] = useState(0);
-  const { dynamic } = useNavigate();
+  const { go, dynamic } = useNavigate();
 
   if (!items.length) return null;
 
@@ -55,7 +55,7 @@ const BuskingCarousel = ({ items }: { items: BuskingUiType[] }) => {
                 if (i !== index) {
                   setIndex(i);
                 } else {
-                  window.location.href = dynamic.liveRoom(item.id, item.status);
+                  go(dynamic.liveRoom(item.id, item.status));
                 }
               }}
             />
