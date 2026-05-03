@@ -9,20 +9,15 @@ import type {
 } from './types';
 import { BUSKING_STATUS } from './types';
 
-type HostInfo = {
-  nickname: string;
-  profileImage: string;
-};
-
 const toBuskingStatus = (status: string): BuskingType =>
   status === BUSKING_STATUS.LIVE ? 'live' : 'record';
 
-export const toBuskingUi = (room: BuskingRoomApiType, hostInfo?: HostInfo): BuskingUiType => ({
+export const toBuskingUi = (room: BuskingRoomApiType): BuskingUiType => ({
   id: room.id,
   status: toBuskingStatus(room.status),
   thumbnail: room.thumbnail,
-  nickname: hostInfo?.nickname ?? '',
-  profileImage: hostInfo?.profileImage ?? '',
+  nickname: room.host_profile?.nickname ?? '',
+  profileImage: room.host_profile?.profile_img ?? '',
   totalViewers: room.total_viewers,
 });
 

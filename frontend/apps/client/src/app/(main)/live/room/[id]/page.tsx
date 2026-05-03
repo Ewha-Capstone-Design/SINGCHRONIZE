@@ -122,13 +122,14 @@ const BuskingViewerPage = () => {
   }, [isRecord, room?.ended_at]);
 
   const handleMessage = useCallback(
-    (payload: { userId: string; nickname: string; message: string }) => {
+    (payload: { userId: string; nickname: string; profileImg?: string | null; message: string }) => {
       console.log('[Chat] WS 수신 CHAT_MESSAGE', payload);
       setMessages((prev) => [
         ...prev,
         {
           id: `${Date.now()}-${payload.userId}`,
           username: payload.nickname,
+          profileImage: payload.profileImg ?? undefined,
           message: payload.message,
         },
       ]);
@@ -204,14 +205,14 @@ const BuskingViewerPage = () => {
           <div className='ml-5 flex gap-2'>
             <div className='relative size-12 rounded-full bg-gray-600 border border-accent-600 shrink-0 overflow-hidden'>
               <AppImage
-                src={me?.profileImage}
-                alt={me?.nickname ?? ''}
+                src={room?.host_profile?.profile_img}
+                alt={room?.host_profile?.nickname ?? ''}
                 fill
                 className='object-cover'
               />
             </div>
             <div className='flex flex-col'>
-              <span className='typo-16m text-white'>{me?.nickname}</span>
+              <span className='typo-16m text-white'>{room?.host_profile?.nickname}</span>
               <span className='typo-14r text-gray-300'>
                 {viewerCount}명이 같이 듣는 중
               </span>

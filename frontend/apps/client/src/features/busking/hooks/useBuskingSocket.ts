@@ -4,14 +4,14 @@ import { tokenStore } from '@/shared/api/tokenStore';
 type BuskingSocketEvent =
   | { type: 'live_end' }
   | { type: 'session_ended' }
-  | { type: 'chat'; user_id: string; nickname: string; message: string }
-  | { type: 'new_chat'; payload: { userId: string; nickname: string; message: string } }
+  | { type: 'chat'; user_id: string; nickname: string; profile_img?: string | null; message: string }
+  | { type: 'new_chat'; payload: { userId: string; nickname: string; profileImg?: string | null; message: string } }
   | { type: 'vote'; payload: { songId: string; count: number } }
   | { type: 'join'; payload: { userId: string; nickname: string } }
   | { type: 'leave'; payload: { userId: string; nickname: string } }
   | { type: 'state_update'; current_song_index: number; viewer_count: number };
 
-type ChatPayload = { userId: string; nickname: string; message: string };
+type ChatPayload = { userId: string; nickname: string; profileImg?: string | null; message: string };
 
 interface UseBuskingSocketOptions {
   roomId: string;
@@ -97,6 +97,7 @@ export const useBuskingSocket = ({
             onMessageRef.current?.({
               userId: event.user_id,
               nickname: event.nickname,
+              profileImg: event.profile_img,
               message: event.message,
             });
             break;
