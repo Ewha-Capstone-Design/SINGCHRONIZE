@@ -23,6 +23,8 @@ const BuskingSection = ({
   px = 8,
   onItemClick,
 }: BuskingSectionProps) => {
+  if (!items.length) return null;
+
   return (
     <section className='flex flex-col gap-4'>
       <h2

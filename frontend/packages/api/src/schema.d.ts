@@ -617,7 +617,7 @@ export interface paths {
         };
         /**
          * Get Recommendation Songs
-         * @description 2차 추천 완료 결과(recommended_songs) 조회.
+         * @description 2차 추천 완료 결과(recommended_songs) 조회. songs 테이블에서 key/bpm 보완.
          */
         get: operations["get_recommendation_songs_api_v1_recommendations__job_id__songs_get"];
         put?: never;

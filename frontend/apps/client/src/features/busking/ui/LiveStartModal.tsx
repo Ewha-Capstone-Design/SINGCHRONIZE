@@ -76,6 +76,11 @@ const LiveStartModal = ({ open, onClose }: LiveStartModalProps) => {
 
       await startRoom(room.id);
 
+      sessionStorage.setItem(
+        `livekit_host_${room.id}`,
+        JSON.stringify({ token: room.livekit_token, url: room.livekit_url }),
+      );
+
       go(dynamic.liveRoom(room.id, 'live'));
     } catch (err) {
       alert(getApiErrorMessage(err, '버스킹 시작에 실패했습니다.'));

@@ -11,6 +11,12 @@ export type LiveKitJoinApiType = components['schemas']['LiveKitJoinResponse'];
 export type SetlistItemApiType = components['schemas']['SetlistItemResponse'];
 export type SetlistItemCreateBody = components['schemas']['SetlistItemCreate'];
 
+export const BUSKING_STATUS = {
+  PREPARING: 'PREPARING',
+  LIVE: 'LIVE',
+  ENDED: 'ENDED',
+} as const;
+
 export type BuskingType = 'live' | 'record';
 
 export type BuskingUiType = {
@@ -23,6 +29,7 @@ export type BuskingUiType = {
 };
 
 export type SetlistType = {
+  id: string;
   rank: number;
   title: string;
   artist: string;

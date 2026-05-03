@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { InputField, Button } from '@singchronize/ui';
-import { BackButton } from '@/shared/components';
+import { AppImage, BackButton } from '@/shared/components';
 import { useThumbnail } from '@/shared/hooks';
 import { ArtistCard } from '@/entities/artist/ui';
 import { EditFavoriteArtistsModal } from '@/features/edit-favorite-artists';
@@ -168,16 +168,13 @@ const ProfileEdit = () => {
       <div className='px-[10vw] py-10 flex gap-16'>
         {/* 프로필 이미지 */}
         <div className='flex flex-col items-center shrink-0'>
-          <div className='size-38.5 rounded-full overflow-hidden bg-gray-800'>
-            {profileImageSrc ? (
-              <img
-                src={profileImageSrc}
-                alt={form.nickname || '프로필 이미지'}
-                className='size-full object-cover'
-              />
-            ) : (
-              <div className='size-full bg-gray-700' />
-            )}
+          <div className='relative size-38.5 rounded-full overflow-hidden bg-gray-800'>
+            <AppImage
+              src={profileImageSrc}
+              alt={form.nickname || 'profile image'}
+              fill
+              className='object-cover'
+            />
           </div>
 
           <input

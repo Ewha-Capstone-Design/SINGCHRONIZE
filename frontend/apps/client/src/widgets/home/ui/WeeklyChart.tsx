@@ -10,6 +10,8 @@ type WeeklyChartProps = {
 };
 
 const WeeklyChart = ({ items, onSongClick, className }: WeeklyChartProps) => {
+  if (!items.length) return null;
+
   return (
     <section className={cn('flex flex-col gap-4', className)}>
       <SectionHeader

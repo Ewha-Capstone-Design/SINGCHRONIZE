@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/shared/lib/cn';
+import { AppImage } from '@/shared/components';
 import type { ArtistUiType } from '../model/types';
 
 type ArtistCardProps = {
@@ -16,20 +17,12 @@ const ArtistCard = ({ artist, isSelected, onToggle }: ArtistCardProps) => {
       onClick={() => onToggle(artist.id)}
       className={cn(
         'relative w-37.5 h-37.5 overflow-hidden rounded-10 text-left transition',
-        isSelected ? 'border border-brand' : 'border border-transparent'
+        isSelected ? 'border border-brand' : 'border border-transparent',
       )}
     >
       {/* 썸네일 */}
-      <div className='aspect-square inset-0'>
-        {artist.imageUrl ? (
-          <img
-            src={artist.imageUrl}
-            alt={artist.name}
-            className='w-full h-full object-cover'
-          />
-        ) : (
-          <div className='w-full h-full bg-white-10' />
-        )}
+      <div className='relative aspect-square inset-0'>
+        <AppImage src={artist.imageUrl} alt={artist.name} fill className='object-cover' />
 
         <div className='absolute inset-0 bg-black/60' />
       </div>

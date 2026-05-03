@@ -82,10 +82,12 @@ const RecordUploadModal = ({ open, onClose }: RecordUploadModalProps) => {
           keyword={keyword}
           selectedSongs={selectedSongs}
           endDate={endDate}
+          recordFile={recordFile}
           onKeywordChange={setKeyword}
           onToggleSong={handleToggleSong}
           onSetlistChange={setSelectedSongs}
           onEndDateChange={setEndDate}
+          onRecordFileChange={setRecordFile}
           onSubmit={handleSubmit}
         />
       )}

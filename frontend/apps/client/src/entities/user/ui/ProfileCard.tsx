@@ -1,4 +1,5 @@
 import { Button } from '@singchronize/ui';
+import { AppImage } from '@/shared/components';
 import { useNavigate } from '@/shared/lib/navigation';
 import type { UserUiType } from '../model/types';
 
@@ -11,16 +12,13 @@ const ProfileCard = ({ profile }: ProfileCardProps) => {
 
   return (
     <div className='flex gap-5 h-37.5'>
-      <div className='size-37.5 rounded-full border-2 border-brand overflow-hidden shrink-0 bg-gray-800'>
-        {profile.profileImage ? (
-          <img
-            src={profile.profileImage}
-            alt={profile.nickname}
-            className='size-full object-cover'
-          />
-        ) : (
-          <div className='size-full bg-gray-700' />
-        )}
+      <div className='relative size-37.5 rounded-full border-2 border-brand overflow-hidden shrink-0 bg-gray-800'>
+        <AppImage
+          src={profile.profileImage}
+          alt={profile.nickname}
+          fill
+          className='object-cover'
+        />
       </div>
       <div className='flex flex-col justify-between h-full'>
         <div>

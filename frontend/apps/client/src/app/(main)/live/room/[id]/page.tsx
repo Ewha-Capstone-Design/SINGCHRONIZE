@@ -1,14 +1,26 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Button } from '@singchronize/ui';
 import { useModal } from '@/shared/hooks';
 import { cn } from '@/shared/lib/cn';
 import { useNavigate } from '@/shared/lib/navigation';
-import { BackButton } from '@/shared/components';
+import {
+  formatElapsedDuration,
+  formatFixedDuration,
+  formatMinutesRemaining,
+} from '@/shared/lib/formatTime';
+import { AppImage, BackButton } from '@/shared/components';
 import { BuskingSection } from '@/widgets/busking-list/ui';
-import { LiveEndModal, SetlistPanel, VotePanel, LiveChat } from '@/features/busking/ui';
+import {
+  BuskingVideoRoom,
+  HostLiveEndModal,
+  ViewerLiveEndModal,
+  SetlistPanel,
+  VotePanel,
+  LiveChat,
+} from '@/features/busking/ui';
 import { useBuskingSocket } from '@/features/busking/hooks/useBuskingSocket';
 import { BuskingBadge } from '@/entities/busking/ui';
 
@@ -18,9 +30,12 @@ import {
   useEndBuskingRoom,
   useJoinBuskingRoom,
   useAdvanceSetlist,
+  BUSKING_STATUS,
 } from '@/entities/busking';
 import type { ChatMessageType } from '@/entities/busking';
 import { useMe } from '@/entities/user';
+
+type LiveKitCredentials = { token: string; url: string };
 
 const BuskingViewerPage = () => {
   const { go, ROUTES, dynamic } = useNavigate();
@@ -32,6 +47,13 @@ const BuskingViewerPage = () => {
 
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [showVote] = useState(true);
+  const [isLastSong, setIsLastSong] = useState(false);
+  const [liveKitCredentials, setLiveKitCredentials] = useState<LiveKitCredentials | null>(
+    null,
+  );
+  const [liveDuration, setLiveDuration] = useState('00:00');
+  const [viewerCount, setViewerCount] = useState(0);
+  const [voteTimeLeft, setVoteTimeLeft] = useState<string | undefined>();
 
   const endModal = useModal();
   const viewerEndModal = useModal();
@@ -40,18 +62,67 @@ const BuskingViewerPage = () => {
   const { data: room } = useBuskingRoom(roomId);
   const { data: rooms = [] } = useBuskingRooms();
   const { mutate: endRoom } = useEndBuskingRoom();
-  const { mutate: joinRoom } = useJoinBuskingRoom();
-  const { mutate: advanceSetlist } = useAdvanceSetlist();
+  const { mutateAsync: joinRoom } = useJoinBuskingRoom();
+  const { mutate: advanceSetlist, isPending: isAdvancing } = useAdvanceSetlist();
 
   const isStreamer = !isRecord && !!me && !!room && me.id === room.host_id;
+  const sessionEndedRef = useRef(false);
 
-  // 시청자 입장 시 LiveKit 토큰 발급
   useEffect(() => {
-    if (!isRecord && !isStreamer && roomId) joinRoom(roomId);
-  }, [isRecord, isStreamer, roomId, joinRoom]);
+    if (
+      !isRecord &&
+      room &&
+      room.status !== BUSKING_STATUS.LIVE &&
+      !sessionEndedRef.current
+    ) {
+      go(ROUTES.live.root);
+    }
+  }, [isRecord, room, go, ROUTES.live.root]);
+
+  useEffect(() => {
+    if (isRecord || !me || !room) return;
+
+    if (isStreamer) {
+      const stored = sessionStorage.getItem(`livekit_host_${roomId}`);
+      if (stored) {
+        setLiveKitCredentials(JSON.parse(stored));
+        sessionStorage.removeItem(`livekit_host_${roomId}`);
+      }
+    } else {
+      joinRoom(roomId).then((data) => {
+        setLiveKitCredentials({ token: data.livekit_token, url: data.livekit_url });
+      });
+    }
+  }, [isStreamer, isRecord, roomId, me, room, joinRoom]);
+
+  useEffect(() => {
+    if (room?.total_viewers !== undefined) setViewerCount(room.total_viewers);
+  }, [room?.total_viewers]);
+
+  useEffect(() => {
+    if (!room?.started_at) return;
+    if (isRecord) {
+      if (room.ended_at)
+        setLiveDuration(formatFixedDuration(room.started_at, room.ended_at));
+      return;
+    }
+    const startedAt = room.started_at;
+    setLiveDuration(formatElapsedDuration(startedAt));
+    const id = setInterval(() => setLiveDuration(formatElapsedDuration(startedAt)), 1000);
+    return () => clearInterval(id);
+  }, [isRecord, room?.started_at, room?.ended_at]);
+
+  useEffect(() => {
+    if (!isRecord || !room?.ended_at) return;
+    const endAt = room.ended_at;
+    setVoteTimeLeft(formatMinutesRemaining(endAt));
+    const id = setInterval(() => setVoteTimeLeft(formatMinutesRemaining(endAt)), 60_000);
+    return () => clearInterval(id);
+  }, [isRecord, room?.ended_at]);
 
   const handleMessage = useCallback(
     (payload: { userId: string; nickname: string; message: string }) => {
+      console.log('[Chat] WS 수신 CHAT_MESSAGE', payload);
       setMessages((prev) => [
         ...prev,
         {
@@ -64,14 +135,35 @@ const BuskingViewerPage = () => {
     [],
   );
 
-  const { endLive, sendMessage } = useBuskingSocket({
+  const currentSong = room?.setlist?.find((s) => s.isCurrent);
+
+  const { endLive, sendMessage, sendVote } = useBuskingSocket({
     roomId,
-    enabled: !isRecord,
+    enabled: !!room,
     onLiveEnd: () => {
-      if (!isStreamer) viewerEndModal.openModal();
+      sessionEndedRef.current = true;
+      if (!isStreamer && !isRecord) viewerEndModal.openModal();
     },
     onMessage: handleMessage,
+    onStateUpdate: ({ viewerCount }) => setViewerCount(viewerCount),
   });
+
+  const handleSend = useCallback(
+    (message: string) => {
+      console.log('[Chat] WS 전송', message);
+      sendMessage(message);
+    },
+    [sendMessage],
+  );
+
+  const handleAdvanceSetlist = () => {
+    advanceSetlist(roomId, {
+      onError: (error) => {
+        const detail = (error as { detail?: { code: string } })?.detail;
+        if (detail?.code === 'ALREADY_LAST_SONG') setIsLastSong(true);
+      },
+    });
+  };
 
   // 스트리머: 종료 버튼 → LiveEndModal 오픈
   const handleEndLive = () => {
@@ -108,28 +200,23 @@ const BuskingViewerPage = () => {
           <BackButton />
 
           <div className='ml-5 flex gap-2'>
-            <div className='size-12 rounded-full bg-gray-600 border border-accent-600 shrink-0 overflow-hidden'>
-              {me?.profileImage && (
-                <img
-                  src={me.profileImage}
-                  alt={me.nickname}
-                  className='size-full object-cover'
-                />
-              )}
+            <div className='relative size-12 rounded-full bg-gray-600 border border-accent-600 shrink-0 overflow-hidden'>
+              <AppImage
+                src={me?.profileImage}
+                alt={me?.nickname ?? ''}
+                fill
+                className='object-cover'
+              />
             </div>
             <div className='flex flex-col'>
               <span className='typo-16m text-white'>{me?.nickname}</span>
               <span className='typo-14r text-gray-300'>
-                {room?.total_viewers ?? 0}명이 같이 듣는 중
+                {viewerCount}명이 같이 듣는 중
               </span>
             </div>
           </div>
 
-          <BuskingBadge
-            isRecord={isRecord}
-            duration={isRecord ? '3:30' : '2:30'}
-            className='ml-4'
-          />
+          <BuskingBadge isRecord={isRecord} duration={liveDuration} className='ml-4' />
 
           {isStreamer && (
             <Button variant={'accent'} className='ml-auto' onClick={handleEndLive}>
@@ -138,9 +225,24 @@ const BuskingViewerPage = () => {
           )}
         </div>
 
-        {/* 비디오 영역 */}
         <div className='relative ml-9 mr-5 mb-5 flex-1 min-h-120 rounded-10 overflow-hidden aspect-video'>
-          <div className='size-full bg-gray-700' />
+          <div className='relative size-full bg-gray-700'>
+            <AppImage
+              src={room?.thumbnail}
+              alt={room?.title ?? ''}
+              fill
+              className='object-cover'
+            />
+          </div>
+
+          {/* LiveKit 오디오 연결 */}
+          {!isRecord && liveKitCredentials && (
+            <BuskingVideoRoom
+              token={liveKitCredentials.token}
+              serverUrl={liveKitCredentials.url}
+              isHost={isStreamer}
+            />
+          )}
 
           {/* 셋리스트 오버레이 */}
           <div className='absolute top-3 left-3'>
@@ -154,7 +256,11 @@ const BuskingViewerPage = () => {
           {/* 투표 패널 */}
           {showVote && !isStreamer && (
             <div className='absolute bottom-3 right-3'>
-              <VotePanel timeLeft={isRecord ? '00:07:30' : undefined} />
+              <VotePanel
+                timeLeft={voteTimeLeft}
+                songId={currentSong?.id}
+                onVote={sendVote}
+              />
             </div>
           )}
         </div>
@@ -162,7 +268,11 @@ const BuskingViewerPage = () => {
         {/* 다른 버스킹 */}
         {isStreamer ? (
           <div className='h-62 flex items-center justify-center'>
-            <Button variant='normal' onClick={() => advanceSetlist(roomId)}>
+            <Button
+              variant='normal'
+              onClick={handleAdvanceSetlist}
+              disabled={isAdvancing || isLastSong}
+            >
               다음 곡으로
             </Button>
           </div>
@@ -174,6 +284,7 @@ const BuskingViewerPage = () => {
               listClassName='px-9 gap-2'
               cardVariant='sm'
               items={rooms}
+              onItemClick={(item) => go(dynamic.liveRoom(item.id, item.status))}
             />
           </div>
         )}
@@ -181,25 +292,18 @@ const BuskingViewerPage = () => {
 
       {/* 채팅 사이드바 */}
       <div className='w-96 shrink-0'>
-        <LiveChat messages={messages} onSend={sendMessage} />
+        <LiveChat messages={messages} onSend={handleSend} />
       </div>
 
       {/* 스트리머: 종료 확인 모달 */}
       {endModal.open && (
-        <LiveEndModal onClose={endModal.closeModal} onConfirm={handleConfirmEndLive} />
+        <HostLiveEndModal
+          onClose={endModal.closeModal}
+          onConfirm={handleConfirmEndLive}
+        />
       )}
 
-      {/* 시청자: 방송 종료 알림 모달 */}
-      {viewerEndModal.open && (
-        <div className='absolute inset-0 flex items-center justify-center bg-dim z-20'>
-          <div className='p-8 flex flex-col items-center gap-6 w-80 rounded-10 bg-gray-800'>
-            <p className='typo-18sb text-white text-center'>라이브가 종료되었습니다</p>
-            <Button variant={'accent'} className='w-52' onClick={handleConfirmViewerEnd}>
-              확인
-            </Button>
-          </div>
-        </div>
-      )}
+      {viewerEndModal.open && <ViewerLiveEndModal onConfirm={handleConfirmViewerEnd} />}
     </div>
   );
 };

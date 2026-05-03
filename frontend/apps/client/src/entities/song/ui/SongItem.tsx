@@ -1,6 +1,7 @@
 import { cn } from '@/shared/lib/cn';
-import type { SongUiType } from '@/entities/song/model/types';
 import { IcDrag, IcPlay } from '@/shared/assets/icons';
+import { AppImage } from '@/shared/components';
+import type { SongUiType } from '@/entities/song/model/types';
 
 type SongItemProps = {
   song: SongUiType;
@@ -24,14 +25,8 @@ const SongItem = ({
       className={cn('flex items-center w-108 h-22.5 bg-white-10 rounded-10', className)}
     >
       {/* 앨범 이미지 */}
-      <div className='h-full aspect-square rounded-l-[10px] overflow-hidden shrink-0'>
-        {song.thumbnail ? (
-          <img
-            src={song.thumbnail}
-            alt={song.title}
-            className='w-full h-full object-cover'
-          />
-        ) : null}
+      <div className='relative h-full aspect-square rounded-l-[10px] overflow-hidden shrink-0'>
+        <AppImage src={song.thumbnail} alt={song.title} fill className='object-cover' />
       </div>
 
       <div className='px-6.25 py-4.5 flex flex-1 items-center gap-4 overflow-hidden'>
