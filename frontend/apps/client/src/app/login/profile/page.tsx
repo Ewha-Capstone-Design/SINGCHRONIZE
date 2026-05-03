@@ -1,21 +1,27 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { InputField, Button } from '@singchronize/ui';
 import { useNavigate } from '@/shared/lib/navigation';
 import { cn } from '@/shared/lib/cn';
 import { IcLogo, IcPlus, IcProfile } from '@/shared/assets/icons';
 import { AppImage } from '@/shared/components';
-import { useOnboardingStep1 } from '@/entities/user';
+import { useOnboardingStep1, useMe } from '@/entities/user';
 
 const ProfilePage = () => {
   const { go, ROUTES } = useNavigate();
   const { mutateAsync: onboardingStep1, isPending } = useOnboardingStep1();
+  const { data: me } = useMe();
 
   const fileRef = useRef<HTMLInputElement | null>(null);
   const fileObjRef = useRef<File | null>(null);
 
   const [nickname, setNickname] = useState('');
+
+  useEffect(() => {
+    if (me?.nickname) setNickname(me.nickname);
+  }, [me?.nickname]);
+
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const openPicker = () => {

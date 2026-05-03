@@ -68,7 +68,7 @@ const OnboardingArtistSelect = ({ onCompleted }: OnboardingArtistSelectProps) =>
         </button>
       </div>
 
-      <div className='grid grid-cols-3 gap-4'>
+      <div className='grid grid-cols-3 gap-4 min-h-79'>
         {artists.map((artist) => (
           <ArtistCard
             key={artist.id}
