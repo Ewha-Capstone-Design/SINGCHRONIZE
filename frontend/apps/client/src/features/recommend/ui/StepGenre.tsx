@@ -9,9 +9,15 @@ import type { GenreKey } from '@/shared/types/category';
 
 type StepGenreProps = {
   onNext: (selectedLabels: string[]) => void;
+  isSubmitting?: boolean;
+  submitError?: boolean;
 };
 
-const StepGenre = ({ onNext }: StepGenreProps) => {
+const StepGenre = ({
+  onNext,
+  isSubmitting = false,
+  submitError = false,
+}: StepGenreProps) => {
   const [selectedKeys, setSelectedKeys] = useState<GenreKey[]>([]);
 
   const toggleSelect = (key: GenreKey) => {
@@ -51,9 +57,20 @@ const StepGenre = ({ onNext }: StepGenreProps) => {
           ))}
         </div>
 
-        <Button variant='normal' onClick={() => onNext(selectedKeys.map((k) => GENRE_API_LABEL[k]))}>
-          선택 완료하기
-        </Button>
+        <div className='flex flex-col items-center gap-3'>
+          {submitError && (
+            <p className='typo-14r text-red-400'>
+              제출에 실패했어요. 다시 시도해 주세요.
+            </p>
+          )}
+          <Button
+            variant='normal'
+            onClick={() => onNext(selectedKeys.map((k) => GENRE_API_LABEL[k]))}
+            disabled={isSubmitting}
+          >
+            선택 완료하기
+          </Button>
+        </div>
       </div>
     </div>
   );

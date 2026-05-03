@@ -15,20 +15,12 @@ const BG_CLASS = {
 } as const;
 
 const RecommendAnalyzePage = () => {
-  const {
-    step,
-    audioBlob,
-    firstSongs,
-    goBack,
-    onRecordDone,
-    onAnalyzeDone,
-    onRankingDone,
-    onSituationDone,
-    onGenreDone,
-  } = useRecommendFlow();
+  const { step, goBack, handlers, data, genreSubmit } = useRecommendFlow();
+  const { onRecordDone, onAnalyzeDone, onRankingDone, onSituationDone, onGenreDone } = handlers;
+  const { audioBlob, firstSongs } = data;
 
   const filled = FILLED_COUNT_BY_STEP[step];
-
+  
   const canAnalyze = step === 'analyze' && audioBlob;
 
   return (
@@ -39,13 +31,17 @@ const RecommendAnalyzePage = () => {
         ${step === 'record' ? BG_CLASS.record : BG_CLASS.other}
       `}
     >
-      <FlowHeader filled={filled} onBack={goBack} className={step === 'analyze' ? 'invisible' : ''} />
+      <FlowHeader
+        filled={filled}
+        onBack={goBack}
+        className={step === 'analyze' ? 'invisible' : ''}
+      />
       <div className='flex-1 flex flex-col items-center'>
         {step === 'record' && <StepRecord onNext={onRecordDone} />}
         {canAnalyze && <StepAnalyze audioBlob={audioBlob} onNext={onAnalyzeDone} />}
         {step === 'ranking' && <StepRanking songs={firstSongs} onNext={onRankingDone} />}
         {step === 'situation' && <StepSituation onNext={onSituationDone} />}
-        {step === 'genre' && <StepGenre onNext={onGenreDone} />}
+        {step === 'genre' && <StepGenre onNext={onGenreDone} {...genreSubmit} />}
       </div>
     </div>
   );

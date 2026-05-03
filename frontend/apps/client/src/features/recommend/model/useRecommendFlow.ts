@@ -32,6 +32,8 @@ export const useRecommendFlow = () => {
 
   const [step, setStep] = useState<InternalRecommendStep>('record');
   const [flowState, setFlowState] = useState<FlowState>(INITIAL_STATE);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(false);
 
   const onRecordDone = (blob: Blob) => {
     setFlowState((prev) => ({ ...prev, audioBlob: blob }));
@@ -71,6 +73,9 @@ export const useRecommendFlow = () => {
     const { jobId, rankedSongIds, selectedSituations, audioBlob } = flowState;
     if (!jobId) return;
 
+    setIsSubmitting(true);
+    setSubmitError(false);
+
     try {
       await recommendationApi.submitFeedback(jobId, {
         reranking_top3: rankedSongIds,
@@ -85,18 +90,17 @@ export const useRecommendFlow = () => {
       } else {
         console.error('[Recommend] 피드백 제출 실패:', err);
       }
+      setSubmitError(true);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return {
     step,
-    audioBlob: flowState.audioBlob,
-    firstSongs: flowState.firstSongs,
     goBack,
-    onRecordDone,
-    onAnalyzeDone,
-    onRankingDone,
-    onSituationDone,
-    onGenreDone,
+    handlers: { onRecordDone, onAnalyzeDone, onRankingDone, onSituationDone, onGenreDone },
+    data: { audioBlob: flowState.audioBlob, firstSongs: flowState.firstSongs },
+    genreSubmit: { isSubmitting, submitError },
   };
 };
