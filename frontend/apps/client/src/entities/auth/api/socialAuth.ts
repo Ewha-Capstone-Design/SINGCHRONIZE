@@ -28,6 +28,30 @@ export const loginWithKakao = (): void => {
 };
 
 // 네이버 로그인
-export const loginWithNaver = async (): Promise<string> => {
-  throw new Error('Naver 로그인이 아직 구현되지 않았습니다.');
+export const loginWithNaver = (): void => {
+  const clientId = process.env.NEXT_PUBLIC_NAVER_CLIENT_ID;
+  const redirectUri = process.env.NEXT_PUBLIC_NAVER_REDIRECT_URI;
+
+  if (!clientId) {
+    throw new Error('NEXT_PUBLIC_NAVER_CLIENT_ID가 설정되지 않았습니다.');
+  }
+
+  if (!redirectUri) {
+    throw new Error('NEXT_PUBLIC_NAVER_REDIRECT_URI가 설정되지 않았습니다.');
+  }
+
+  const next = new URLSearchParams(window.location.search).get('next');
+  if (next) localStorage.setItem('login_next', next);
+
+  const state = crypto.randomUUID();
+  localStorage.setItem('naver_oauth_state', state);
+
+  const params = new URLSearchParams({
+    response_type: 'code',
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    state,
+  });
+
+  window.location.href = `https://nid.naver.com/oauth2.0/authorize?${params.toString()}`;
 };
