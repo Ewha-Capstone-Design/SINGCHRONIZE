@@ -24,7 +24,7 @@ const BuskingListPage = () => {
 
   return (
     <>
-      <main className='flex flex-col gap-10'>
+      <main className='flex flex-col'>
         <PageBanner
           category='온라인 버스킹'
           title='온라인 버스킹으로 노래를 들려주고, 내 목소리와 곡의 어울림을 확인해보세요!'
@@ -40,8 +40,16 @@ const BuskingListPage = () => {
           </div>
 
           <div className='flex flex-col gap-6'>
-            <BuskingSection title='NOW ON AIR! 최근 업로드된 버스킹' items={rooms} onItemClick={handleRoomClick} />
-            <BuskingSection title='지금 인기 있는 버스킹' items={rooms} onItemClick={handleRoomClick} />
+            <BuskingSection
+              title='NOW ON AIR! 최근 업로드된 버스킹'
+              items={rooms}
+              onItemClick={handleRoomClick}
+            />
+            <BuskingSection
+              title='지금 인기 있는 버스킹'
+              items={rooms}
+              onItemClick={handleRoomClick}
+            />
           </div>
         </div>
       </main>

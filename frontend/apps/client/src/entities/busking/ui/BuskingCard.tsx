@@ -59,6 +59,12 @@ const listenerTypoMap: Record<BuskingCardVariant, string> = {
   lg: 'typo-16r text-gray-300',
 };
 
+const badgePositionMap: Record<BuskingCardVariant, string> = {
+  sm: 'left-2 top-1.75',
+  md: 'left-3 top-2.5',
+  lg: 'left-4.75 top-2.75',
+};
+
 const bottomAreaClassMap: Record<BuskingCardVariant, string> = {
   sm: 'h-12 px-2 bg-gray-800',
   md: 'h-17 px-3 bg-gray-800',
@@ -83,7 +89,7 @@ const BuskingCard = ({ variant = 'md', item, onClick }: BuskingCardProps) => {
       </div>
 
       {/* 상단 배지 */}
-      <div className='absolute left-2.5 top-2.5 z-10'>
+      <div className={cn('absolute z-10', badgePositionMap[variant])}>
         <span
           className={cn(
             'inline-flex items-center',
