@@ -14,9 +14,9 @@ interface BuskingCardProps {
 }
 
 const variantClassMap: Record<BuskingCardVariant, string> = {
-  sm: 'w-[192px] h-[153px]',
-  md: 'w-[350px] h-[222px]',
-  lg: 'w-[530px] h-[300px]',
+  sm: 'w-[192px] h-[153px] rounded-10',
+  md: 'w-[350px] h-[222px] rounded-[15px]',
+  lg: 'w-[530px] h-[300px] rounded-20',
 };
 
 const badgeVariantClassMap: Record<BuskingCardVariant, string> = {
@@ -59,6 +59,12 @@ const listenerTypoMap: Record<BuskingCardVariant, string> = {
   lg: 'typo-16r text-gray-300',
 };
 
+const badgePositionMap: Record<BuskingCardVariant, string> = {
+  sm: 'left-2 top-1.75',
+  md: 'left-3 top-2.5',
+  lg: 'left-4.75 top-2.75',
+};
+
 const bottomAreaClassMap: Record<BuskingCardVariant, string> = {
   sm: 'h-12 px-2 bg-gray-800',
   md: 'h-17 px-3 bg-gray-800',
@@ -73,7 +79,7 @@ const BuskingCard = ({ variant = 'md', item, onClick }: BuskingCardProps) => {
       type='button'
       onClick={onClick}
       className={cn(
-        'relative overflow-hidden rounded-10 bg-gray-800 text-left shrink-0',
+        'relative overflow-hidden bg-gray-800 text-left shrink-0',
         variantClassMap[variant],
       )}
     >
@@ -83,7 +89,7 @@ const BuskingCard = ({ variant = 'md', item, onClick }: BuskingCardProps) => {
       </div>
 
       {/* 상단 배지 */}
-      <div className='absolute left-2.5 top-2.5 z-10'>
+      <div className={cn('absolute z-10', badgePositionMap[variant])}>
         <span
           className={cn(
             'inline-flex items-center',

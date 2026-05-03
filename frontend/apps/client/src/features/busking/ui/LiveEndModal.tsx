@@ -8,20 +8,22 @@ type HostLiveEndModalProps = {
   onClose: () => void;
   onConfirm: () => void;
   thumbnail?: string;
+  isPending?: boolean;
 };
 
 export const HostLiveEndModal = ({
   onClose,
   onConfirm,
   thumbnail,
+  isPending = false,
 }: HostLiveEndModalProps) => {
   return (
     <BaseModal
-      onClose={onClose}
+      onClose={isPending ? () => {} : onClose}
       className={cn(
         'relative p-10 flex flex-col justify-center items-center w-full max-w-198 max-h-178 h-[70vh] rounded-20',
         'bg-bg bg-[radial-gradient(50%_50%_at_50%_50%,rgba(240,48,58,0.17)_0%,rgba(22,22,22,0.17)_100%)]',
-        'bg-size-[130%_280%] bg-position-[50%_0%]',
+        'bg-size-[80%_280%] bg-position-[50%_0%]',
       )}
     >
       <div className='flex flex-col gap-9 w-103'>
@@ -46,7 +48,12 @@ export const HostLiveEndModal = ({
         </ul>
       </div>
 
-      <Button variant={'accent'} className='mt-[6vh]' onClick={onConfirm}>
+      <Button
+        variant={'accent'}
+        className='mt-[6vh]'
+        onClick={onConfirm}
+        disabled={isPending}
+      >
         라이브 버스킹 종료 후 리포트 받기
       </Button>
     </BaseModal>
@@ -55,12 +62,16 @@ export const HostLiveEndModal = ({
 
 type ViewerLiveEndModalProps = {
   onConfirm: () => void;
+  isPending?: boolean;
 };
 
-export const ViewerLiveEndModal = ({ onConfirm }: ViewerLiveEndModalProps) => {
+export const ViewerLiveEndModal = ({
+  onConfirm,
+  isPending = false,
+}: ViewerLiveEndModalProps) => {
   return (
     <BaseModal
-      onClose={onConfirm}
+      onClose={isPending ? () => {} : onConfirm}
       className={cn(
         'relative p-10 flex flex-col justify-center items-center w-full max-w-198 max-h-178 h-[70vh] rounded-20',
         'bg-bg bg-[radial-gradient(50%_50%_at_50%_50%,rgba(200,255,0,0.15)_0%,rgba(22,22,22,0.17)_100%)]',
@@ -72,7 +83,12 @@ export const ViewerLiveEndModal = ({ onConfirm }: ViewerLiveEndModalProps) => {
         <p className='typo-16r text-gray-200 text-center'>버스킹이 종료되었습니다.</p>
       </div>
 
-      <Button variant='accent' className='mt-[6vh]' onClick={onConfirm}>
+      <Button
+        variant='accent'
+        className='mt-[6vh]'
+        onClick={onConfirm}
+        disabled={isPending}
+      >
         버스킹 목록으로 돌아가기
       </Button>
     </BaseModal>

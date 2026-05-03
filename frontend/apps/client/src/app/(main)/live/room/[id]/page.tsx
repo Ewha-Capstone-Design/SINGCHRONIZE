@@ -20,6 +20,7 @@ import {
   SetlistPanel,
   VotePanel,
   LiveChat,
+  SetlistCarousel,
 } from '@/features/busking/ui';
 import { useBuskingSocket } from '@/features/busking/hooks/useBuskingSocket';
 import { BuskingBadge } from '@/entities/busking/ui';
@@ -61,7 +62,7 @@ const BuskingViewerPage = () => {
   const { data: me } = useMe();
   const { data: room } = useBuskingRoom(roomId);
   const { data: rooms = [] } = useBuskingRooms();
-  const { mutate: endRoom } = useEndBuskingRoom();
+  const { mutate: endRoom, isPending: isEndingRoom } = useEndBuskingRoom();
   const { mutateAsync: joinRoom } = useJoinBuskingRoom();
   const { mutate: advanceSetlist, isPending: isAdvancing } = useAdvanceSetlist();
 
@@ -172,6 +173,7 @@ const BuskingViewerPage = () => {
 
   // 스트리머: 모달에서 확인 → 소켓 종료 후 결과 페이지
   const handleConfirmEndLive = () => {
+    if (isEndingRoom) return;
     endLive();
     endRoom(roomId, {
       onSuccess: () => go(dynamic.liveRoomEnd(roomId, 'live')),
@@ -219,7 +221,12 @@ const BuskingViewerPage = () => {
           <BuskingBadge isRecord={isRecord} duration={liveDuration} className='ml-4' />
 
           {isStreamer && (
-            <Button variant={'accent'} className='ml-auto' onClick={handleEndLive}>
+            <Button
+              variant={'accent'}
+              className='ml-auto'
+              onClick={handleEndLive}
+              disabled={isEndingRoom}
+            >
               라이브 버스킹 종료하기
             </Button>
           )}
@@ -267,15 +274,12 @@ const BuskingViewerPage = () => {
 
         {/* 다른 버스킹 */}
         {isStreamer ? (
-          <div className='h-62 flex items-center justify-center'>
-            <Button
-              variant='normal'
-              onClick={handleAdvanceSetlist}
-              disabled={isAdvancing || isLastSong}
-            >
-              다음 곡으로
-            </Button>
-          </div>
+          <SetlistCarousel
+            items={room?.setlist ?? []}
+            isAdvancing={isAdvancing}
+            isLastSong={isLastSong}
+            onNext={handleAdvanceSetlist}
+          />
         ) : (
           <div className='pt-5 pb-7 bg-gray-950'>
             <BuskingSection
@@ -284,7 +288,6 @@ const BuskingViewerPage = () => {
               listClassName='px-9 gap-2'
               cardVariant='sm'
               items={rooms}
-              onItemClick={(item) => go(dynamic.liveRoom(item.id, item.status))}
             />
           </div>
         )}
@@ -300,10 +303,13 @@ const BuskingViewerPage = () => {
         <HostLiveEndModal
           onClose={endModal.closeModal}
           onConfirm={handleConfirmEndLive}
+          isPending={isEndingRoom}
         />
       )}
 
-      {viewerEndModal.open && <ViewerLiveEndModal onConfirm={handleConfirmViewerEnd} />}
+      {viewerEndModal.open && (
+        <ViewerLiveEndModal onConfirm={handleConfirmViewerEnd} isPending={isEndingRoom} />
+      )}
     </div>
   );
 };

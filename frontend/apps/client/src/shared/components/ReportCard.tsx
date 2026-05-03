@@ -23,7 +23,7 @@ const ReportCard = ({
     <section
       className={cn(
         'p-6 flex flex-col h-full md:h-90 bg-bg border border-gray-600 rounded-20',
-        className
+        className,
       )}
       onClick={onClick}
     >
@@ -34,7 +34,7 @@ const ReportCard = ({
         </div>
 
         {!hideArrow ? (
-          <button type='button' className='shrink-0'>
+          <button type='button' className='shrink-0 text-gray-500 '>
             <IcArrowRight />
           </button>
         ) : null}

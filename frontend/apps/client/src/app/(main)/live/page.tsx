@@ -4,27 +4,20 @@ import { BuskingCarousel, BuskingSection } from '@/widgets/busking-list/ui';
 import { Button } from '@singchronize/ui';
 import { PageBanner } from '@/shared/components';
 import { useModal } from '@/shared/hooks';
-import { useNavigate } from '@/shared/lib/navigation';
 import { LiveStartModal } from '@/features/busking/ui';
 import { RecordUploadModal } from '@/features/record-upload';
 
 import { useBuskingRooms } from '@/entities/busking';
-import type { BuskingUiType } from '@/entities/busking';
 
 const BuskingListPage = () => {
-  const { go, dynamic } = useNavigate();
   const liveStartModal = useModal();
   const recordUploadModal = useModal();
 
   const { data: rooms = [] } = useBuskingRooms();
 
-  const handleRoomClick = (item: BuskingUiType) => {
-    go(dynamic.liveRoom(item.id, item.status));
-  };
-
   return (
     <>
-      <main className='flex flex-col gap-10'>
+      <main className='flex flex-col'>
         <PageBanner
           category='온라인 버스킹'
           title='온라인 버스킹으로 노래를 들려주고, 내 목소리와 곡의 어울림을 확인해보세요!'
@@ -40,8 +33,8 @@ const BuskingListPage = () => {
           </div>
 
           <div className='flex flex-col gap-6'>
-            <BuskingSection title='NOW ON AIR! 최근 업로드된 버스킹' items={rooms} onItemClick={handleRoomClick} />
-            <BuskingSection title='지금 인기 있는 버스킹' items={rooms} onItemClick={handleRoomClick} />
+            <BuskingSection title='NOW ON AIR! 최근 업로드된 버스킹' items={rooms} />
+            <BuskingSection title='지금 인기 있는 버스킹' items={rooms} />
           </div>
         </div>
       </main>

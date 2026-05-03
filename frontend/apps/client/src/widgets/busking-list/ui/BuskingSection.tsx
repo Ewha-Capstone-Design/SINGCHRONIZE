@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/shared/lib/cn';
+import { useNavigate } from '@/shared/lib/navigation';
 import { BuskingCard } from '@/entities/busking/ui';
 import type { BuskingUiType } from '@/entities/busking/model/types';
 
@@ -23,6 +24,8 @@ const BuskingSection = ({
   px = 8,
   onItemClick,
 }: BuskingSectionProps) => {
+  const { go, dynamic } = useNavigate();
+
   if (!items.length) return null;
 
   return (
@@ -43,7 +46,10 @@ const BuskingSection = ({
             key={item.id}
             variant={cardVariant}
             item={item}
-            onClick={() => onItemClick?.(item)}
+            onClick={() => {
+              if (onItemClick) onItemClick(item);
+              else go(dynamic.liveRoom(item.id, item.status));
+            }}
           />
         ))}
       </div>
