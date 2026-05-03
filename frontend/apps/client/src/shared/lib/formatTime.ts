@@ -12,6 +12,24 @@ export const formatTime = (seconds: number) => {
   return { mm, ss, formatted: `${mm}:${ss}` };
 };
 
+export const formatMinutesRemaining = (endAt: string): string | undefined => {
+  const remaining = Math.floor((new Date(endAt).getTime() - Date.now()) / 60_000);
+  return remaining > 0 ? String(remaining) : undefined;
+};
+
+export const formatFixedDuration = (startedAt: string, endedAt: string): string => {
+  const totalSecs = Math.max(
+    0,
+    Math.floor((new Date(endedAt).getTime() - new Date(startedAt).getTime()) / 1000),
+  );
+  const h = Math.floor(totalSecs / 3600);
+  const m = Math.floor((totalSecs % 3600) / 60);
+  const s = totalSecs % 60;
+  const mm = String(m).padStart(2, '0');
+  const ss = String(s).padStart(2, '0');
+  return h > 0 ? `${String(h).padStart(2, '0')}:${mm}:${ss}` : `${mm}:${ss}`;
+};
+
 export const formatElapsedDuration = (startedAt: string): string => {
   const elapsed = Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000);
   const h = Math.floor(elapsed / 3600);

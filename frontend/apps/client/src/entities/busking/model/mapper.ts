@@ -27,6 +27,7 @@ export const toBuskingUi = (room: BuskingRoomApiType, hostInfo?: HostInfo): Busk
 });
 
 export const toSetlistUi = (item: SetlistItemApiType, currentIndex?: number): SetlistType => ({
+  id: item.id,
   rank: item.order_index + 1,
   title: item.title,
   artist: item.artist,

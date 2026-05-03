@@ -7,10 +7,18 @@ type VoteType = 'up' | 'down' | null;
 
 type VotePanelProps = {
   timeLeft?: string;
+  songId?: string;
+  onVote?: (songId: string) => void;
 };
 
-const VotePanel = ({ timeLeft }: VotePanelProps) => {
+const VotePanel = ({ timeLeft, songId, onVote }: VotePanelProps) => {
   const [vote, setVote] = useState<VoteType>(null);
+
+  const handleVote = (type: VoteType) => {
+    if (vote || !songId || !onVote) return;
+    setVote(type);
+    onVote(songId);
+  };
 
   return (
     <div className='px-5 py-4 flex flex-col items-center gap-3 rounded-[14px] bg-black-80'>
@@ -25,15 +33,17 @@ const VotePanel = ({ timeLeft }: VotePanelProps) => {
 
       <div className='flex gap-2'>
         <button
-          onClick={() => setVote('up')}
-          className='p-3 flex flex-col items-center gap-0.5 w-22.5 rounded-10 bg-yellow-500-30'
+          onClick={() => handleVote('up')}
+          disabled={!!vote}
+          className='p-3 flex flex-col items-center gap-0.5 w-22.5 rounded-10 bg-yellow-500-30 disabled:opacity-50'
         >
           <IcThumbsUp />
           <span className='typo-12r text-brand'>어울려요</span>
         </button>
         <button
-          onClick={() => setVote('down')}
-          className='p-3 flex flex-col items-center gap-0.5 w-22.5 rounded-10 bg-white-20'
+          onClick={() => handleVote('down')}
+          disabled={!!vote}
+          className='p-3 flex flex-col items-center gap-0.5 w-22.5 rounded-10 bg-white-20 disabled:opacity-50'
         >
           <IcThumbsDown />
           <span className='typo-12r text-white'>안어울려요</span>

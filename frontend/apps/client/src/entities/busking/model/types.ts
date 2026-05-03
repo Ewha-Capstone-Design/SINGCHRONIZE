@@ -29,6 +29,7 @@ export type BuskingUiType = {
 };
 
 export type SetlistType = {
+  id: string;
   rank: number;
   title: string;
   artist: string;

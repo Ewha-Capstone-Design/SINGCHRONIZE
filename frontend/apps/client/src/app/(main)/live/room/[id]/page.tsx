@@ -6,7 +6,7 @@ import { Button } from '@singchronize/ui';
 import { useModal } from '@/shared/hooks';
 import { cn } from '@/shared/lib/cn';
 import { useNavigate } from '@/shared/lib/navigation';
-import { formatElapsedDuration } from '@/shared/lib/formatTime';
+import { formatElapsedDuration, formatFixedDuration, formatMinutesRemaining } from '@/shared/lib/formatTime';
 import { BackButton } from '@/shared/components';
 import { BuskingSection } from '@/widgets/busking-list/ui';
 import {
@@ -47,6 +47,7 @@ const BuskingViewerPage = () => {
   const [liveKitCredentials, setLiveKitCredentials] = useState<LiveKitCredentials | null>(null);
   const [liveDuration, setLiveDuration] = useState('00:00');
   const [viewerCount, setViewerCount] = useState(0);
+  const [voteTimeLeft, setVoteTimeLeft] = useState<string | undefined>();
 
   const endModal = useModal();
   const viewerEndModal = useModal();
@@ -88,12 +89,24 @@ const BuskingViewerPage = () => {
   }, [room?.total_viewers]);
 
   useEffect(() => {
-    if (isRecord || !room?.started_at) return;
+    if (!room?.started_at) return;
+    if (isRecord) {
+      if (room.ended_at) setLiveDuration(formatFixedDuration(room.started_at, room.ended_at));
+      return;
+    }
     const startedAt = room.started_at;
     setLiveDuration(formatElapsedDuration(startedAt));
     const id = setInterval(() => setLiveDuration(formatElapsedDuration(startedAt)), 1000);
     return () => clearInterval(id);
-  }, [isRecord, room?.started_at]);
+  }, [isRecord, room?.started_at, room?.ended_at]);
+
+  useEffect(() => {
+    if (!isRecord || !room?.ended_at) return;
+    const endAt = room.ended_at;
+    setVoteTimeLeft(formatMinutesRemaining(endAt));
+    const id = setInterval(() => setVoteTimeLeft(formatMinutesRemaining(endAt)), 60_000);
+    return () => clearInterval(id);
+  }, [isRecord, room?.ended_at]);
 
   const handleMessage = useCallback(
     (payload: { userId: string; nickname: string; message: string }) => {
@@ -110,12 +123,14 @@ const BuskingViewerPage = () => {
     [],
   );
 
-  const { endLive, sendMessage } = useBuskingSocket({
+  const currentSong = room?.setlist?.find((s) => s.isCurrent);
+
+  const { endLive, sendMessage, sendVote } = useBuskingSocket({
     roomId,
-    enabled: !isRecord && !!room && room.status === BUSKING_STATUS.LIVE,
+    enabled: !!room,
     onLiveEnd: () => {
       sessionEndedRef.current = true;
-      if (!isStreamer) viewerEndModal.openModal();
+      if (!isStreamer && !isRecord) viewerEndModal.openModal();
     },
     onMessage: handleMessage,
     onStateUpdate: ({ viewerCount }) => setViewerCount(viewerCount),
@@ -231,7 +246,11 @@ const BuskingViewerPage = () => {
           {/* 투표 패널 */}
           {showVote && !isStreamer && (
             <div className='absolute bottom-3 right-3'>
-              <VotePanel timeLeft={isRecord ? '00:07:30' : undefined} />
+              <VotePanel
+                timeLeft={voteTimeLeft}
+                songId={currentSong?.id}
+                onVote={sendVote}
+              />
             </div>
           )}
         </div>
@@ -255,6 +274,7 @@ const BuskingViewerPage = () => {
               listClassName='px-9 gap-2'
               cardVariant='sm'
               items={rooms}
+              onItemClick={(item) => go(dynamic.liveRoom(item.id, item.status))}
             />
           </div>
         )}
