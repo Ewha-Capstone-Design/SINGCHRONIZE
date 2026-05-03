@@ -1,5 +1,6 @@
 #!/bin/bash
-# 추천 워커 SQS 소비기 — ECR 빌드/푸시 + ECS 태스크 정의 등록 + Fargate 실행
+# 추천 워커 이미지 — ECR 빌드/푸시 + ECS 태스크 정의 등록. SQS는 Lambda 디스패처가 소비 후 RunTask로 1건 실행.
+# 스모크 테스트: DEPLOY_SMOKE_TEST_JOB_ID=<recommendation_logs.id> 가 있으면 RunTask 1회(환경변수 JOB_ID 주입).
 # 사용법: cd ai && ./deploy-recommendation-worker.sh
 
 set -e
@@ -31,7 +32,6 @@ echo -e "${GREEN}계정: $AWS_ACCOUNT_ID${NC}"
 
 echo -e "\n${YELLOW}[0] 필수 시크릿 확인${NC}"
 for secret_name in \
-  singchronize/recommendation-sqs-queue-url \
   singchronize/mongo-uri \
   singchronize/mongo-db-name; do
   if ! aws secretsmanager describe-secret --secret-id "$secret_name" --region "$AWS_REGION" >/dev/null 2>&1; then
@@ -70,22 +70,28 @@ sed "s|YOUR_ACCOUNT_ID|$AWS_ACCOUNT_ID|g" "$TASK_DEF_FILE" > "$TMP_DEF"
 aws ecs register-task-definition --cli-input-json "file://$TMP_DEF" --region "$AWS_REGION" >/dev/null
 rm -f "$TMP_DEF"
 
-echo -e "\n${YELLOW}[7] Fargate 태스크 실행${NC}"
-TASK_ARN=$(aws ecs run-task \
-  --cluster "$ECS_CLUSTER" \
-  --task-definition "$ECS_TASK_DEFINITION" \
-  --launch-type FARGATE \
-  --network-configuration "awsvpcConfiguration={subnets=[$SUBNET_IDS],securityGroups=[$SECURITY_GROUP_ID],assignPublicIp=ENABLED}" \
-  --region "$AWS_REGION" \
-  --query 'tasks[0].taskArn' \
-  --output text)
-
-if [ "$TASK_ARN" != "None" ] && [ -n "$TASK_ARN" ]; then
-  echo -e "${GREEN}Task ARN: $TASK_ARN${NC}"
-  echo -e "\n${YELLOW}로그:${NC} aws logs tail /ecs/recommendation-worker --follow --region $AWS_REGION"
+echo -e "\n${YELLOW}[7] Fargate 스모크 실행 (선택)${NC}"
+if [ -z "${DEPLOY_SMOKE_TEST_JOB_ID:-}" ]; then
+  echo -e "${YELLOW}건너뜀: DEPLOY_SMOKE_TEST_JOB_ID 가 비어 있음. 운영은 Lambda→RunTask.${NC}"
 else
-  echo -e "${RED}태스크 실행 실패${NC}"
-  exit 1
+  OVERRIDES="{\"containerOverrides\":[{\"name\":\"recommendation-worker\",\"environment\":[{\"name\":\"JOB_ID\",\"value\":\"${DEPLOY_SMOKE_TEST_JOB_ID}\"}]}]}"
+  TASK_ARN=$(aws ecs run-task \
+    --cluster "$ECS_CLUSTER" \
+    --task-definition "$ECS_TASK_DEFINITION" \
+    --launch-type FARGATE \
+    --network-configuration "awsvpcConfiguration={subnets=[$SUBNET_IDS],securityGroups=[$SECURITY_GROUP_ID],assignPublicIp=ENABLED}" \
+    --overrides "$OVERRIDES" \
+    --region "$AWS_REGION" \
+    --query 'tasks[0].taskArn' \
+    --output text)
+
+  if [ "$TASK_ARN" != "None" ] && [ -n "$TASK_ARN" ]; then
+    echo -e "${GREEN}Task ARN: $TASK_ARN${NC}"
+    echo -e "\n${YELLOW}로그:${NC} aws logs tail /ecs/recommendation-worker --follow --region $AWS_REGION"
+  else
+    echo -e "${RED}태스크 실행 실패${NC}"
+    exit 1
+  fi
 fi
 
 echo -e "\n${GREEN}추천 워커 배포 완료${NC}"

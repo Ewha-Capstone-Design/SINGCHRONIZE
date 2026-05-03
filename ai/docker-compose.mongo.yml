@@ -1,0 +1,15 @@
+# 로컬 MongoDB — Docker Desktop 실행 후:
+#   docker compose -f ai/docker-compose.mongo.yml up -d
+# 연결: MONGO_URI=mongodb://localhost:27017  MONGO_DB_NAME=singchronize
+services:
+  mongodb:
+    image: mongo:7
+    container_name: singchronize-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - singchronize_mongo_data:/data/db
+    restart: unless-stopped
+
+volumes:
+  singchronize_mongo_data:

@@ -1,6 +1,10 @@
 """
 추천 워커 (1차 + 2차 통합)
 
+프로덕션(ECS RunTask): 환경변수 JOB_ID 만으로 실행 — user_id·stage 등은 DB/옵션 env에서 보강.
+
+로컬/레거시: --queue 로 SQS 폴링(개발·검증용).
+
 Queue에서 job_id, user_id, (선택) s3_key를 받아서:
 1. 1차 추천: user_vocal_profiles(보컬 워커가 채운 스코어링 컬럼)로 유저 특징 로드 → 유저-음원 계산 → 상위 200곡 MongoDB basescore 저장
    (비상 폴백: FIRST_REC_FORCE_PIPELINE=1 이면 S3+s3_key 로 파이프라인 재실행)
@@ -147,12 +151,12 @@ def get_song_info_from_db(supabase, song_id: str) -> Optional[Dict]:
         song_id: 곡 ID
     
     Returns:
-        song_info: {id, title, artist, album_cover, genre, tags} 또는 None
+        song_info: {id, title, artist, album_cover, bpm, key, genre, tags} 또는 None
     """
     try:
         res = (
             supabase.table("songs")
-            .select("id, title, artist, album_cover, genre, tags")
+            .select("id, title, artist, album_cover, bpm, key, genre, tags")
             .eq("id", song_id)
             .execute()
         )
@@ -165,18 +169,60 @@ def get_song_info_from_db(supabase, song_id: str) -> Optional[Dict]:
         return None
 
 
+def get_songs_info_map(
+    supabase,
+    song_ids: List[str],
+    chunk_size: int = 100,
+) -> Dict[str, Dict]:
+    """
+    songs 테이블에서 여러 곡을 배치 조회.
+    Lambda/원격에서 곡당 .eq() 왕복이 병목이 되므로 .in_()으로 묶는다.
+    """
+    if not song_ids:
+        return {}
+    unique: List[str] = []
+    seen = set()
+    for sid in song_ids:
+        s = str(sid)
+        if s not in seen:
+            seen.add(s)
+            unique.append(s)
+    out: Dict[str, Dict] = {}
+    for i in range(0, len(unique), chunk_size):
+        chunk = unique[i : i + chunk_size]
+        try:
+            res = (
+                supabase.table("songs")
+                .select("id, title, artist, album_cover, bpm, key, genre, tags")
+                .in_("id", chunk)
+                .execute()
+            )
+            for row in res.data or []:
+                rid = row.get("id")
+                if rid is not None:
+                    out[str(rid)] = row
+        except Exception as e:
+            print(f"⚠️  곡 정보 배치 조회 실패 (chunk {i // chunk_size + 1}): {e}")
+    return out
+
+
 def parse_genres(genre_str: Optional[str]) -> List[str]:
-    """장르 문자열을 리스트로 파싱"""
+    """
+    songs.genre 문자열을 리스트로 파싱.
+    '전체'/ALL 은 장르가 아니므로 basescore·메타용 리스트에서 제외한다.
+    """
     if not genre_str:
         return []
     
     if isinstance(genre_str, list):
-        return [g.strip() for g in genre_str if g.strip()]
-    
-    if isinstance(genre_str, str):
-        return [g.strip() for g in genre_str.split(',') if g.strip()]
-    
-    return []
+        raw = [g.strip() for g in genre_str if g.strip()]
+    elif isinstance(genre_str, str):
+        raw = [g.strip() for g in genre_str.split(',') if g.strip()]
+    else:
+        return []
+
+    skip = {'전체', 'ALL', 'all'}
+    return [g for g in raw if g not in skip]
 
 
 def parse_situations(tags_str: Optional[str]) -> List[str]:
@@ -293,13 +339,15 @@ def save_basescore_to_mongodb(
     
     print(f"\n[MongoDB 저장] 상위 {len(top_results)}개 곡의 basescore 저장 중...")
     
+    song_ids = [str(r["song_id"]) for r in top_results]
+    song_map = get_songs_info_map(supabase, song_ids)
+    
     basescore_docs = []
     
     for result in top_results:
-        song_id = result['song_id']
+        song_id = str(result["song_id"])
         
-        # DB에서 곡 정보 조회 (키워드, 장르)
-        song_info = get_song_info_from_db(supabase, song_id)
+        song_info = song_map.get(song_id)
         
         if not song_info:
             print(f"  ⚠️  곡 정보를 찾을 수 없음: {song_id}")
@@ -510,16 +558,21 @@ def process_stage1(
         # Step 7: 상위 3곡을 recommendation_logs.first_recommended_songs 에 저장
         print("\n[Step 7] 1차 추천 Top3 저장 (상위 3곡)")
         top_3_songs = results_sorted[:3]
+        top3_map = get_songs_info_map(
+            supabase, [str(r["song_id"]) for r in top_3_songs]
+        )
         first_recommendation = []
         for result in top_3_songs:
-            song_id = result['song_id']
-            song_info = get_song_info_from_db(supabase, song_id) or {}
+            song_id = str(result["song_id"])
+            song_info = top3_map.get(song_id) or {}
             first_recommendation.append(
                 {
                     'song_id': song_id,
                     'title': song_info.get('title', ''),
                     'artist': song_info.get('artist', ''),
                     'album_cover': song_info.get('album_cover'),
+                    'bpm': song_info.get('bpm'),
+                    'key': song_info.get('key'),
                     'score': result['final_score'],
                     'ecapa_score': result.get('ecapa_score', 0.0),
                     'pitch_total': result.get('pitch_total', result.get('pitch_score', 0.0)),
@@ -849,6 +902,58 @@ def process_recommendation_job(
         }
 
 
+def fetch_recommendation_user_id(supabase, job_id: str) -> Optional[str]:
+    """recommendation_logs.id 로 user_id 조회 (Lambda·RunTask 가 JOB_ID 만 넘길 때 사용)."""
+    try:
+        res = (
+            supabase.table("recommendation_logs")
+            .select("user_id")
+            .eq("id", job_id)
+            .execute()
+        )
+        if res.data and len(res.data) > 0:
+            uid = res.data[0].get("user_id")
+            if uid is not None and str(uid).strip():
+                return str(uid).strip()
+    except Exception as e:
+        print(f"⚠️  recommendation_logs user_id 조회 실패: {e}")
+    return None
+
+
+def run_from_env() -> Dict:
+    """
+    ECS RunTask 전용: JOB_ID 필수. user_id는 Supabase recommendation_logs에서 조회.
+    RECOMMENDATION_STAGE: stage1 | stage2 (비우면 상태 기반 자동).
+    RECOMMENDATION_S3_KEY 또는 S3_KEY: FIRST_REC_FORCE_PIPELINE 폴백용 (선택).
+    """
+    job_id = (os.getenv("JOB_ID") or "").strip()
+    if not job_id:
+        raise RuntimeError("JOB_ID 환경변수가 필요합니다.")
+
+    supabase = get_supabase_client()
+    user_id = fetch_recommendation_user_id(supabase, job_id)
+    if not user_id:
+        raise RuntimeError(
+            f"recommendation_logs 에서 user_id 를 찾을 수 없습니다 (id={job_id})."
+        )
+
+    stage_raw = (os.getenv("RECOMMENDATION_STAGE") or "").strip().lower()
+    stage: Optional[str] = None
+    if stage_raw:
+        if stage_raw in ("stage1", "stage2"):
+            stage = stage_raw
+        else:
+            raise RuntimeError(
+                f"RECOMMENDATION_STAGE 는 stage1 또는 stage2 여야 합니다: {stage_raw!r}"
+            )
+
+    s3_key = (
+        os.getenv("RECOMMENDATION_S3_KEY") or os.getenv("S3_KEY") or ""
+    ).strip()
+
+    return process_recommendation_job(job_id, user_id, s3_key, stage)
+
+
 def receive_message_from_queue(sqs_client, queue_url: str) -> Optional[Dict]:
     """
     SQS Queue에서 메시지 수신
@@ -1048,7 +1153,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--queue",
         action="store_true",
-        help="Queue 모드 (메시지를 계속 받아서 처리)"
+        help="(레거시) SQS 폴링 루프 — 프로덕션은 Lambda+RunTask 및 환경변수 JOB_ID 사용",
     )
     parser.add_argument(
         "--queue-once",
@@ -1059,28 +1164,41 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     try:
+        job_id_env = (os.getenv("JOB_ID") or "").strip()
+
         if args.queue_once:
             run_worker_once()
         elif args.queue:
-            # Queue 모드
             run_worker_loop()
         elif args.job_id and args.user_id:
-            # 직접 처리 모드
             result = process_recommendation_job(
                 job_id=args.job_id,
                 user_id=args.user_id,
                 s3_key=args.s3_key or "",
                 stage=args.stage
             )
-            
-            if result.get('status') == 'success':
-                print("\n✅ 작업 완료!")
+
+            if result.get("status") in ("success", "skipped", "partial_success"):
+                print("\n✅ 작업 종료 (성공·스킵·부분성공)")
                 exit(0)
-            else:
-                print(f"\n❌ 작업 실패: {result.get('error', 'Unknown error')}")
-                exit(1)
+            print(f"\n❌ 작업 실패: {result.get('error', 'Unknown error')}")
+            exit(1)
+        elif job_id_env and not args.job_id:
+            print(f"📌 ECS/JOB_ID 모드: job_id={job_id_env}")
+            result = run_from_env()
+            st = result.get("status")
+            if st in ("success", "skipped", "partial_success"):
+                print("\n✅ 작업 종료 (성공·스킵·부분성공)")
+                exit(0)
+            print(f"\n❌ 작업 실패: {result.get('error', result.get('reason', 'Unknown'))}")
+            exit(1)
         else:
-            print("❌ --queue / --queue-once 또는 --job-id/--user-id가 필요합니다.")
+            print(
+                "❌ 다음 중 하나가 필요합니다: "
+                "환경변수 JOB_ID (ECS RunTask), "
+                "또는 --job-id/--user-id, "
+                "또는 --queue / --queue-once (로컬 SQS 검증)"
+            )
             exit(1)
             
     except Exception as e:

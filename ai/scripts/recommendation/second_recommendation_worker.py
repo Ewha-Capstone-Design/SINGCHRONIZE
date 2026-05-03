@@ -117,7 +117,7 @@ GENRE_KEY_TO_LABEL = {
     "BALLAD": "발라드",
     "POP": "POP",
     "DANCE": "댄스",
-    "R&B": "R&B/어반",
+    "R&B": "R&B",
     "ROCK": "락/메탈",
     "TROT": "트로트",
 }
@@ -312,13 +312,13 @@ def get_song_metadata_from_db(supabase, song_id: str) -> Optional[Dict]:
     
     Returns:
         metadata: {
-            'id', 'title', 'artist', 'genre', 'tags', 'situations' (선택적)
+            'id', 'title', 'artist', 'album_cover', 'bpm', 'key', 'genre', 'tags', 'situations' (선택적)
         } 또는 None
     """
     try:
         res = (
             supabase.table("songs")
-            .select("id, title, artist, album_cover, genre, tags")
+            .select("id, title, artist, album_cover, bpm, key, genre, tags")
             .eq("id", song_id)
             .execute()
         )
@@ -340,7 +340,7 @@ def get_song_metadata_batch(supabase, song_ids: List[str]) -> Dict[str, Dict]:
         song_ids: 곡 ID 리스트
     
     Returns:
-        metadata_dict: {song_id: {id, title, artist, album_cover, genre, tags}, ...}
+        metadata_dict: {song_id: {id, title, artist, album_cover, bpm, key, genre, tags}, ...}
     """
     if not song_ids:
         return {}
@@ -349,7 +349,7 @@ def get_song_metadata_batch(supabase, song_ids: List[str]) -> Dict[str, Dict]:
         # Supabase의 in_ 쿼리로 한 번에 조회
         res = (
             supabase.table("songs")
-            .select("id, title, artist, album_cover, genre, tags")
+            .select("id, title, artist, album_cover, bpm, key, genre, tags")
             .in_("id", song_ids)
             .execute()
         )
@@ -822,7 +822,12 @@ def calculate_score2(
 
 
 def parse_genres(genre_str: Optional[str]) -> List[str]:
-    """장르 문자열을 리스트로 파싱"""
+    """
+    songs.genre → 장르별 버킷용 키 리스트.
+
+    DB에 '전체'·ALL 등이 들어 있어도 실제 장르가 아니므로 제외한다.
+    출력의 "전체" 구간은 항상 scored 전체 정렬 상위 4곡으로만 채운다.
+    """
     if not genre_str:
         return []
     
@@ -836,7 +841,7 @@ def parse_genres(genre_str: Optional[str]) -> List[str]:
     normalized = []
     for g in raw_genres:
         nk = normalize_genre_key(g)
-        if nk:
+        if nk and nk != "ALL":
             normalized.append(nk)
 
     # 중복 제거 (순서 유지)
@@ -1048,6 +1053,8 @@ def process_second_recommendation(job_id: str, user_id: str) -> Dict:
                 'title': doc.get('title', '') or metadata.get('title', ''),
                 'artist': artist or metadata.get('artist', ''),
                 'album_cover': metadata.get('album_cover'),
+                'bpm': metadata.get('bpm'),
+                'key': metadata.get('key'),
                 'score2': score2,
                 'base_score': base_score,
                 'genres': genres,
@@ -1060,16 +1067,16 @@ def process_second_recommendation(job_id: str, user_id: str) -> Dict:
         # Step 6: 멀티 태그 그룹별 top4 뽑기
         print("\n[Step 6] 장르별/상황별 top4 추출")
         
-        # 전체 상위 곡 정렬 (ALL 장르용)
+        # "전체": DB 장르가 아님 — 후보 전체를 score2 기준 정렬한 뒤 상위 4곡만 사용
         all_songs_sorted = sorted(scored_songs, key=lambda x: x['score2'], reverse=True)
         
-        # 장르별 결과 (선택된 장르만, 단 ALL은 항상 포함)
-        selected_genres = feedback.get('selected_genres') or GENRE_KEYS
-        selected_genres = [g for g in selected_genres if g in GENRE_KEYS]
-        if 'ALL' not in selected_genres:
-            selected_genres = ['ALL'] + selected_genres
-        # 출력 순서 고정: 전체, 발라드, POP, 댄스, R&B/어반, 락/메탈, 트로트
-        selected_genres = [g for g in GENRE_OUTPUT_ORDER if g in set(selected_genres)]
+        # 장르별 결과: 유저 선택값만 반영하되, ALL(전체)은 항상 첫 번째로 포함
+        raw_selected_genres = feedback.get('selected_genres') or []
+        selected_genres = []
+        for g in raw_selected_genres:
+            if g in GENRE_KEYS and g != 'ALL' and g not in selected_genres:
+                selected_genres.append(g)
+        selected_genres = ['ALL'] + selected_genres
         genre_results = {g: [] for g in selected_genres}
         
         # ALL 장르: 전체 상위 4개
@@ -1080,6 +1087,8 @@ def process_second_recommendation(job_id: str, user_id: str) -> Dict:
                     'title': song.get('title', ''),
                     'artist': song.get('artist', ''),
                     'album_cover': song.get('album_cover'),
+                    'bpm': song.get('bpm'),
+                    'key': song.get('key'),
                     'score': song['score2']
                 }
                 for song in all_songs_sorted[:4]
@@ -1097,6 +1106,8 @@ def process_second_recommendation(job_id: str, user_id: str) -> Dict:
                         'title': song.get('title', ''),
                         'artist': song.get('artist', ''),
                         'album_cover': song.get('album_cover'),
+                        'bpm': song.get('bpm'),
+                        'key': song.get('key'),
                         'score': song['score2']
                     })
         
@@ -1107,8 +1118,8 @@ def process_second_recommendation(job_id: str, user_id: str) -> Dict:
                 genre_results[genre] = genre_results[genre][:4]
                 print(f"  - {GENRE_KEY_TO_LABEL.get(genre, genre)}: {len(genre_results[genre])}곡")
         
-        # 상황별 결과 (선택된 상황만, 미선택 시 기존과 동일하게 전체)
-        selected_situations = feedback.get('selected_situations') or SITUATION_KEYS
+        # 상황별 결과: 유저가 선택한 상황만 반영 (미선택 시 빈 결과)
+        selected_situations = feedback.get('selected_situations') or []
         selected_situations = [s for s in selected_situations if s in SITUATION_KEYS]
         situation_results = {s: [] for s in selected_situations}
         for song in scored_songs:
@@ -1119,6 +1130,8 @@ def process_second_recommendation(job_id: str, user_id: str) -> Dict:
                         'title': song.get('title', ''),
                         'artist': song.get('artist', ''),
                         'album_cover': song.get('album_cover'),
+                        'bpm': song.get('bpm'),
+                        'key': song.get('key'),
                         'score': song['score2']
                     })
         

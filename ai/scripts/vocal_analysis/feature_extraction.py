@@ -271,11 +271,16 @@ class FeatureExtractor:
         print(f"  - 테시투라: {tessitura_low:.1f}Hz ~ {tessitura_high:.1f}Hz")
         print(f"  - 평균 F0: {f0_mean:.1f}Hz (±{f0_std:.1f})")
         
+        # 프레임 정렬 F0·유성 플래그 (f0_contour / voiced_mask 와 동일 데이터 — 커브·외부 API 명시용)
+        _f0_frames = frequency.tolist()
+        _voiced_frames = voiced_mask.tolist()
         return {
-            'f0_contour': frequency.tolist(),
+            'f0_contour': _f0_frames,
+            'frame_f0_hz': _f0_frames,
             'time': time.tolist(),
             'confidence': voiced_probs.tolist(),  # pyin의 voiced_probs 사용
-            'voiced_mask': voiced_mask.tolist(),
+            'voiced_mask': _voiced_frames,
+            'frame_voiced': _voiced_frames,
             'f0_min': f0_min,
             'f0_max': f0_max,
             'f0_mean': f0_mean,

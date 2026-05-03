@@ -60,10 +60,6 @@
           "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:YOUR_ACCOUNT_ID:secret:singchronize/s3-bucket-name"
         },
         {
-          "name": "SQS_QUEUE_URL",
-          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:YOUR_ACCOUNT_ID:secret:singchronize/recommendation-sqs-queue-url"
-        },
-        {
           "name": "MONGO_URI",
           "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:YOUR_ACCOUNT_ID:secret:singchronize/mongo-uri"
         },
@@ -72,7 +68,7 @@
           "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:YOUR_ACCOUNT_ID:secret:singchronize/mongo-db-name"
         }
       ],
-      "command": ["python", "recommendation_worker.py", "--queue"]
+      "command": ["python", "recommendation_worker.py"]
     }
   ]
 }

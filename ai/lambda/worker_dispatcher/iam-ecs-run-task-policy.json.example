@@ -1,0 +1,25 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "RunTaskOnCluster",
+      "Effect": "Allow",
+      "Action": ["ecs:RunTask"],
+      "Resource": "*",
+      "Condition": {
+        "ArnEquals": {
+          "ecs:cluster": "arn:aws:ecs:ap-northeast-2:YOUR_ACCOUNT_ID:cluster/YOUR_CLUSTER_NAME"
+        }
+      }
+    },
+    {
+      "Sid": "PassTaskRoles",
+      "Effect": "Allow",
+      "Action": ["iam:PassRole"],
+      "Resource": [
+        "arn:aws:iam::YOUR_ACCOUNT_ID:role/ecsTaskExecutionRole",
+        "arn:aws:iam::YOUR_ACCOUNT_ID:role/ecsTaskRole"
+      ]
+    }
+  ]
+}

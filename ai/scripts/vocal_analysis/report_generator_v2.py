@@ -14,8 +14,10 @@ warnings.filterwarnings('ignore')
 
 try:
     from .radar_chart_descriptions import RADAR_CHART_DESCRIPTIONS, get_score_interpretation
+    from .vocal_range_curve import compute_vocal_range_curve
 except ImportError:
     from radar_chart_descriptions import RADAR_CHART_DESCRIPTIONS, get_score_interpretation
+    from vocal_range_curve import compute_vocal_range_curve
 
 
 # 음색 5축 raw(value) → UI용 display_score (해석·구간 로직은 기존 value 그대로 유지)
@@ -588,6 +590,12 @@ class ReportGeneratorV2:
         print(f"  - 테시투라: {hz_to_note(tessitura_low)} ~ {hz_to_note(tessitura_high)}")
         print(f"  - 음역대: {range_semitones:.1f} 반음")
         
+        vocal_range_curve = compute_vocal_range_curve(pitch_features)
+        print(
+            f"  - 음역 커브: {len(vocal_range_curve.get('notes', []))} bins, "
+            f"peak={vocal_range_curve.get('peak_note')}"
+        )
+
         return {
             'lowest_hz': f0_min,
             'lowest_note': hz_to_note(f0_min),
@@ -597,7 +605,8 @@ class ReportGeneratorV2:
             'tessitura_low_note': hz_to_note(tessitura_low),
             'tessitura_high_hz': tessitura_high,
             'tessitura_high_note': hz_to_note(tessitura_high),
-            'range_semitones': float(range_semitones)
+            'range_semitones': float(range_semitones),
+            'vocal_range_curve': vocal_range_curve,
         }
     
     # ========================================

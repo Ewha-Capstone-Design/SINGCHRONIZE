@@ -1,18 +1,25 @@
 {
-  "family": "song-feature-worker",
+  "family": "vocal-analysis-worker",
   "networkMode": "awsvpc",
   "requiresCompatibilities": ["FARGATE"],
+  "runtimePlatform": {
+    "cpuArchitecture": "ARM64",
+    "operatingSystemFamily": "LINUX"
+  },
+  "executionRoleArn": "arn:aws:iam::YOUR_ACCOUNT_ID:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::YOUR_ACCOUNT_ID:role/ecsTaskRole",
   "cpu": "4096",
   "memory": "8192",
   "containerDefinitions": [
     {
-      "name": "song-feature-worker",
-      "image": "YOUR_ACCOUNT_ID.dkr.ecr.ap-northeast-2.amazonaws.com/song-feature-worker:latest",
+      "name": "vocal-analysis-worker",
+      "image": "YOUR_ACCOUNT_ID.dkr.ecr.ap-northeast-2.amazonaws.com/vocal-analysis-worker:latest",
       "essential": true,
+      "workingDirectory": "/app/scripts/vocal_analysis",
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/song-feature-worker",
+          "awslogs-group": "/ecs/vocal-analysis-worker",
           "awslogs-region": "ap-northeast-2",
           "awslogs-stream-prefix": "ecs"
         }
@@ -24,7 +31,15 @@
         },
         {
           "name": "PYTHONPATH",
-          "value": "/app/scripts"
+          "value": "/app/scripts/vocal_analysis"
+        },
+        {
+          "name": "AWS_DEFAULT_REGION",
+          "value": "ap-northeast-2"
+        },
+        {
+          "name": "VOCAL_ANALYSIS_INCLUDE_SCORING_SONG_ALIGNED",
+          "value": "1"
         }
       ],
       "secrets": [
@@ -49,21 +64,7 @@
           "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:YOUR_ACCOUNT_ID:secret:singchronize/s3-bucket-name"
         }
       ],
-      "command": [
-        "python",
-        "song_feature_worker.py",
-        "--mode",
-        "s3",
-        "--unprocessed",
-        "--limit",
-        "500",
-        "--upload-features-s3"
-      ]
+      "command": ["python", "vocal_analysis_worker.py", "--queue"]
     }
   ]
 }
-
-
-
-
-

@@ -1,0 +1,91 @@
+{
+  "family": "song-feature-worker-gpu",
+  "networkMode": "bridge",
+  "requiresCompatibilities": ["EC2"],
+  "containerDefinitions": [
+    {
+      "name": "song-feature-worker",
+      "image": "682326650645.dkr.ecr.ap-northeast-2.amazonaws.com/song-feature-worker:latest",
+      "essential": true,
+      "memory": 12288,
+      "cpu": 4096,
+      "gpu": [
+        {
+          "deviceName": "/dev/nvidia0",
+          "value": "1"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/song-feature-worker",
+          "awslogs-region": "ap-northeast-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "environment": [
+        {
+          "name": "PYTHONUNBUFFERED",
+          "value": "1"
+        },
+        {
+          "name": "PYTHONPATH",
+          "value": "/app/scripts"
+        },
+        {
+          "name": "CUDA_VISIBLE_DEVICES",
+          "value": "0"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "SUPABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:682326650645:secret:singchronize/supabase-url"
+        },
+        {
+          "name": "SUPABASE_SERVICE_ROLE_KEY",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:682326650645:secret:singchronize/supabase-service-role-key"
+        },
+        {
+          "name": "S3_BUCKET_NAME",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:682326650645:secret:singchronize/s3-bucket-name"
+        },
+        {
+          "name": "DB_HOST",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:682326650645:secret:singchronize/db-host"
+        },
+        {
+          "name": "DB_NAME",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:682326650645:secret:singchronize/db-name"
+        },
+        {
+          "name": "DB_USER",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:682326650645:secret:singchronize/db-user"
+        },
+        {
+          "name": "DB_PASSWORD",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:682326650645:secret:singchronize/db-password"
+        },
+        {
+          "name": "DB_PORT",
+          "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:682326650645:secret:singchronize/db-port"
+        }
+      ],
+      "command": [
+        "python",
+        "song_feature_worker.py",
+        "--mode",
+        "s3",
+        "--unprocessed",
+        "--limit",
+        "500",
+        "--upload-features-s3"
+      ]
+    }
+  ]
+}
+
+
+
+
+

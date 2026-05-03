@@ -1,0 +1,31 @@
+# Lambda 컨테이너 — 보컬 분석 SQS 직접 처리
+# 빌드: cd ai && docker build -f lambda/sqs_direct/Dockerfile.vocal -t singchronize-vocal-lambda .
+
+FROM public.ecr.aws/lambda/python:3.11
+
+RUN if command -v dnf >/dev/null 2>&1; then \
+      dnf install -y ffmpeg libsndfile git gcc gcc-c++ cmake ninja-build make \
+        && dnf clean all; \
+    else \
+      yum install -y ffmpeg libsndfile git gcc gcc-c++ cmake ninja-build make \
+        && yum clean all; \
+    fi
+
+WORKDIR ${LAMBDA_TASK_ROOT}
+
+COPY requirements.txt ${LAMBDA_TASK_ROOT}/requirements.txt
+RUN pip install --no-cache-dir -r ${LAMBDA_TASK_ROOT}/requirements.txt
+
+COPY scripts/vocal_analysis/ ${LAMBDA_TASK_ROOT}/scripts/vocal_analysis/
+
+ENV PYTHONPATH=/var/task/scripts/vocal_analysis
+
+ARG PREFETCH_ECAPA=1
+RUN if [ "$PREFETCH_ECAPA" = "1" ]; then \
+      cd ${LAMBDA_TASK_ROOT}/scripts/vocal_analysis && \
+      python -c "from speechbrain.pretrained import EncoderClassifier; EncoderClassifier.from_hparams(source='speechbrain/spkrec-ecapa-voxceleb', savedir='pretrained_models/spkrec-ecapa-voxceleb')"; \
+    fi
+
+COPY lambda/sqs_direct/vocal_handler.py ${LAMBDA_TASK_ROOT}/vocal.py
+
+CMD ["vocal.handler"]
