@@ -9,6 +9,7 @@ export {
   useEndBuskingRoom,
   useJoinBuskingRoom,
   useAdvanceSetlist,
+  useInvalidateBuskingRoom,
   useMyBuskingHistory,
 } from './model/queries';
 export type {
