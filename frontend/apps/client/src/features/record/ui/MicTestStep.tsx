@@ -13,7 +13,7 @@ type MicTestStepProps = {
 };
 
 const MicTestStep = ({ gain, onChangeGain, onFinish }: MicTestStepProps) => {
-  const { isTesting, levelStatus, formattedTime, startTest, stopTest } = useMicTest();
+  const { isTesting, levelStatus, formattedTime, startTest, stopTest } = useMicTest(gain);
 
   const text = !isTesting
     ? MIC_TEST_TEXT_BY_STATE.beforeTest

@@ -23,6 +23,9 @@ const WaveformRecorder = ({
   const recordRef = useRef<any>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const rawStreamRef = useRef<MediaStream | null>(null);
+  const gainRef = useRef(gain);
+  gainRef.current = gain;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -56,13 +59,6 @@ const WaveformRecorder = ({
 
     record.on('record-end', handleEnd);
 
-    // AudioContext + GainNode 준비 (앱 내부 레벨 조절용)
-    const ctx = new AudioContext();
-    audioCtxRef.current = ctx;
-    const gainNode = ctx.createGain();
-    gainNode.gain.value = gain;
-    gainNodeRef.current = gainNode;
-
     return () => {
       record.un('record-end', handleEnd);
       try {
@@ -70,7 +66,11 @@ const WaveformRecorder = ({
       } catch {}
       ws.destroy();
       wsRef.current = null;
-      ctx.close();
+      rawStreamRef.current?.getTracks().forEach((t) => t.stop());
+      rawStreamRef.current = null;
+      audioCtxRef.current?.close();
+      audioCtxRef.current = null;
+      gainNodeRef.current = null;
     };
   }, [onRecorded, mode]);
 
@@ -80,32 +80,61 @@ const WaveformRecorder = ({
     if (!record) return;
 
     if (phase === 'finish') {
-      const isActive = record.isRecording?.() || record.isPaused?.();
-      if (isActive) {
+      if (record.isRecording?.() || record.isPaused?.()) {
         record.stopRecording();
       }
+      rawStreamRef.current?.getTracks().forEach((t) => t.stop());
+      rawStreamRef.current = null;
+      audioCtxRef.current?.close();
+      audioCtxRef.current = null;
+      gainNodeRef.current = null;
       return;
     }
 
     const commands: Record<RecordingPhase, () => void> = {
       idle: () => {
-        // 아무 것도 하지 않음
+        if (record.isRecording?.() || record.isPaused?.()) {
+          record.stopRecording();
+        }
+        rawStreamRef.current?.getTracks().forEach((t) => t.stop());
+        rawStreamRef.current = null;
+        audioCtxRef.current?.close();
+        audioCtxRef.current = null;
+        gainNodeRef.current = null;
       },
       recording: () => {
-        if (record.isPaused && record.isPaused()) {
+        if (record.isPaused?.()) {
           record.resumeRecording();
-        } else if (!record.isRecording || !record.isRecording()) {
-          record.startRecording();
+        } else if (!record.isRecording?.()) {
+          (async () => {
+            const rawStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            rawStreamRef.current = rawStream;
+
+            const ctx = new AudioContext();
+            audioCtxRef.current = ctx;
+            const source = ctx.createMediaStreamSource(rawStream);
+            const gainNode = ctx.createGain();
+            gainNode.gain.value = gainRef.current;
+            gainNodeRef.current = gainNode;
+            const dest = ctx.createMediaStreamDestination();
+
+            source.connect(gainNode);
+            gainNode.connect(dest);
+
+            // RecordPlugin이 내부적으로 getUserMedia를 건너뛰도록 gain-processed stream 주입
+            (record as any).stream = dest.stream;
+            (record as any).micStream = record.renderMicStream(dest.stream);
+
+            await record.startRecording();
+          })();
         }
       },
       paused: () => {
-        if (record.isRecording && record.isRecording()) {
+        if (record.isRecording?.()) {
           record.pauseRecording();
         }
       },
-      finish: () => {
-        // 위에서 이미 처리
-      },
+      finish: () => {},
     };
 
     commands[phase]?.();
