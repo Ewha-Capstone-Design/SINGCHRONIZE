@@ -72,7 +72,7 @@ const BuskingCarousel = ({ items }: { items: BuskingUiType[] }) => {
           className='absolute top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 size-12 rounded-full bg-white flex items-center justify-center shadow-lg'
           style={{ left: `calc(50% - ${CARD_W / 2 + 48}px)` }}
         >
-          <IcArrowRight className='rotate-180' />
+          <IcArrowRight className='rotate-180 text-black' />
         </button>
       )}
 
@@ -85,7 +85,7 @@ const BuskingCarousel = ({ items }: { items: BuskingUiType[] }) => {
           className='absolute top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 size-12 rounded-full bg-white flex items-center justify-center shadow-lg'
           style={{ left: `calc(50% + ${CARD_W / 2 + 48}px)` }}
         >
-          <IcArrowRight />
+          <IcArrowRight className='text-black' />
         </button>
       )}
     </div>
