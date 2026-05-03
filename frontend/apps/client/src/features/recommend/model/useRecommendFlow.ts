@@ -5,6 +5,7 @@ import { useNavigate } from '@/shared/lib/navigation';
 import { RECOMMEND_STEPS } from '@/shared/types/recommend';
 import type { InternalRecommendStep } from '@/shared/types/recommend';
 import type { SongUiType } from '@/entities/song/model/types';
+import { saveRecordedAudio } from './useRecordedAudio';
 
 import { isApiError } from '@/shared/api/apiError';
 import { recommendationApi } from '@/entities/recommendation';
@@ -67,7 +68,7 @@ export const useRecommendFlow = () => {
   };
 
   const onGenreDone = async (selectedGenres: string[]) => {
-    const { jobId, rankedSongIds, selectedSituations } = flowState;
+    const { jobId, rankedSongIds, selectedSituations, audioBlob } = flowState;
     if (!jobId) return;
 
     try {
@@ -76,6 +77,7 @@ export const useRecommendFlow = () => {
         selected_keyword: selectedSituations,
         selected_genre: selectedGenres,
       });
+      if (audioBlob) saveRecordedAudio(jobId, audioBlob);
       go(dynamic.recommendResult(jobId));
     } catch (err) {
       if (isApiError(err)) {
