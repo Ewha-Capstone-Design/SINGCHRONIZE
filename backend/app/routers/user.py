@@ -317,6 +317,8 @@ async def update_profile(
         user_id=current_user.id,
         nickname=update_data.get("nickname"),
     )
+    await db.commit()
+    await db.refresh(updated)
     return UserResponse.model_validate(updated)
 
 
