@@ -18,10 +18,12 @@ type RecordUploadStep2Props = {
   keyword: string;
   selectedSongs: SongUiType[];
   endDate?: Date;
+  recordFile: File | null;
   onKeywordChange: (value: string) => void;
   onToggleSong: (song: SongUiType) => void;
   onSetlistChange: (songs: SongUiType[]) => void;
   onEndDateChange: (date: Date) => void;
+  onRecordFileChange: (file: File) => void;
   onSubmit: () => void;
 };
 
@@ -29,10 +31,11 @@ export const RecordUploadStep2 = ({
   keyword,
   selectedSongs,
   endDate,
+  recordFile,
   onKeywordChange,
   onToggleSong,
-  onSetlistChange,
   onEndDateChange,
+  onRecordFileChange,
   onSubmit,
 }: RecordUploadStep2Props) => {
   const selectedIds = useMemo(
@@ -42,12 +45,13 @@ export const RecordUploadStep2 = ({
 
   const { open: isDateOpen, openModal: openDate, closeModal: closeDate } = useModal();
   const dateWrapperRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   useClickOutside(dateWrapperRef, closeDate);
 
   const debouncedKeyword = useDebounce(keyword);
   const { data: searchedSongs = [] } = useSearchMusic(debouncedKeyword);
 
-  const canSubmit = selectedSongs.length >= 1;
+  const canSubmit = selectedSongs.length >= 1 && !!recordFile;
 
   return (
     <div className='flex flex-col h-full'>
@@ -108,8 +112,18 @@ export const RecordUploadStep2 = ({
               <h2 className='typo-28b text-white'>녹음 파일 업로드</h2>
               <p className='typo-16r text-gray-200'>음성 녹음 파일만 가능해요</p>
             </div>
-            <Button variant='normal' className='w-fit'>
-              파일 선택하기
+            <input
+              ref={fileInputRef}
+              type='file'
+              accept='audio/*'
+              className='hidden'
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) onRecordFileChange(file);
+              }}
+            />
+            <Button variant='normal' className='w-fit' onClick={() => fileInputRef.current?.click()}>
+              {recordFile ? recordFile.name : '파일 선택하기'}
             </Button>
           </div>
 
