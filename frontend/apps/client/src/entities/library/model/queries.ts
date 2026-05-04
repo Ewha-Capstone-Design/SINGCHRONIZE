@@ -4,6 +4,7 @@ import type {
   FolderCreate,
   WishlistItemCreate,
   FavoriteFolderApiType,
+  FavoriteSongApiType,
   HistoryItemApiType,
   ArchiveCreate,
   ArchiveUpdate,
@@ -63,7 +64,35 @@ export const useAddWishlistItem = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body: WishlistItemCreate) => libraryApi.addWishlistItem(body),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['library', 'wishlist'] }),
+    onMutate: async (body) => {
+      const wishlistKey = queryKeys.wishlist(body.folder_id ?? undefined);
+      await queryClient.cancelQueries({ queryKey: wishlistKey });
+
+      const previous = queryClient.getQueryData<FavoriteSongApiType[]>(wishlistKey);
+
+      const tempItem: FavoriteSongApiType = {
+        id: `temp-${crypto.randomUUID()}`,
+        user_id: '',
+        folder_id: body.folder_id ?? null,
+        song_data: body.song_data,
+        created_at: new Date().toISOString(),
+      };
+
+      queryClient.setQueryData<FavoriteSongApiType[]>(wishlistKey, (old = []) => [
+        tempItem,
+        ...old,
+      ]);
+
+      return { previous, wishlistKey };
+    },
+    onError: (_err, _body, context) => {
+      if (context) queryClient.setQueryData(context.wishlistKey, context.previous);
+    },
+    onSettled: (_data, _err, body) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.wishlist(body.folder_id ?? undefined),
+      });
+    },
   });
 };
 
@@ -72,7 +101,29 @@ export const useDeleteWishlistItem = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (itemId: string) => libraryApi.deleteWishlistItem(itemId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['library', 'wishlist'] }),
+    onMutate: async (itemId) => {
+      await queryClient.cancelQueries({ queryKey: ['library', 'wishlist'] });
+
+      const allCaches = queryClient.getQueriesData<FavoriteSongApiType[]>({
+        queryKey: ['library', 'wishlist'],
+      });
+
+      allCaches.forEach(([key, data]) => {
+        if (!data) return;
+        queryClient.setQueryData<FavoriteSongApiType[]>(
+          key,
+          data.filter((item) => item.id !== itemId),
+        );
+      });
+
+      return { allCaches };
+    },
+    onError: (_err, _itemId, context) => {
+      context?.allCaches.forEach(([key, data]) => {
+        queryClient.setQueryData(key, data);
+      });
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['library', 'wishlist'] }),
   });
 };
 
