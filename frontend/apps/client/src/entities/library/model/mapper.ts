@@ -52,7 +52,7 @@ export const toFavoriteFolderUi = (
 ): FavoriteFolderUiType => ({
   id: folder.id,
   name: folder.name,
-  coverImages: [],
+  coverImages: folder.thumbnails,
   songCount: folder.item_count,
   updatedAt: formatUpdatedAtLabel(folder.created_at),
 });
