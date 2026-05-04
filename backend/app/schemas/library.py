@@ -1,6 +1,6 @@
 """Library 스키마 - Folder & Wishlist"""
 from pydantic import BaseModel
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 from datetime import datetime
 
@@ -11,6 +11,10 @@ class FolderCreate(BaseModel):
     name: str
 
 
+class FolderUpdate(BaseModel):
+    name: str
+
+
 class FolderResponse(BaseModel):
     id: UUID
     user_id: UUID
@@ -18,6 +22,7 @@ class FolderResponse(BaseModel):
     is_system: bool
     created_at: datetime
     item_count: int = 0
+    thumbnails: List[str] = []   # 최신 찜 항목 앨범 커버 최대 4개
 
     model_config = {"from_attributes": True}
 

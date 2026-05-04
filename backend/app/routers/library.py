@@ -17,7 +17,7 @@ from app.models.archive import Archive
 from app.models.recommendation import Recommendation
 from app.models.song import Song as SongModel
 from app.schemas.library import (
-    FolderCreate, FolderResponse,
+    FolderCreate, FolderUpdate, FolderResponse,
     WishlistItemCreate, WishlistItemResponse,
 )
 from app.schemas.archive import ArchiveCreate, ArchiveUpdate, ArchiveResponse
@@ -34,19 +34,50 @@ async def get_folders(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    rows = (await db.execute(
+    # 폴더 목록 + item_count
+    folder_rows = (await db.execute(
         select(Folder, func.count(WishlistItem.id).label("item_count"))
         .outerjoin(WishlistItem, WishlistItem.folder_id == Folder.id)
         .where(Folder.user_id == current_user.id)
         .group_by(Folder.id)
         .order_by(Folder.created_at)
     )).all()
+
+    # 폴더별 썸네일: 최신 순 최대 4개 album_image (ROW_NUMBER 윈도우 단일 쿼리)
+    wi_ranked = (
+        select(
+            WishlistItem.folder_id,
+            WishlistItem.song_data["album_image"].astext.label("album_image"),
+            func.row_number().over(
+                partition_by=WishlistItem.folder_id,
+                order_by=WishlistItem.created_at.desc(),
+            ).label("rn"),
+        )
+        .where(
+            WishlistItem.user_id == current_user.id,
+            WishlistItem.folder_id.isnot(None),
+        )
+        .subquery()
+    )
+    thumb_rows = (await db.execute(
+        select(wi_ranked.c.folder_id, wi_ranked.c.album_image)
+        .where(wi_ranked.c.rn <= 4)
+        .order_by(wi_ranked.c.folder_id, wi_ranked.c.rn)
+    )).all()
+
+    thumbnails_by_folder: dict[str, list[str]] = defaultdict(list)
+    for row in thumb_rows:
+        if row.album_image:
+            thumbnails_by_folder[str(row.folder_id)].append(row.album_image)
+
     return [
         FolderResponse(
             id=f.id, user_id=f.user_id, name=f.name,
-            is_system=f.is_system, created_at=f.created_at, item_count=cnt,
+            is_system=f.is_system, created_at=f.created_at,
+            item_count=cnt,
+            thumbnails=thumbnails_by_folder.get(str(f.id), []),
         )
-        for f, cnt in rows
+        for f, cnt in folder_rows
     ]
 
 
@@ -63,6 +94,32 @@ async def create_folder(
     return FolderResponse(
         id=folder.id, user_id=folder.user_id, name=folder.name,
         is_system=folder.is_system, created_at=folder.created_at, item_count=0,
+    )
+
+
+@router.patch("/folders/{folder_id}", response_model=FolderResponse)
+async def rename_folder(
+    folder_id: UUID,
+    body: FolderUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    folder = (await db.execute(
+        select(Folder).where(Folder.id == folder_id, Folder.user_id == current_user.id)
+    )).scalar_one_or_none()
+    if not folder:
+        raise HTTPException(status_code=404, detail="폴더를 찾을 수 없습니다.")
+    if folder.is_system:
+        raise HTTPException(status_code=400, detail="시스템 폴더는 이름을 변경할 수 없습니다.")
+    folder.name = body.name.strip()
+    await db.commit()
+    await db.refresh(folder)
+    cnt = (await db.execute(
+        select(func.count(WishlistItem.id)).where(WishlistItem.folder_id == folder.id)
+    )).scalar_one()
+    return FolderResponse(
+        id=folder.id, user_id=folder.user_id, name=folder.name,
+        is_system=folder.is_system, created_at=folder.created_at, item_count=cnt,
     )
 
 
