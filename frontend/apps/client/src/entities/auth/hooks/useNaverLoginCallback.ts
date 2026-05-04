@@ -1,14 +1,15 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from '@/shared/lib/navigation';
 import { useLogin } from '../model/queries';
+
+let isProcessing = false;
 
 export const useNaverLoginCallback = () => {
   const { go, ROUTES } = useNavigate();
   const { mutate: login } = useLogin();
-  const hasRunRef = useRef(false);
 
   useEffect(() => {
-    if (hasRunRef.current) return;
+    if (isProcessing) return;
 
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
@@ -24,7 +25,7 @@ export const useNaverLoginCallback = () => {
     }
     localStorage.removeItem('naver_oauth_state');
 
-    hasRunRef.current = true;
+    isProcessing = true;
 
     const getNaverToken = async (authCode: string, oauthState: string) => {
       const response = await fetch('/api/auth/naver/token', {
@@ -66,11 +67,15 @@ export const useNaverLoginCallback = () => {
             },
             onError: (error) => {
               console.error('로그인 실패:', error);
+              isProcessing = false;
+              go(ROUTES.login.root);
             },
           },
         );
       } catch (error) {
         console.error('로그인 에러:', error);
+        isProcessing = false;
+        go(ROUTES.login.root);
       }
     };
 

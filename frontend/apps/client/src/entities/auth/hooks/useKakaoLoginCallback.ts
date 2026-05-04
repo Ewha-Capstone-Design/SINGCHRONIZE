@@ -13,8 +13,17 @@ export const useKakaoLoginCallback = () => {
 
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
+    const state = params.get('state');
 
-    if (!code) return;
+    if (!code || !state) return;
+
+    const savedState = localStorage.getItem('kakao_oauth_state');
+    if (state !== savedState) {
+      console.error('Kakao OAuth state 불일치');
+      go(ROUTES.login.root);
+      return;
+    }
+    localStorage.removeItem('kakao_oauth_state');
 
     isProcessing = true;
 
@@ -61,11 +70,15 @@ export const useKakaoLoginCallback = () => {
             },
             onError: (error) => {
               console.error('로그인 실패:', error);
+              isProcessing = false;
+              go(ROUTES.login.root);
             },
           },
         );
       } catch (error) {
         console.error('로그인 에러:', error);
+        isProcessing = false;
+        go(ROUTES.login.root);
       }
     };
 
