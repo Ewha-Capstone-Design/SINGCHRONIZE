@@ -1,21 +1,22 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from '@/shared/lib/navigation';
 import { useLogin } from '../model/queries';
+
+let isProcessing = false;
 
 export const useKakaoLoginCallback = () => {
   const { go, ROUTES } = useNavigate();
   const { mutate: login } = useLogin();
-  const hasRunRef = useRef(false);
 
   useEffect(() => {
-    if (hasRunRef.current) return;
+    if (isProcessing) return;
 
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
 
     if (!code) return;
 
-    hasRunRef.current = true;
+    isProcessing = true;
 
     const getKakaoToken = async (authCode: string) => {
       const response = await fetch('https://kauth.kakao.com/oauth/token', {
