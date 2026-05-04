@@ -46,6 +46,7 @@ class BuskingReaction(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     room_id = Column(UUID(as_uuid=True), ForeignKey("busking_rooms.id", ondelete="CASCADE"), nullable=False, index=True)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    song_index = Column(Integer, nullable=True)        # 반응 시점의 current_song_index (0-based)
     value = Column(String, nullable=False)             # "match" | "mismatch"
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

@@ -8,7 +8,7 @@ from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect, status
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -416,6 +416,36 @@ async def get_result(room_id: UUID, db: AsyncSession = Depends(get_db)):
         )
 
     setlist = await _get_setlist(db, room_id)
+
+    # 곡별 match/mismatch 집계
+    per_song_rows = (await db.execute(
+        select(
+            BuskingReaction.song_index,
+            func.sum(case((BuskingReaction.value == "match", 1), else_=0)).label("match_count"),
+            func.sum(case((BuskingReaction.value == "mismatch", 1), else_=0)).label("mismatch_count"),
+        )
+        .where(
+            BuskingReaction.room_id == room_id,
+            BuskingReaction.song_index.isnot(None),
+        )
+        .group_by(BuskingReaction.song_index)
+        .order_by(BuskingReaction.song_index)
+    )).all()
+
+    per_song_map = {
+        row.song_index: {"match": int(row.match_count), "mismatch": int(row.mismatch_count)}
+        for row in per_song_rows
+    }
+    per_song = [
+        {
+            "song_index": s.order_index,
+            "title": s.title,
+            "artist": s.artist,
+            **per_song_map.get(s.order_index, {"match": 0, "mismatch": 0}),
+        }
+        for s in setlist
+    ]
+
     return BuskingResultResponse(
         live_id=room.id,
         title=room.title,
@@ -423,7 +453,10 @@ async def get_result(room_id: UUID, db: AsyncSession = Depends(get_db)):
         peak_viewer_count=room.peak_viewer_count,
         total_unique_viewers=room.total_unique_viewers,
         setlist=[SetlistItemResponse.model_validate(s) for s in setlist],
-        reactions={"match": result_row.match_count, "mismatch": result_row.mismatch_count},
+        reactions={
+            "total": {"match": result_row.match_count, "mismatch": result_row.mismatch_count},
+            "per_song": per_song,
+        },
         chat_count=result_row.chat_count,
         started_at=room.started_at,
         ended_at=room.ended_at,
@@ -559,7 +592,12 @@ async def _save_chat(room_id: str, user_id: str, message: str):
 
 async def _save_reaction(room_id: str, user_id: str, value: str):
     async with AsyncSessionLocal() as db:
-        db.add(BuskingReaction(room_id=room_id, user_id=user_id, value=value))
+        song_idx = (await db.execute(
+            select(BuskingRoom.current_song_index).where(BuskingRoom.id == room_id)
+        )).scalar_one_or_none()
+        db.add(BuskingReaction(
+            room_id=room_id, user_id=user_id, value=value, song_index=song_idx
+        ))
         await db.commit()
 
 
