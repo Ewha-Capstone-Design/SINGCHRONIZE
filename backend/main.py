@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import init_db
 from app.routers import auth, user, songs, library, busking, recommendations, singers
+from app.utils.aws import configure_s3_cors
 from app.routers.analysis import router as analysis_router
 from app.routers.home import router as home_router
 from app.routers.oauth_test import router as oauth_test_router
@@ -19,6 +20,7 @@ from fastapi.staticfiles import StaticFiles
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # await init_db()
+    configure_s3_cors(settings.allowed_origins_list)
     yield
 
 

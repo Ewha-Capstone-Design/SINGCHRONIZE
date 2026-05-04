@@ -1,6 +1,9 @@
+import logging
 import boto3
 from botocore.exceptions import ClientError
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 # AWS 클라이언트 설정
 s3_client = boto3.client(
@@ -16,6 +19,25 @@ sqs_client = boto3.client(
     aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
     region_name=settings.AWS_REGION,
 )
+
+def configure_s3_cors(allowed_origins: list[str]) -> None:
+    """S3 버킷 CORS 정책 설정 — presigned URL PUT 업로드 시 브라우저 CORS 에러 방지."""
+    cors_rules = [{
+        "AllowedHeaders": ["*"],
+        "AllowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
+        "AllowedOrigins": allowed_origins if allowed_origins else ["*"],
+        "ExposeHeaders": ["ETag"],
+        "MaxAgeSeconds": 3600,
+    }]
+    try:
+        s3_client.put_bucket_cors(
+            Bucket=settings.S3_BUCKET_NAME,
+            CORSConfiguration={"CORSRules": cors_rules},
+        )
+        logger.info("S3 CORS 정책 설정 완료: %s", allowed_origins)
+    except ClientError as e:
+        logger.warning("S3 CORS 설정 실패 (권한 확인 필요): %s", e)
+
 
 def generate_presigned_url(object_name, expiration=3600, content_type: str = "audio/wav"):
     """프론트엔드가 S3에 직접 업로드할 수 있는 URL 생성"""
