@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { libraryApi } from '../api/libraryApi';
 import type {
   FolderCreate,
+  FolderUpdate,
   WishlistItemCreate,
   FavoriteFolderApiType,
   FavoriteSongApiType,
@@ -45,6 +46,29 @@ export const useDeleteFolder = () => {
       return { previous };
     },
     onError: (_err, _folderId, context) => {
+      queryClient.setQueryData(queryKeys.folders, context?.previous);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.folders }),
+  });
+};
+
+// PATCH: 폴더 이름 변경
+export const useRenameFolder = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ folderId, body }: { folderId: string; body: FolderUpdate }) =>
+      libraryApi.renameFolder(folderId, body),
+    onMutate: async ({ folderId, body }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.folders });
+      const previous = queryClient.getQueryData<FavoriteFolderApiType[]>(
+        queryKeys.folders,
+      );
+      queryClient.setQueryData<FavoriteFolderApiType[]>(queryKeys.folders, (old = []) =>
+        old.map((f) => (f.id === folderId ? { ...f, name: body.name } : f)),
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
       queryClient.setQueryData(queryKeys.folders, context?.previous);
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.folders }),
