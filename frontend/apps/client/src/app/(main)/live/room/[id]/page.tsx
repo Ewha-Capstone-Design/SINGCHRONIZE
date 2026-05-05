@@ -61,7 +61,8 @@ const BuskingViewerPage = () => {
 
   const { data: me } = useMe();
   const { data: room } = useBuskingRoom(roomId);
-  const { data: rooms = [] } = useBuskingRooms();
+  const { data: allRooms = [] } = useBuskingRooms();
+  const rooms = allRooms.filter((r) => r.id !== roomId);
   const { mutate: endRoom, isPending: isEndingRoom } = useEndBuskingRoom();
   const { mutateAsync: joinRoom } = useJoinBuskingRoom();
   const { mutate: advanceSetlist, isPending: isAdvancing } = useAdvanceSetlist();
