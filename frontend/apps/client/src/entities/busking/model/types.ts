@@ -4,7 +4,12 @@ export type BuskingRoomApiType = components['schemas']['BuskingRoomResponse'];
 export type BuskingRoomDetailApiType = components['schemas']['BuskingRoomDetailResponse'];
 export type BuskingRoomCreateApiType = components['schemas']['BuskingRoomCreateResponse'];
 export type BuskingRoomCreateBody = components['schemas']['BuskingRoomCreate'];
-export type BuskingResultApiType = components['schemas']['BuskingResultResponse'];
+export type BuskingResultApiType = Omit<
+  components['schemas']['BuskingResultResponse'],
+  'reactions'
+> & {
+  reactions: Record<string, number>;
+};
 export type ThumbnailPresignedApiType =
   components['schemas']['ThumbnailPresignedResponse'];
 export type LiveKitJoinApiType = components['schemas']['LiveKitJoinResponse'];
