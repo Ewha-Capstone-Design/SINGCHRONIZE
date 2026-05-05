@@ -2,8 +2,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { libraryApi } from '../api/libraryApi';
 import type {
   FolderCreate,
+  FolderUpdate,
   WishlistItemCreate,
   FavoriteFolderApiType,
+  FavoriteSongApiType,
   HistoryItemApiType,
   ArchiveCreate,
   ArchiveUpdate,
@@ -50,6 +52,29 @@ export const useDeleteFolder = () => {
   });
 };
 
+// PATCH: 폴더 이름 변경
+export const useRenameFolder = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ folderId, body }: { folderId: string; body: FolderUpdate }) =>
+      libraryApi.renameFolder(folderId, body),
+    onMutate: async ({ folderId, body }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.folders });
+      const previous = queryClient.getQueryData<FavoriteFolderApiType[]>(
+        queryKeys.folders,
+      );
+      queryClient.setQueryData<FavoriteFolderApiType[]>(queryKeys.folders, (old = []) =>
+        old.map((f) => (f.id === folderId ? { ...f, name: body.name } : f)),
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      queryClient.setQueryData(queryKeys.folders, context?.previous);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.folders }),
+  });
+};
+
 // GET: 위시리스트 조회
 export const useWishlist = (folderId?: string) =>
   useQuery({
@@ -63,7 +88,36 @@ export const useAddWishlistItem = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body: WishlistItemCreate) => libraryApi.addWishlistItem(body),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['library', 'wishlist'] }),
+    onMutate: async (body) => {
+      const wishlistKey = queryKeys.wishlist(body.folder_id ?? undefined);
+      await queryClient.cancelQueries({ queryKey: wishlistKey });
+
+      const previous = queryClient.getQueryData<FavoriteSongApiType[]>(wishlistKey);
+
+      const tempItem: FavoriteSongApiType = {
+        id: `temp-${crypto.randomUUID()}`,
+        user_id: '',
+        folder_id: body.folder_id ?? null,
+        song_data: body.song_data,
+        created_at: new Date().toISOString(),
+      };
+
+      queryClient.setQueryData<FavoriteSongApiType[]>(wishlistKey, (old = []) => [
+        tempItem,
+        ...old,
+      ]);
+
+      return { previous, wishlistKey };
+    },
+    onError: (_err, _body, context) => {
+      if (context) queryClient.setQueryData(context.wishlistKey, context.previous);
+    },
+    onSettled: (_data, _err, body) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.wishlist(body.folder_id ?? undefined),
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.folders });
+    },
   });
 };
 
@@ -72,7 +126,32 @@ export const useDeleteWishlistItem = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (itemId: string) => libraryApi.deleteWishlistItem(itemId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['library', 'wishlist'] }),
+    onMutate: async (itemId) => {
+      await queryClient.cancelQueries({ queryKey: ['library', 'wishlist'] });
+
+      const allCaches = queryClient.getQueriesData<FavoriteSongApiType[]>({
+        queryKey: ['library', 'wishlist'],
+      });
+
+      allCaches.forEach(([key, data]) => {
+        if (!data) return;
+        queryClient.setQueryData<FavoriteSongApiType[]>(
+          key,
+          data.filter((item) => item.id !== itemId),
+        );
+      });
+
+      return { allCaches };
+    },
+    onError: (_err, _itemId, context) => {
+      context?.allCaches.forEach(([key, data]) => {
+        queryClient.setQueryData(key, data);
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['library', 'wishlist'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.folders });
+    },
   });
 };
 

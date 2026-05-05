@@ -81,7 +81,6 @@ export const useBuskingSocket = ({
       };
 
       ws.onmessage = (e) => {
-        console.log('[WS 수신]', e.data);
         const event: BuskingSocketEvent = JSON.parse(e.data);
 
         switch (event.type) {

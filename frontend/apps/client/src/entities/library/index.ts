@@ -3,6 +3,7 @@ export {
   useFolders,
   useCreateFolder,
   useDeleteFolder,
+  useRenameFolder,
   useWishlist,
   useAddWishlistItem,
   useDeleteWishlistItem,

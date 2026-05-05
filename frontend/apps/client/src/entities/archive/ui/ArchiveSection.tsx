@@ -54,6 +54,7 @@ const ArchiveSection = ({ group }: ArchiveSectionProps) => {
                 <SongLikeButton
                   songId={String(song.id)}
                   isLiked={song.isLiked ?? false}
+                  song={song}
                 />
                 <SongBlockMenu songId={String(song.id)} />
               </div>

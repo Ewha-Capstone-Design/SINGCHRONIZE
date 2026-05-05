@@ -48,7 +48,6 @@ const BuskingViewerPage = () => {
   const isRecord = searchParams.get('type') === 'record';
 
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
-  const [showVote] = useState(true);
   const [isLastSong, setIsLastSong] = useState(false);
   const [liveKitCredentials, setLiveKitCredentials] = useState<LiveKitCredentials | null>(
     null,
@@ -62,7 +61,8 @@ const BuskingViewerPage = () => {
 
   const { data: me } = useMe();
   const { data: room } = useBuskingRoom(roomId);
-  const { data: rooms = [] } = useBuskingRooms();
+  const { data: allRooms = [] } = useBuskingRooms();
+  const rooms = allRooms.filter((r) => r.id !== roomId);
   const { mutate: endRoom, isPending: isEndingRoom } = useEndBuskingRoom();
   const { mutateAsync: joinRoom } = useJoinBuskingRoom();
   const { mutate: advanceSetlist, isPending: isAdvancing } = useAdvanceSetlist();
@@ -131,7 +131,6 @@ const BuskingViewerPage = () => {
       profileImg?: string | null;
       message: string;
     }) => {
-      console.log('[Chat] WS 수신 CHAT_MESSAGE', payload);
       setMessages((prev) => [
         ...prev,
         {
@@ -169,7 +168,6 @@ const BuskingViewerPage = () => {
 
   const handleSend = useCallback(
     (message: string) => {
-      console.log('[Chat] WS 전송', message);
       sendMessage(message);
     },
     [sendMessage],
@@ -216,7 +214,7 @@ const BuskingViewerPage = () => {
       <div className='flex flex-col flex-1 overflow-y-auto scrollbar-hide'>
         {/* 헤더 */}
         <div className='px-9 flex items-center h-26 shrink-0'>
-          <BackButton />
+          <BackButton onClick={() => go(ROUTES.live.root)} />
 
           <div className='ml-5 flex gap-2'>
             <div className='relative size-12 rounded-full bg-gray-600 border border-accent-600 shrink-0 overflow-hidden'>
@@ -278,7 +276,7 @@ const BuskingViewerPage = () => {
           </div>
 
           {/* 투표 패널 */}
-          {showVote && !isStreamer && (
+          {!isStreamer && (
             <div className='absolute bottom-3 right-3'>
               <VotePanel
                 timeLeft={voteTimeLeft}

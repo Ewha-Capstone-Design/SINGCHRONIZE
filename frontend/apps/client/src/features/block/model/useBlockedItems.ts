@@ -1,5 +1,10 @@
 import { useMemo, useState } from 'react';
-import { useBlockedSingers, useBlockedSongs, useUnblockSinger, useUnblockSong } from '@/entities/user';
+import {
+  useBlockedSingers,
+  useBlockedSongs,
+  useUnblockSinger,
+  useUnblockSong,
+} from '@/entities/user';
 
 export const useBlockedItems = (type: 'song' | 'artist') => {
   const [query, setQuery] = useState('');
@@ -7,8 +12,8 @@ export const useBlockedItems = (type: 'song' | 'artist') => {
   const blockedSongQuery = useBlockedSongs();
   const blockedSingerQuery = useBlockedSingers();
 
-  const { mutate: unblockSong } = useUnblockSong();
-  const { mutate: unblockSinger } = useUnblockSinger();
+  const { mutate: unblockSong, isPending: isUnblockSongPending } = useUnblockSong();
+  const { mutate: unblockSinger, isPending: isUnblockSingerPending } = useUnblockSinger();
 
   const rawItems = useMemo(() => {
     if (type === 'song') {
@@ -22,7 +27,7 @@ export const useBlockedItems = (type: 'song' | 'artist') => {
     return (blockedSingerQuery.data?.blocked_singers ?? []).map((item) => ({
       id: String(item.singer_id),
       thumbnail: item.photo_url ?? undefined,
-      title: item.name,
+      title: item.name, // 가수명이 title로 들어가서 artist는 undefined로 처리
       artist: undefined as string | undefined,
     }));
   }, [type, blockedSongQuery.data, blockedSingerQuery.data]);
@@ -30,9 +35,7 @@ export const useBlockedItems = (type: 'song' | 'artist') => {
   const normalizedItems = useMemo(() => {
     const q = query.trim();
     if (!q) return rawItems;
-    return rawItems.filter((item) =>
-      `${item.title} ${item.artist ?? ''}`.includes(q)
-    );
+    return rawItems.filter((item) => `${item.title} ${item.artist ?? ''}`.includes(q));
   }, [query, rawItems]);
 
   const unblock = (id: string) => {
@@ -41,7 +44,9 @@ export const useBlockedItems = (type: 'song' | 'artist') => {
   };
 
   const isLoading =
-    type === 'song' ? blockedSongQuery.isLoading : blockedSingerQuery.isLoading;
+    type === 'song'
+      ? blockedSongQuery.isLoading || isUnblockSongPending
+      : blockedSingerQuery.isLoading || isUnblockSingerPending;
 
   return { query, setQuery, normalizedItems, unblock, isLoading };
 };

@@ -25,12 +25,11 @@ const SongBlockMenu = ({ songId, singerId }: SongBlockMenuProps) => {
           type='button'
           aria-label='더보기'
           className='inline-flex items-center justify-center'
-          onClick={(e) => e.stopPropagation()}
         >
           <IcMore />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align='end'>
+      <DropdownMenuContent align='end' onClick={(e) => e.stopPropagation()}>
         <DropdownMenuItem onSelect={() => blockSong({ song_id: songId })}>
           곡 차단하기
         </DropdownMenuItem>

@@ -21,7 +21,10 @@ export const toBuskingUi = (room: BuskingRoomApiType): BuskingUiType => ({
   totalViewers: room.total_viewers,
 });
 
-export const toSetlistUi = (item: SetlistItemApiType, currentIndex?: number): SetlistType => ({
+export const toSetlistUi = (
+  item: SetlistItemApiType,
+  currentIndex?: number,
+): SetlistType => ({
   id: item.id,
   rank: item.order_index + 1,
   title: item.title,
@@ -34,7 +37,7 @@ export const toResultItemUi = (
   item: SetlistItemApiType,
   reactions: BuskingResultApiType['reactions'],
 ): BuskingResultItemType => {
-  const votePercent = (reactions as Record<string, number>)[item.id] ?? 0;
+  const votePercent = reactions[item.id] ?? 0;
 
   return {
     id: item.id,

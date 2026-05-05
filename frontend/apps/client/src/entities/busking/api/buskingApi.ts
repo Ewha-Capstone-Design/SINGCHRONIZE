@@ -1,5 +1,6 @@
 import { privateClient } from '@/shared/api/client';
 import type { components } from '@singchronize/api';
+import type { BuskingResultApiType } from '../model/types';
 
 export const buskingApi = {
   // POST: 썸네일 업로드용 presigned URL 발급
@@ -92,7 +93,7 @@ export const buskingApi = {
   // GET: 버스킹 결과 조회
   getResult: async (
     roomId: string,
-  ): Promise<components['schemas']['BuskingResultResponse']> => {
+  ): Promise<BuskingResultApiType> => {
     const { data, error } = await privateClient.GET(
       '/api/v1/busking/rooms/{room_id}/result',
       { params: { path: { room_id: roomId } } },

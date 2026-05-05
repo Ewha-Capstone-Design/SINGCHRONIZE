@@ -56,7 +56,7 @@ const SetlistCarousel = ({
   };
 
   return (
-    <section className='relative flex h-62 flex-col items-center justify-center overflow-hidden'>
+    <section className='relative flex h-62 flex-col items-center justify-center overflow-hidden shrink-0'>
       <div className='relative w-full overflow-hidden' style={{ height: CARD_HEIGHT }}>
         <div
           className='absolute top-0 transition-transform duration-300 ease-in-out'

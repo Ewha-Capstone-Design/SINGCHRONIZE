@@ -8,7 +8,7 @@ import { FavoriteFolderCard } from '@/entities/library/ui';
 import type { FavoriteFolderUiType } from '@/entities/library/model/types';
 import FavoriteFolderDetail from './FavoriteFolderDetail';
 
-import { useFolders, useDeleteFolder } from '@/entities/library';
+import { useFolders, useDeleteFolder, useRenameFolder } from '@/entities/library';
 
 const LibraryFavoriteList = () => {
   const { open: isAddModalOpen, openModal, closeModal } = useModal(false);
@@ -16,6 +16,7 @@ const LibraryFavoriteList = () => {
 
   const { data: folders = [] } = useFolders();
   const { mutate: deleteFolder } = useDeleteFolder();
+  const { mutate: renameFolder } = useRenameFolder();
 
   if (selectedFolder) {
     return (
@@ -40,7 +41,9 @@ const LibraryFavoriteList = () => {
             <FavoriteFolderCard
               folder={folder}
               onClick={() => setSelectedFolder(folder)}
-              onRenameClick={() => {}} // TODO: 폴더 이름 변경 기능 논의 필요
+              onRenameSubmit={(folderId, newName) =>
+                renameFolder({ folderId, body: { name: newName } })
+              }
               onDeleteClick={() => deleteFolder(folder.id)}
             />
           </li>

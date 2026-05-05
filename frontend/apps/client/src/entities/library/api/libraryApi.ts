@@ -1,5 +1,11 @@
 import { privateClient } from '@/shared/api/client';
-import type { FolderCreate, WishlistItemCreate, ArchiveCreate, ArchiveUpdate } from '../model/types';
+import type {
+  FolderCreate,
+  FolderUpdate,
+  WishlistItemCreate,
+  ArchiveCreate,
+  ArchiveUpdate,
+} from '../model/types';
 
 export const libraryApi = {
   // GET: 폴더 목록 조회
@@ -12,6 +18,19 @@ export const libraryApi = {
   // POST: 폴더 생성
   createFolder: async (body: FolderCreate) => {
     const { data, error } = await privateClient.POST('/api/v1/library/folders', { body });
+    if (error) throw error;
+    return data;
+  },
+
+  // PATCH: 폴더 이름 변경
+  renameFolder: async (folderId: string, body: FolderUpdate) => {
+    const { data, error } = await privateClient.PATCH(
+      '/api/v1/library/folders/{folder_id}',
+      {
+        params: { path: { folder_id: folderId } },
+        body,
+      },
+    );
     if (error) throw error;
     return data;
   },
@@ -35,7 +54,9 @@ export const libraryApi = {
 
   // POST: 위시리스트 곡 추가
   addWishlistItem: async (body: WishlistItemCreate) => {
-    const { data, error } = await privateClient.POST('/api/v1/library/wishlist', { body });
+    const { data, error } = await privateClient.POST('/api/v1/library/wishlist', {
+      body,
+    });
     if (error) throw error;
     return data;
   },
@@ -64,10 +85,13 @@ export const libraryApi = {
 
   // PATCH: 보컬 기록 수정
   updateHistory: async (archiveId: string, body: ArchiveUpdate) => {
-    const { data, error } = await privateClient.PATCH('/api/v1/library/history/{archive_id}', {
-      params: { path: { archive_id: archiveId } },
-      body,
-    });
+    const { data, error } = await privateClient.PATCH(
+      '/api/v1/library/history/{archive_id}',
+      {
+        params: { path: { archive_id: archiveId } },
+        body,
+      },
+    );
     if (error) throw error;
     return data;
   },

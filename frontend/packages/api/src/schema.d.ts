@@ -284,7 +284,8 @@ export interface paths {
         delete: operations["delete_folder_api_v1_library_folders__folder_id__delete"];
         options?: never;
         head?: never;
-        patch?: never;
+        /** Rename Folder */
+        patch: operations["rename_folder_api_v1_library_folders__folder_id__patch"];
         trace?: never;
     };
     "/api/v1/library/wishlist": {
@@ -1376,6 +1377,16 @@ export interface components {
              * @default 0
              */
             item_count: number;
+            /**
+             * Thumbnails
+             * @default []
+             */
+            thumbnails: string[];
+        };
+        /** FolderUpdate */
+        FolderUpdate: {
+            /** Name */
+            name: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -2372,6 +2383,41 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rename_folder_api_v1_library_folders__folder_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                folder_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FolderUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FolderResponse"];
+                };
             };
             /** @description Validation Error */
             422: {

@@ -4,6 +4,7 @@ import { HistoryTagType } from './tags';
 export type HistoryItemApiType = components['schemas']['ArchiveResponse'];
 export type FavoriteFolderApiType = components['schemas']['FolderResponse'];
 export type FolderCreate = components['schemas']['FolderCreate'];
+export type FolderUpdate = components['schemas']['FolderUpdate'];
 export type FavoriteSongApiType = components['schemas']['WishlistItemResponse'];
 export type WishlistItemCreate = components['schemas']['WishlistItemCreate'];
 export type ArchiveCreate = components['schemas']['ArchiveCreate'];
