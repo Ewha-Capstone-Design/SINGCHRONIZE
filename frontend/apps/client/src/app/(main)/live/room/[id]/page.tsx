@@ -130,7 +130,6 @@ const BuskingViewerPage = () => {
       profileImg?: string | null;
       message: string;
     }) => {
-      console.log('[Chat] WS 수신 CHAT_MESSAGE', payload);
       setMessages((prev) => [
         ...prev,
         {
@@ -168,7 +167,6 @@ const BuskingViewerPage = () => {
 
   const handleSend = useCallback(
     (message: string) => {
-      console.log('[Chat] WS 전송', message);
       sendMessage(message);
     },
     [sendMessage],
