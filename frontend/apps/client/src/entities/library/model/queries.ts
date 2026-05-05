@@ -116,6 +116,7 @@ export const useAddWishlistItem = () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.wishlist(body.folder_id ?? undefined),
       });
+      queryClient.invalidateQueries({ queryKey: queryKeys.folders });
     },
   });
 };
@@ -147,7 +148,10 @@ export const useDeleteWishlistItem = () => {
         queryClient.setQueryData(key, data);
       });
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['library', 'wishlist'] }),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['library', 'wishlist'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.folders });
+    },
   });
 };
 
