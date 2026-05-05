@@ -44,13 +44,16 @@ const HistoryItem = ({ item, onEditClick, onDeleteClick }: HistoryItemProps) => 
           {/* 더보기 드롭다운 */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <IcMore className='rotate-90 cursor-pointer' />
+              <button type='button' aria-label='기록 메뉴 열기' className='shrink-0'>
+                <IcMore className='rotate-90' />
+              </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
               side='bottom'
               align='end'
               sideOffset={12}
               alignOffset={-28}
+              onClick={(e) => e.stopPropagation()}
             >
               <DropdownMenuItem onSelect={() => onEditClick?.(item.historyId)}>
                 기록 수정하기

@@ -27,7 +27,7 @@ export const useBlockedItems = (type: 'song' | 'artist') => {
     return (blockedSingerQuery.data?.blocked_singers ?? []).map((item) => ({
       id: String(item.singer_id),
       thumbnail: item.photo_url ?? undefined,
-      title: item.name,
+      title: item.name, // 가수명이 title로 들어가서 artist는 undefined로 처리
       artist: undefined as string | undefined,
     }));
   }, [type, blockedSongQuery.data, blockedSingerQuery.data]);

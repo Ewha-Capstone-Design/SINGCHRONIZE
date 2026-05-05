@@ -24,7 +24,7 @@ const ArchiveListWidget = ({
   const { open: isOpen, openModal, closeModal } = useModal();
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  useClickOutside(wrapperRef, closeModal);
+  useClickOutside(wrapperRef, closeModal, isOpen);
 
   return (
     <section className='px-8 py-6 flex flex-col gap-4'>
