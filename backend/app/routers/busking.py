@@ -450,14 +450,14 @@ async def get_result(room_id: UUID, db: AsyncSession = Depends(get_db)):
         live_id=room.id,
         title=room.title,
         duration_seconds=result_row.duration_seconds,
-        peak_viewer_count=room.peak_viewer_count,
-        total_unique_viewers=room.total_unique_viewers,
+        peak_viewer_count=room.peak_viewer_count or 0,
+        total_unique_viewers=room.total_unique_viewers or 0,
         setlist=[SetlistItemResponse.model_validate(s) for s in setlist],
         reactions={
-            "total": {"match": result_row.match_count, "mismatch": result_row.mismatch_count},
+            "total": {"match": result_row.match_count or 0, "mismatch": result_row.mismatch_count or 0},
             "per_song": per_song,
         },
-        chat_count=result_row.chat_count,
+        chat_count=result_row.chat_count or 0,
         started_at=room.started_at,
         ended_at=room.ended_at,
     )
