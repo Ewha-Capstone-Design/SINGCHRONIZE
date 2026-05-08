@@ -13,6 +13,7 @@ from app.dependencies.auth import get_current_user
 from app.models.busking import BuskingRoom
 from app.models.library import WishlistItem
 from app.models.user import User
+from app.routers.busking import manager as busking_manager
 
 router = APIRouter(prefix="/api/v1", tags=["Home"])
 
@@ -57,7 +58,8 @@ async def get_live_ticker(
 
 
 # ── 내부 함수 ─────────────────────────────────────────
-async def _get_weekly_chart(db: AsyncSession) -> List[WeeklySong]:
+async def _get_weekly_chart(db: AsyncSession, liked_uris: Optional[set] = None) -> List[WeeklySong]:
+    liked_uris = liked_uris or set()
     since = datetime.now(timezone.utc) - timedelta(days=7)
 
     result = await db.execute(
@@ -100,18 +102,17 @@ async def _get_weekly_chart(db: AsyncSession) -> List[WeeklySong]:
 
 async def _get_live_ticker(db: AsyncSession) -> List[LiveTickerItem]:
     result = await db.execute(
-        select(BuskingRoom)
-        .where(BuskingRoom.status == "LIVE")
-        .order_by(BuskingRoom.total_viewers.desc())
-        .limit(10)
+        select(BuskingRoom).where(BuskingRoom.status == "LIVE").limit(20)
     )
     rooms = result.scalars().all()
-    return [
+    ticker = [
         LiveTickerItem(
             room_id=str(r.id),
             title=r.title,
             thumbnail=r.thumbnail,
-            viewer_count=r.total_viewers or 0,
+            viewer_count=busking_manager.viewer_count(r.id),
         )
         for r in rooms
     ]
+    ticker.sort(key=lambda x: x.viewer_count, reverse=True)
+    return ticker[:10]
