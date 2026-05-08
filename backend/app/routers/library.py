@@ -20,7 +20,9 @@ from app.schemas.library import (
     FolderCreate, FolderUpdate, FolderResponse,
     WishlistItemCreate, WishlistItemResponse,
 )
-from app.schemas.archive import ArchiveCreate, ArchiveUpdate, ArchiveResponse
+from app.schemas.archive import ArchiveCreate, ArchiveUpdate, ArchiveResponse, RecordingUploadUrlResponse
+from app.utils.aws import generate_presigned_url
+from app.config import settings
 
 router = APIRouter(prefix="/api/v1/library", tags=["Library"])
 

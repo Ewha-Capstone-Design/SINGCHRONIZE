@@ -12,8 +12,10 @@ from app.database import get_db
 from app.dependencies.auth import get_current_user, get_optional_user
 from app.models.busking import BuskingRoom
 from app.models.library import WishlistItem
+from app.models.recorded_busking import RecordedBusking, RecordedBuskingReaction
 from app.models.user import User
 from app.routers.busking import manager as busking_manager
+from app.schemas.recorded_busking import RecordedBuskingPreview, VoteRemaining
 
 router = APIRouter(prefix="/api/v1", tags=["Home"])
 
@@ -37,6 +39,7 @@ class LiveTickerItem(BaseModel):
 class HomeFeedsResponse(BaseModel):
     weekly: List[WeeklySong]
     live_ticker: List[LiveTickerItem]
+    recorded_buskings: List[RecordedBuskingPreview] = []
 
 
 # ── GET /api/v1/home/feeds ────────────────────────────
@@ -52,7 +55,8 @@ async def get_home_feeds(
 
     weekly = await _get_weekly_chart(db, liked_uris)
     live_ticker = await _get_live_ticker(db)
-    return HomeFeedsResponse(weekly=weekly, live_ticker=live_ticker)
+    recorded_buskings = await _get_recorded_buskings(db)
+    return HomeFeedsResponse(weekly=weekly, live_ticker=live_ticker, recorded_buskings=recorded_buskings)
 
 
 # ── GET /api/v1/busking/live-ticker ──────────────────
@@ -105,6 +109,73 @@ async def _get_weekly_chart(db: AsyncSession, liked_uris: Optional[set] = None) 
         )
         for i, (key, count) in enumerate(top5)
     ]
+
+
+async def _get_recorded_buskings(db: AsyncSession, limit: int = 10) -> List[RecordedBuskingPreview]:
+    from sqlalchemy import func
+    items = (await db.execute(
+        select(RecordedBusking)
+        .order_by(RecordedBusking.created_at.desc())
+        .limit(limit)
+    )).scalars().all()
+    if not items:
+        return []
+
+    busking_ids = [i.id for i in items]
+    host_ids = list({i.host_id for i in items})
+
+    hosts = {
+        u.id: u for u in (await db.execute(
+            select(User).where(User.id.in_(host_ids))
+        )).scalars().all()
+    }
+
+    reaction_rows = (await db.execute(
+        select(
+            RecordedBuskingReaction.busking_id,
+            RecordedBuskingReaction.value,
+            func.count().label("cnt"),
+        )
+        .where(RecordedBuskingReaction.busking_id.in_(busking_ids))
+        .group_by(RecordedBuskingReaction.busking_id, RecordedBuskingReaction.value)
+    )).all()
+    match_map: dict = {}
+    mismatch_map: dict = {}
+    for row in reaction_rows:
+        if row.value == "match":
+            match_map[row.busking_id] = row.cnt
+        else:
+            mismatch_map[row.busking_id] = row.cnt
+
+    now = datetime.now(timezone.utc)
+
+    def _remaining(vote_ends_at) -> VoteRemaining:
+        if vote_ends_at.tzinfo is None:
+            vote_ends_at = vote_ends_at.replace(tzinfo=timezone.utc)
+        delta = vote_ends_at - now
+        if delta.total_seconds() <= 0:
+            return VoteRemaining(days=0, hours=0, minutes=0, is_ended=True)
+        total = int(delta.total_seconds())
+        return VoteRemaining(days=total // 86400, hours=(total % 86400) // 3600, minutes=(total % 3600) // 60, is_ended=False)
+
+    result = []
+    for item in items:
+        host = hosts.get(item.host_id)
+        if not host:
+            continue
+        result.append(RecordedBuskingPreview(
+            id=item.id,
+            host_nickname=host.nickname,
+            host_profile_img=host.profile_img,
+            title=item.title,
+            thumbnail=item.thumbnail,
+            song_data=item.song_data,
+            vote_remaining=_remaining(item.vote_ends_at),
+            match_count=match_map.get(item.id, 0),
+            mismatch_count=mismatch_map.get(item.id, 0),
+            created_at=item.created_at,
+        ))
+    return result
 
 
 async def _get_live_ticker(db: AsyncSession) -> List[LiveTickerItem]:
