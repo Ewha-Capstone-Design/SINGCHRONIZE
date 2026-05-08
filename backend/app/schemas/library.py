@@ -1,5 +1,5 @@
 """Library 스키마 - Folder & Wishlist"""
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 from datetime import datetime
@@ -41,5 +41,10 @@ class WishlistItemResponse(BaseModel):
     folder_id: Optional[UUID] = None
     song_data: Dict[str, Any]
     created_at: datetime
+
+    @computed_field
+    @property
+    def song_id(self) -> UUID:
+        return self.id
 
     model_config = {"from_attributes": True}

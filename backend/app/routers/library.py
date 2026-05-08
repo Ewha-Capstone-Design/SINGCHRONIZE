@@ -200,6 +200,18 @@ async def delete_wishlist_item(
 # Archive / History
 # ═══════════════════════════════════════════════════
 
+@router.get("/wishlist/uris", response_model=List[str])
+async def get_wishlist_uris(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """찜 목록에 있는 Spotify URI 목록 반환"""
+    rows = (await db.execute(
+        select(WishlistItem.song_data).where(WishlistItem.user_id == current_user.id)
+    )).scalars().all()
+    return [r.get("uri") for r in rows if isinstance(r, dict) and r.get("uri")]
+
+
 @router.get("/history", response_model=List[ArchiveResponse])
 async def get_history(
     tag: Optional[str] = Query(None),
@@ -210,7 +222,17 @@ async def get_history(
     if tag is not None:
         stmt = stmt.where(Archive.tags.any(tag))
     stmt = stmt.order_by(Archive.recorded_date.desc())
-    return (await db.execute(stmt)).scalars().all()
+    archives = (await db.execute(stmt)).scalars().all()
+
+    liked_rows = (await db.execute(
+        select(WishlistItem.song_data).where(WishlistItem.user_id == current_user.id)
+    )).scalars().all()
+    liked_uris = {r.get("uri") for r in liked_rows if isinstance(r, dict) and r.get("uri")}
+
+    return [
+        ArchiveResponse.model_validate(a).model_copy(update={"is_liked": a.song_data.get("uri") in liked_uris})
+        for a in archives
+    ]
 
 
 @router.post("/history", response_model=ArchiveResponse, status_code=status.HTTP_201_CREATED)

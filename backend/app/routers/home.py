@@ -9,10 +9,11 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.dependencies.auth import get_current_user
+from app.dependencies.auth import get_current_user, get_optional_user
 from app.models.busking import BuskingRoom
 from app.models.library import WishlistItem
 from app.models.user import User
+from app.routers.busking import manager as busking_manager
 
 router = APIRouter(prefix="/api/v1", tags=["Home"])
 
@@ -25,6 +26,7 @@ class WeeklySong(BaseModel):
     album_image: Optional[str] = None
     uri: Optional[str] = None
     wish_count: int
+    is_liked: bool = False
 
 class LiveTickerItem(BaseModel):
     room_id: str
@@ -43,7 +45,12 @@ async def get_home_feeds(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    weekly = await _get_weekly_chart(db)
+    liked_rows = (await db.execute(
+        select(WishlistItem.song_data).where(WishlistItem.user_id == current_user.id)
+    )).scalars().all()
+    liked_uris = {r.get("uri") for r in liked_rows if isinstance(r, dict) and r.get("uri")}
+
+    weekly = await _get_weekly_chart(db, liked_uris)
     live_ticker = await _get_live_ticker(db)
     return HomeFeedsResponse(weekly=weekly, live_ticker=live_ticker)
 
@@ -57,7 +64,8 @@ async def get_live_ticker(
 
 
 # ── 내부 함수 ─────────────────────────────────────────
-async def _get_weekly_chart(db: AsyncSession) -> List[WeeklySong]:
+async def _get_weekly_chart(db: AsyncSession, liked_uris: Optional[set] = None) -> List[WeeklySong]:
+    liked_uris = liked_uris or set()
     since = datetime.now(timezone.utc) - timedelta(days=7)
 
     result = await db.execute(
@@ -93,6 +101,7 @@ async def _get_weekly_chart(db: AsyncSession) -> List[WeeklySong]:
             album_image=song_map[key].get("album_image"),
             uri=song_map[key].get("uri"),
             wish_count=count,
+            is_liked=song_map[key].get("uri") in liked_uris,
         )
         for i, (key, count) in enumerate(top5)
     ]
@@ -100,18 +109,17 @@ async def _get_weekly_chart(db: AsyncSession) -> List[WeeklySong]:
 
 async def _get_live_ticker(db: AsyncSession) -> List[LiveTickerItem]:
     result = await db.execute(
-        select(BuskingRoom)
-        .where(BuskingRoom.status == "LIVE")
-        .order_by(BuskingRoom.total_viewers.desc())
-        .limit(10)
+        select(BuskingRoom).where(BuskingRoom.status == "LIVE").limit(20)
     )
     rooms = result.scalars().all()
-    return [
+    ticker = [
         LiveTickerItem(
             room_id=str(r.id),
             title=r.title,
             thumbnail=r.thumbnail,
-            viewer_count=r.total_viewers or 0,
+            viewer_count=busking_manager.viewer_count(r.id),
         )
         for r in rooms
     ]
+    ticker.sort(key=lambda x: x.viewer_count, reverse=True)
+    return ticker[:10]
