@@ -24,5 +24,6 @@ class ArchiveResponse(BaseModel):
     tags: List[str] = []
     memo: Optional[str] = None
     recorded_date: datetime
+    is_liked: bool = False
 
     model_config = {"from_attributes": True}
