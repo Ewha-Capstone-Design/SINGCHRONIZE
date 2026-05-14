@@ -1,6 +1,6 @@
 """Library 모델 - Folder & WishlistItem"""
 import uuid
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Uuid
+from sqlalchemy import Column, Index, String, Boolean, DateTime, ForeignKey, Uuid, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -31,3 +31,8 @@ class WishlistItem(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     folder = relationship("Folder", back_populates="items")
+
+    __table_args__ = (
+        # 유저당 동일 Spotify URI 중복 찜 방지
+        Index("uq_wishlist_user_uri", "user_id", text("(song_data->>'uri')"), unique=True),
+    )
