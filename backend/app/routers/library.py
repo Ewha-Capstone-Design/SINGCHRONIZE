@@ -166,12 +166,25 @@ async def add_wishlist_item(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Spotify 검색 결과를 찜 목록에 추가. song_data = { name, artist, album_image, uri }"""
+    """Spotify 검색 결과를 찜 목록에 추가. song_data = { name, artist, album_image, uri }
+    동일 URI가 이미 찜 목록에 있으면 기존 항목을 그대로 반환합니다.
+    """
     if body.folder_id is not None:
         if not (await db.execute(
             select(Folder.id).where(Folder.id == body.folder_id, Folder.user_id == current_user.id)
         )).scalar_one_or_none():
             raise HTTPException(status_code=404, detail="폴더를 찾을 수 없습니다.")
+
+    uri = body.song_data.get("uri")
+    if uri:
+        existing = (await db.execute(
+            select(WishlistItem).where(
+                WishlistItem.user_id == current_user.id,
+                WishlistItem.song_data["uri"].astext == uri,
+            )
+        )).scalar_one_or_none()
+        if existing:
+            return existing
 
     item = WishlistItem(
         user_id=current_user.id,
