@@ -126,6 +126,7 @@ async def get_vocal_profile(
     genre_fit = None
     timbre = None
     range_info = None
+    descriptions = None
 
     if profile.latest_analysis_job_id:
         job_row = await db.execute(
@@ -155,6 +156,12 @@ async def get_vocal_profile(
                 "comfort": raw_range.get("comfort"),
             }
 
+            # 설명 문장 — {name} → 유저 닉네임으로 치환
+            raw_desc = rd.get("description_templates") or {}
+            if raw_desc:
+                name = current_user.nickname
+                descriptions = {k: v.replace("{name}", name) for k, v in raw_desc.items()}
+
     return VocalProfileResponse(
         user_id=current_user.id,
         has_profile=True,
@@ -166,6 +173,7 @@ async def get_vocal_profile(
         genreFit=genre_fit,
         timbre=timbre,
         range=range_info,
+        descriptions=descriptions,
     )
 
 
