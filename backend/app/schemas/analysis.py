@@ -52,4 +52,8 @@ class VocalProfileResponse(BaseModel):
     # data: [{note: "C#2", score: 0}, ...]  /  comfort: {from: "G4", to: "C#5"}
     range: Optional[Dict[str, Any]] = None
 
+    # 유저 이름이 치환된 설명 문장
+    # {timbre, genre_fit, vocal_range, vocal_traits}
+    descriptions: Optional[Dict[str, str]] = None
+
     model_config = {"from_attributes": True}
