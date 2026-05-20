@@ -301,6 +301,7 @@ export interface paths {
         /**
          * Add Wishlist Item
          * @description Spotify 검색 결과를 찜 목록에 추가. song_data = { name, artist, album_image, uri }
+         *     동일 URI가 이미 찜 목록에 있으면 기존 항목을 그대로 반환합니다.
          */
         post: operations["add_wishlist_item_api_v1_library_wishlist_post"];
         delete?: never;
@@ -321,6 +322,26 @@ export interface paths {
         post?: never;
         /** Delete Wishlist Item */
         delete: operations["delete_wishlist_item_api_v1_library_wishlist__item_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/library/wishlist/uris": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Wishlist Uris
+         * @description 찜 목록에 있는 Spotify URI 목록 반환
+         */
+        get: operations["get_wishlist_uris_api_v1_library_wishlist_uris_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -940,6 +961,111 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/busking/recordings/upload-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Get Recording Upload Url */
+        post: operations["get_recording_upload_url_api_v1_busking_recordings_upload_url_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/busking/recordings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Recorded Buskings */
+        get: operations["list_recorded_buskings_api_v1_busking_recordings_get"];
+        put?: never;
+        /** Create Recorded Busking */
+        post: operations["create_recorded_busking_api_v1_busking_recordings_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/busking/recordings/{busking_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Recorded Busking */
+        get: operations["get_recorded_busking_api_v1_busking_recordings__busking_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/busking/recordings/{busking_id}/reactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** React */
+        post: operations["react_api_v1_busking_recordings__busking_id__reactions_post"];
+        /** Delete Reaction */
+        delete: operations["delete_reaction_api_v1_busking_recordings__busking_id__reactions_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/busking/recordings/{busking_id}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Comments */
+        get: operations["get_comments_api_v1_busking_recordings__busking_id__comments_get"];
+        put?: never;
+        /** Add Comment */
+        post: operations["add_comment_api_v1_busking_recordings__busking_id__comments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/busking/recordings/{busking_id}/comments/{comment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Comment */
+        delete: operations["delete_comment_api_v1_busking_recordings__busking_id__comments__comment_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -1050,6 +1176,11 @@ export interface components {
              * Format: date-time
              */
             recorded_date: string;
+            /**
+             * Is Liked
+             * @default false
+             */
+            is_liked: boolean;
         };
         /** ArchiveSong */
         ArchiveSong: {
@@ -1244,7 +1375,7 @@ export interface components {
              * Format: uuid
              */
             host_id: string;
-            host_profile?: components["schemas"]["HostProfile"] | null;
+            host_profile?: components["schemas"]["app__schemas__busking__HostProfile"] | null;
             /** Title */
             title: string;
             /** Thumbnail */
@@ -1283,7 +1414,7 @@ export interface components {
              * Format: uuid
              */
             host_id: string;
-            host_profile?: components["schemas"]["HostProfile"] | null;
+            host_profile?: components["schemas"]["app__schemas__busking__HostProfile"] | null;
             /** Title */
             title: string;
             /** Thumbnail */
@@ -1318,7 +1449,7 @@ export interface components {
              * Format: uuid
              */
             host_id: string;
-            host_profile?: components["schemas"]["HostProfile"] | null;
+            host_profile?: components["schemas"]["app__schemas__busking__HostProfile"] | null;
             /** Title */
             title: string;
             /** Thumbnail */
@@ -1335,6 +1466,35 @@ export interface components {
             started_at: string | null;
             /** Ended At */
             ended_at: string | null;
+        };
+        /** CommentCreate */
+        CommentCreate: {
+            /** Content */
+            content: string;
+        };
+        /** CommentResponse */
+        CommentResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Nickname */
+            nickname: string;
+            /** Profile Img */
+            profile_img?: string | null;
+            /** Content */
+            content: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /** FavoriteSingersSelectRequest */
         FavoriteSingersSelectRequest: {
@@ -1399,20 +1559,11 @@ export interface components {
             weekly: components["schemas"]["WeeklySong"][];
             /** Live Ticker */
             live_ticker: components["schemas"]["LiveTickerItem"][];
-        };
-        /** HostProfile */
-        HostProfile: {
             /**
-             * Id
-             * Format: uuid
+             * Recorded Buskings
+             * @default []
              */
-            id: string;
-            /** Nickname */
-            nickname: string;
-            /** Profile Img */
-            profile_img: string | null;
-            /** Bio */
-            bio: string | null;
+            recorded_buskings: components["schemas"]["RecordedBuskingPreview"][];
         };
         /**
          * LiveKitJoinResponse
@@ -1461,6 +1612,11 @@ export interface components {
         RandomSingersResponse: {
             /** Singers */
             singers: components["schemas"]["SingerInfo"][];
+        };
+        /** ReactionRequest */
+        ReactionRequest: {
+            /** Value */
+            value: string;
         };
         /** RecommendationArchiveResponse */
         RecommendationArchiveResponse: {
@@ -1529,6 +1685,98 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /** RecordedBuskingCreate */
+        RecordedBuskingCreate: {
+            /** Title */
+            title: string;
+            /** Thumbnail Url */
+            thumbnail_url?: string | null;
+            /** S3 Key */
+            s3_key: string;
+            /** Song Data */
+            song_data: Record<string, never>;
+            /**
+             * Vote Ends At
+             * Format: date-time
+             */
+            vote_ends_at: string;
+        };
+        /**
+         * RecordedBuskingPreview
+         * @description 홈 화면 용 경량 응답
+         */
+        RecordedBuskingPreview: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Host Nickname */
+            host_nickname: string;
+            /** Host Profile Img */
+            host_profile_img?: string | null;
+            /** Title */
+            title: string;
+            /** Thumbnail */
+            thumbnail?: string | null;
+            /** Song Data */
+            song_data: Record<string, never>;
+            vote_remaining: components["schemas"]["VoteRemaining"];
+            /** Match Count */
+            match_count: number;
+            /** Mismatch Count */
+            mismatch_count: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** RecordedBuskingResponse */
+        RecordedBuskingResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            host_profile: components["schemas"]["app__schemas__recorded_busking__HostProfile"];
+            /** Title */
+            title: string;
+            /** Thumbnail */
+            thumbnail?: string | null;
+            /** Recording Url */
+            recording_url: string;
+            /** Song Data */
+            song_data: Record<string, never>;
+            /**
+             * Vote Ends At
+             * Format: date-time
+             */
+            vote_ends_at: string;
+            vote_remaining: components["schemas"]["VoteRemaining"];
+            /** Match Count */
+            match_count: number;
+            /** Mismatch Count */
+            mismatch_count: number;
+            /** Comment Count */
+            comment_count: number;
+            /** My Reaction */
+            my_reaction?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** RecordingUploadUrlResponse */
+        RecordingUploadUrlResponse: {
+            /** Upload Url */
+            upload_url: string;
+            /** S3 Key */
+            s3_key: string;
+            /** Public Url */
+            public_url: string;
         };
         /** SetlistItemCreate */
         SetlistItemCreate: {
@@ -1760,6 +2008,21 @@ export interface components {
             timbre?: Record<string, never>[] | null;
             /** Range */
             range?: Record<string, never> | null;
+            /** Descriptions */
+            descriptions?: {
+                [key: string]: string;
+            } | null;
+        };
+        /** VoteRemaining */
+        VoteRemaining: {
+            /** Days */
+            days: number;
+            /** Hours */
+            hours: number;
+            /** Minutes */
+            minutes: number;
+            /** Is Ended */
+            is_ended: boolean;
         };
         /** WeeklySong */
         WeeklySong: {
@@ -1775,6 +2038,11 @@ export interface components {
             uri?: string | null;
             /** Wish Count */
             wish_count: number;
+            /**
+             * Is Liked
+             * @default false
+             */
+            is_liked: boolean;
         };
         /** WishlistItemCreate */
         WishlistItemCreate: {
@@ -1804,6 +2072,11 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /**
+             * Song Id
+             * Format: uuid
+             */
+            readonly song_id: string;
         };
         /**
          * WithdrawRequest
@@ -1854,6 +2127,32 @@ export interface components {
             album_art_url?: string | null;
             /** Order Index */
             order_index: number;
+        };
+        /** HostProfile */
+        app__schemas__busking__HostProfile: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Nickname */
+            nickname: string;
+            /** Profile Img */
+            profile_img: string | null;
+            /** Bio */
+            bio: string | null;
+        };
+        /** HostProfile */
+        app__schemas__recorded_busking__HostProfile: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Nickname */
+            nickname: string;
+            /** Profile Img */
+            profile_img?: string | null;
         };
     };
     responses: never;
@@ -2520,6 +2819,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_wishlist_uris_api_v1_library_wishlist_uris_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
                 };
             };
         };
@@ -3518,6 +3837,280 @@ export interface operations {
             header?: never;
             path: {
                 artist_name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_recording_upload_url_api_v1_busking_recordings_upload_url_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingUploadUrlResponse"];
+                };
+            };
+        };
+    };
+    list_recorded_buskings_api_v1_busking_recordings_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordedBuskingResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_recorded_busking_api_v1_busking_recordings_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordedBuskingCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordedBuskingResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_recorded_busking_api_v1_busking_recordings__busking_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                busking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordedBuskingResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    react_api_v1_busking_recordings__busking_id__reactions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                busking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReactionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_reaction_api_v1_busking_recordings__busking_id__reactions_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                busking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_comments_api_v1_busking_recordings__busking_id__comments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                busking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommentResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_comment_api_v1_busking_recordings__busking_id__comments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                busking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_comment_api_v1_busking_recordings__busking_id__comments__comment_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                busking_id: string;
+                comment_id: string;
             };
             cookie?: never;
         };
