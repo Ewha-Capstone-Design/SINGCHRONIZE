@@ -1,4 +1,5 @@
 export { buskingApi } from './api/buskingApi';
+export { recordedBuskingApi, uploadFileToS3 } from './api/recordedBuskingApi';
 export {
   useBuskingRooms,
   useBuskingRoom,
