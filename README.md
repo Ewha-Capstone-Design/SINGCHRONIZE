@@ -34,9 +34,6 @@
 
 ## 📱 Product Interface & UX Flow
 
-> 💡 **Visual Proof First (Strict 1:1 Grid Layout)**
-> 핵심 사용자 경험(UX) 흐름을 직관적으로 확인할 수 있는 메인 인터페이스 자산입니다. 디바이스 환경에 구애받지 않고 완벽한 균등 그리드로 정렬되도록 아키텍처를 설계했습니다.
-
 <table>
   <tr>
     <td width="50%" align="center"><strong>01. 메인 대시보드</strong></td>
