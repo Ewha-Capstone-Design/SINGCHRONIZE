@@ -5,7 +5,7 @@
 </div>
 
 > **Synchronize your voice with your song.**<br>
-> 사용자의 음성 특징 벡터 분석 기반 초개인화 가창 곡 추천 및 온라인 버스킹 플랫폼
+> 사용자의 음성 특징 벡터 분석을 통한 개인 맞춤형 가창 곡 추천 시스템
 
 <div align="center">
 
@@ -30,6 +30,12 @@
 
 단 한 번의 보컬 녹음으로 사용자의 음역대, 음색 벡터, 발성 능력을 다차원적으로 평가하며, 딥러닝 기반 임베딩 모델을 거쳐 개인화된 보컬 리포트와 매칭 파이프라인을 제공합니다. 더 나아가 자신의 목소리를 공유하고 실시간으로 소통할 수 있는 온라인 버스킹 환경을 통해 지속 가능한 오디오 생태계를 구축합니다.
 
+### 🖥️ Main Dashboard Overview
+<div align="center">
+  <img src="./docs/01_main_dashboard.png" alt="SINGCHRONIZE Main Dashboard" width="100%" />
+  <p>개인화 추천 피드, 실시간 인기 버스킹 및 커뮤니티 트렌드를 한눈에 확인할 수 있는 메인 대시보드</p>
+</div>
+
 ---
 
 ## 🎯 Key Engineering Features
@@ -38,10 +44,16 @@
 * **정밀 음역대 및 테시투라(Tessitura) 추출**: 단발성 최고/최저음을 넘어, 가창자가 안정적으로 소화할 수 있는 핵심 음역대인 테시투라를 통계학적으로 산출합니다.
 * **CREPE 기반 F0 추적**: 최신 피치 추출 모델인 `CREPE(Convolutional Representation for Pitch Estimation)`를 활용하여 노이즈가 포함된 환경에서도 정확한 기본 주파수(F0)를 트래킹합니다.
 * **ECAPA-TDNN 음색 임베딩**: `SpeechBrain` 프레임워크의 `ECAPA-TDNN` 알고리즘을 활용하여 사용자의 음색을 192차원의 정밀 고밀도 벡터로 임베딩하여 유사도를 계량화합니다.
-* **음원 분리 인프라**: 반주와 보컬이 섞인 오디오 진입 시 `Demucs` 파이프라인을 통하여 무손실 MR 분리 후 정밀 분석을 수행합니다.
+* **음원 분리 인프라**: 반주 및 보컬 데이터 진입 시 `Demucs` 파이프라인을 통하여 무손실 MR 분리 후 정밀 분석을 수행합니다.
+
+<div align="center">
+  <img src="./docs/02_vocal_report.png" alt="Vocal Analysis Report" width="90%" />
+  <p>오디오 피처 추출 엔진을 기반으로 구현된 5차원 보컬 특성 다이어그램 및 음역대 다차원 분석 리포트 UI</p>
+</div>
 
 ### 2. 3단계 추천 파이프라인 엔진 (Recommendation Pipeline)
 최적의 추천 신뢰도를 확보하기 위해 독립된 3단계의 필터링 및 랭킹 모델을 적용했습니다.
+
 
 ```
 
@@ -51,11 +63,21 @@
 
 ```
 
+<div align="center">
+  <img src="./docs/03_song_recommendation.png" alt="Personalized Song Recommendation" width="90%" />
+  <p>사용자 컨텍스트(상황별 필터) 및 AI 분석 모델 결합도를 정밀 반영한 매칭 엔진 결과 대시보드</p>
+</div>
+
 ### 3. 고성능 아키텍처 및 미디어 인프라
 * **FastAPI Async Router**: 오디오 전처리 및 임베딩 추론 등 대규모 I/O 및 CPU 바운드 태스크의 효율적 처리를 위해 비동기(Async/Await) 아키텍처와 분리된 워커 시스템을 도입했습니다.
 * **JWT 기반 Refresh Token Rotation (RTR)**: 사용자 인증 보안 강화를 위해 액세스 토큰 만료 시 리프레시 토큰을 단 1회만 재사용 가능하도록 회전시키는 RTR 메커니즘을 백엔드에 직접 구현했습니다.
 * **FSD (Feature-Sliced Design) 아키텍처**: 프론트엔드는 도메인과 비즈니스 로직 중심의 슬라이스로 결합도를 낮추고 응집도를 높인 FSD 아키텍처를 도입하여 대규모 기능 확장성을 확보했습니다.
 * **Turborepo 모노레포 아키텍처**: 빌드 캐싱 및 멀티 패키지 의존성 최적화를 통해 개발 생산성을 극대화했습니다.
+
+<div align="center">
+  <img src="./docs/04_online_busking.png" alt="Online Busking & Live Chatting" width="100%" />
+  <p>저지연 스트리밍 인프라 및 가창 스케줄러를 적용한 대화형 온라인 버스킹 플레이어</p>
+</div>
 
 ---
 
@@ -64,7 +86,6 @@
 <div align="center">
   <img src="./docs/architecture.png" alt="SINGCHRONIZE Architecture" width="100%" />
 </div>
-
 
 ---
 
@@ -140,11 +161,14 @@ SINGCHRONIZE/
 
 ## 👥 Our Team
 
-| 유서연 | 김민주 | 이윤서 |
-| --- | --- | --- |
-|  |  |  |
-| **Frontend Engineer** | **Backend Engineer** | **AI Engineer** |
-| `Ewha Womans Univ.` | `Ewha Womans Univ.` | `Ewha Womans Univ.` |
+<div align="center">
+
+| [<img src="https://github.com/youtheyeon.png" width="110" style="border-radius: 50%;"/>](https://github.com/youtheyeon) | [<img src="https://github.com/Minju-Kimm.png" width="110" style="border-radius: 50%;"/>](https://github.com/Minju-Kimm) | [<img src="https://github.com/dldbstj22.png" width="110" style="border-radius: 50%;"/>](https://github.com/dldbstj22) |
+|:---:|:---:|:---:|
+| **유서연** | **김민주** | **이윤서** |
+| Frontend Engineer | Backend Engineer | AI Engineer |
+
+</div>
 
 ### 💻 R&D Contributions
 
@@ -165,6 +189,4 @@ SINGCHRONIZE/
 
 ---
 
-**SINGCHRONIZE — Synchronize your voice with your song.**
-
-All rights reserved © 2026 All Day Project (Growth 32).
+**SINGCHRONIZE — Synchronize your voice with your song.** All rights reserved © 2026 All Day Project (Growth 32).
