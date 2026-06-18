@@ -179,11 +179,15 @@ SINGCHRONIZE/
 
 ## 👥 Our Team
 
-| [](https://github.com/youtheyeon) | [](https://github.com/Minju-Kimm) | [](https://github.com/dldbstj22) |
-| --- | --- | --- |
+
+<div align="center">
+
+| [<img src="https://github.com/youtheyeon.png" width="110" style="border-radius: 50%;"/>](https://github.com/youtheyeon) | [<img src="https://github.com/Minju-Kimm.png" width="110" style="border-radius: 50%;"/>](https://github.com/Minju-Kimm) | [<img src="https://github.com/dldbstj22.png" width="110" style="border-radius: 50%;"/>](https://github.com/dldbstj22) |
+|:---:|:---:|:---:|
 | **유서연** | **김민주** | **이윤서** |
 | Frontend Engineer | Backend Engineer | AI Engineer |
-| `Ewha Womans Univ.` | `Ewha Womans Univ.` | `Ewha Womans Univ.` |
+
+</div>
 
 ### 💻 R&D Contributions
 
