@@ -72,7 +72,7 @@
 
 ### 1. AI 기반 고차원 보컬 오디오 파이프라인
 * **정밀 음역대 및 테시투라(Tessitura) 추출**: 단발성 최고/최저음을 넘어, 가창자가 안정적으로 소화할 수 있는 핵심 음역대인 테시투라를 통계학적으로 산출합니다.
-* **CREPE 기반 F0 추적**: 최신 피치 추출 모델인 `CREPE(Convolutional Representation for Pitch Estimation)`를 활용하여 노이즈가 포함된 환경에서도 정확한 기본 주파수(F0)를 트래킹합니다.
+* **Librosa 기반 정밀 F0 추적**: `librosa` 아키텍처의 고성능 오디오 신호 처리 알고리즘(pYIN/YIN)을 활용하여 주파수를 분석하고, 노이즈가 포함된 가창 환경에서도 정확한 기본 주파수(F0)와 피치를 트래킹합니다.
 * **ECAPA-TDNN 음색 임베딩**: `SpeechBrain` 프레임워크의 `ECAPA-TDNN` 알고리즘을 활용하여 사용자의 음색을 192차원의 정밀 고밀도 벡터로 임베딩하여 유사도를 계량화합니다.
 * **음원 분리 인프라**: 반주 및 보컬 데이터 진입 시 `Demucs` 파이프라인을 통하여 무손실 MR 분리 후 정밀 분석을 수행합니다.
 
@@ -129,7 +129,7 @@
 
 | Stack | Purpose | Rationale |
 | --- | --- | --- |
-| **CREPE** | Pitch Extraction | 심층 신경망 알고리즘 기반 타겟 F0 주파수 추적의 정확도 극대화 |
+| **librosa** | Pitch Extraction & DSP | 주파수 추정 알고리즘 기반 타겟 F0 피치 추적 및 오디오 신호 가공 최적화 |
 | **ECAPA-TDNN** | Voice Embedding | SpeechBrain 아키텍처 적용, 고차원 음색 유사도 유클리드 거리를 산출 |
 | **librosa / SciPy** | Audio Signal Processing | 오디오 신호 스펙트로그램 변환, 다차원 오디오 피처 정밀 추출 수량화 |
 
@@ -200,7 +200,7 @@ SINGCHRONIZE/
 
 #### 🟣 이윤서 (AI)
 
-* **Audio Deep Learning Engine**: CREPE 모델 및 ECAPA-TDNN 오디오 임베딩 파이프라인 최적화를 통해 192차원 보컬 고유 특징 벡터 추출 모듈 구현 성공.
+* **Audio Signal Processing & Deep Learning Engine**: `librosa` 디바이스 파이프라인 최적화를 통한 피치 추정 및 ECAPA-TDNN 오디오 임베딩 결합 구조 모델링으로 192차원 보컬 고유 특징 벡터 추출 구현 성공.
 * **Mathematical Tessitura Analytics**: 가창 데이터 주파수 스펙트럼 기반 다차원 스케일링 알고리즘 및 장르 적합도 평가 통계적 스코어링 프레임워크 수립.
 
 ---
