@@ -61,7 +61,7 @@ export const toFavoriteSongUiType = (item: FavoriteSongApiType): FavoriteSongUiT
   const songData = item.song_data as unknown as SongDataType;
   return {
     itemId: item.id,
-    songId: songData.uri,
+    songId: item.song_id,
     title: songData.name,
     artist: songData.artist,
     thumbnail: songData.album_image ?? undefined,

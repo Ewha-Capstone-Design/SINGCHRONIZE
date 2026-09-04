@@ -94,12 +94,14 @@ export const useAddWishlistItem = () => {
 
       const previous = queryClient.getQueryData<FavoriteSongApiType[]>(wishlistKey);
 
+      const tempId = `temp-${crypto.randomUUID()}`;
       const tempItem: FavoriteSongApiType = {
-        id: `temp-${crypto.randomUUID()}`,
+        id: tempId,
         user_id: '',
         folder_id: body.folder_id ?? null,
         song_data: body.song_data,
         created_at: new Date().toISOString(),
+        song_id: tempId,
       };
 
       queryClient.setQueryData<FavoriteSongApiType[]>(wishlistKey, (old = []) => [

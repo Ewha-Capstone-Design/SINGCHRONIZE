@@ -25,6 +25,7 @@ type RecordUploadStep2Props = {
   onEndDateChange: (date: Date) => void;
   onRecordFileChange: (file: File) => void;
   onSubmit: () => void;
+  isSubmitting?: boolean;
 };
 
 export const RecordUploadStep2 = ({
@@ -37,10 +38,11 @@ export const RecordUploadStep2 = ({
   onEndDateChange,
   onRecordFileChange,
   onSubmit,
+  isSubmitting = false,
 }: RecordUploadStep2Props) => {
   const selectedIds = useMemo(
     () => new Set(selectedSongs.map((s) => s.id)),
-    [selectedSongs]
+    [selectedSongs],
   );
 
   const { open: isDateOpen, openModal: openDate, closeModal: closeDate } = useModal();
@@ -93,7 +95,7 @@ export const RecordUploadStep2 = ({
                       }}
                       className={cn(
                         'text-white',
-                        disabled && 'cursor-not-allowed opacity-40'
+                        disabled && 'cursor-not-allowed opacity-40',
                       )}
                     >
                       {selected ? <IcCheck /> : <IcPlus />}
@@ -122,7 +124,11 @@ export const RecordUploadStep2 = ({
                 if (file) onRecordFileChange(file);
               }}
             />
-            <Button variant='normal' className='w-fit' onClick={() => fileInputRef.current?.click()}>
+            <Button
+              variant='normal'
+              className='w-fit'
+              onClick={() => fileInputRef.current?.click()}
+            >
               {recordFile ? recordFile.name : '파일 선택하기'}
             </Button>
           </div>
@@ -159,7 +165,7 @@ export const RecordUploadStep2 = ({
       </div>
 
       <div className='py-7 flex justify-center shrink-0'>
-        <Button variant='accent' disabled={!canSubmit} onClick={onSubmit}>
+        <Button variant='accent' disabled={!canSubmit || isSubmitting} onClick={onSubmit}>
           녹음 버스킹 업로드하기
         </Button>
       </div>

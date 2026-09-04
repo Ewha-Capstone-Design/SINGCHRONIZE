@@ -1,4 +1,5 @@
 import type { components } from '@singchronize/api';
+import type { SongDataType } from '@/entities/song/model/types';
 
 export type BuskingRoomApiType = components['schemas']['BuskingRoomResponse'];
 export type BuskingRoomDetailApiType = components['schemas']['BuskingRoomDetailResponse'];
@@ -12,6 +13,10 @@ export type BuskingResultApiType = Omit<
 };
 export type ThumbnailPresignedApiType =
   components['schemas']['ThumbnailPresignedResponse'];
+export type RecordedBuskingCreateBody = Omit<
+  components['schemas']['RecordedBuskingCreate'],
+  'song_data'
+> & { song_data: SongDataType };
 export type LiveKitJoinApiType = components['schemas']['LiveKitJoinResponse'];
 export type SetlistItemApiType = components['schemas']['SetlistItemResponse'];
 export type SetlistItemCreateBody = components['schemas']['SetlistItemCreate'];
